@@ -4,34 +4,38 @@ import { createStyles, Card, Text } from "@mantine/core";
 import type { Id } from "./globals";
 
 const useStyles = createStyles((theme) => ({
-    task: {
+    item: {
         width: "250px",
         height: "84px"
     }
 }));
 
-export interface TaskRubric {
-    taskId: Id,
+// TODO: add location to tasks?
+// TODO: finish the Task UI
+// TODO: implement the add button to the List and keyboard shortcuts
+export interface ItemRubric {
+    itemId: Id,
     content: string,
-    complete: boolean
+    complete: boolean,
+    location?: string
 };
 
-interface TaskProps extends TaskRubric {
+interface ItemProps extends ItemRubric {
     index: number
 };
 
-const Task = function(props: TaskProps) {
+const Item = function(props: ItemProps) {
     const { classes } = useStyles();
 
     return (
         <Draggable
-            draggableId={props.taskId}
+            draggableId={props.itemId}
             index={props.index}
         >
             {
                 (provided) => (
                     <Card
-                        className={classes.task}
+                        className={classes.item}
                         ref={provided.innerRef}
                         withBorder
                         {...provided.dragHandleProps}
@@ -40,6 +44,7 @@ const Task = function(props: TaskProps) {
                         <Card.Section>
                             <Text>{props.content}</Text>
                         </Card.Section>
+                        {/* location, pretty formatting, check mark for complete, text wrap */}
                     </Card>
                 )
             }
@@ -47,4 +52,4 @@ const Task = function(props: TaskProps) {
     );
 }
 
-export default Task;
+export default Item;

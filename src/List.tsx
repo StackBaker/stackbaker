@@ -2,11 +2,11 @@ import type { Id } from "./globals"
 import { Droppable, DragDropContext } from "@hello-pangea/dnd";
 import type { DraggableLocation } from "@hello-pangea/dnd"
 import { createStyles, Stack, Title } from "@mantine/core";
-import Task from "./Task";
-import { TaskCollection } from "./DashboardTypes";
+import Item from "./Item";
+import { ItemCollection } from "./DashboardTypes";
 
 const useStyles = createStyles((theme) => ({
-    taskList: {
+    list: {
         display: "flex",
         flexDirection: "column",
         width: "250px",
@@ -14,42 +14,42 @@ const useStyles = createStyles((theme) => ({
     }
 }));
 
-export interface TaskListRubric {
-    taskListId: Id,
+export interface ListRubric {
+    listId: Id,
     title: string,
-    taskIds: Id[],
+    itemIds: Id[],
 }
 
-interface TaskListProps extends TaskListRubric {
+interface ListProps extends ListRubric {
     mutateTaskLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => void,
-    tasks: TaskCollection
+    items: ItemCollection
 };
 
-const TaskList = function(props: TaskListProps) {
+const List = function(props: ListProps) {
     const { classes } = useStyles();
 
     return (
-        <Stack sx={{ height: 100 }}>
+        <Stack justify="flex-start" sx={{ height: "100vh" }}>
             <Title size="h2">{props.title}</Title>
             <Droppable
-                droppableId={props.taskListId}
+                droppableId={props.listId}
             >
                 {
                     (provided) => (
-                        <div
+                        <Stack
                             ref={provided.innerRef}
-                            className={classes.taskList}
+                            className={classes.list}
                             {...provided.droppableProps}
                         >
-                            {props.taskIds.map((tid, idx) => (
-                                <Task 
+                            {props.itemIds.map((tid, idx) => (
+                                <Item 
                                     key={tid}
                                     index={idx}
-                                    {...props.tasks[tid]}
+                                    {...props.items[tid]}
                                 />
                             ))}
                             {provided.placeholder}
-                        </div>
+                        </Stack>
                     )
                 }
             </Droppable>
@@ -57,4 +57,4 @@ const TaskList = function(props: TaskListProps) {
     );
 }
 
-export default TaskList;
+export default List;
