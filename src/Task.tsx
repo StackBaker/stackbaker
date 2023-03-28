@@ -1,11 +1,12 @@
 import { Draggable } from "@hello-pangea/dnd";
-import { Card, createStyles } from "@mantine/core";
+import { createStyles, Card, Text } from "@mantine/core";
 
 import type { Id } from "./globals";
 
 const useStyles = createStyles((theme) => ({
     task: {
-        width: "84px"
+        width: "250px",
+        height: "84px"
     }
 }));
 
@@ -31,8 +32,14 @@ const Task = function(props: TaskProps) {
                 (provided) => (
                     <Card
                         className={classes.task}
+                        ref={provided.innerRef}
+                        withBorder
+                        {...provided.dragHandleProps}
+                        {...provided.draggableProps}
                     >
-                        Hi there.
+                        <Card.Section>
+                            <Text>{props.content}</Text>
+                        </Card.Section>
                     </Card>
                 )
             }
