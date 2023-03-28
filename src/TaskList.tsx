@@ -1,13 +1,17 @@
 import type { Id } from "./globals"
 import { Droppable, DragDropContext } from "@hello-pangea/dnd";
 import type { DragDropContextProps, DropResult, DraggableLocation } from "@hello-pangea/dnd"
-import { createStyles, Title } from "@mantine/core";
+import { createStyles, Stack, Title } from "@mantine/core";
 
-const useStyles = createStyles((theme) => {
-    return ({
-
-    });
-});
+const useStyles = createStyles((theme) => ({
+    taskList: {
+        display: "flex",
+        flexDirection: "column",
+        width: "250px",
+        height: "100px",
+        padding: theme.spacing.xs
+    }
+}));
 
 export interface TaskListRubric {
     taskListId: Id,
@@ -21,6 +25,8 @@ interface TaskListProps extends TaskListRubric {
 };
 
 const TaskList = function(props: TaskListProps) {
+    const { classes } = useStyles();
+
     const onDragEnd = function(result: DropResult) {
         const { source, destination, draggableId } = result;
 
@@ -37,19 +43,24 @@ const TaskList = function(props: TaskListProps) {
             onDragEnd={onDragEnd}
             {...props.dragDropContextProps}
         >
-            <Title size="h2">{props.title}</Title>
-            <Droppable
-                droppableId={props.taskListId}
-            >
-                {
-                    (provided) => (
-                        <div>
-
-                            {provided.placeholder}
-                        </div>
-                    )
-                }
-            </Droppable>
+            <Stack sx={{ height: 100 }}>
+                <Title size="h2">{props.title}</Title>
+                <Droppable
+                    droppableId={props.taskListId}
+                >
+                    {
+                        (provided) => (
+                            <div
+                                ref={provided.innerRef}
+                                className={classes.taskList}
+                            >
+                                hi
+                                {provided.placeholder}
+                            </div>
+                        )
+                    }
+                </Droppable>
+            </Stack>
         </DragDropContext>
     );
 }

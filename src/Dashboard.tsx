@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createStyles, MantineTheme, Divider } from "@mantine/core";
+import { createStyles, AppShell, Navbar, Text, MediaQuery, Header, Burger, Group, Stack, Divider, Paper } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 
@@ -11,46 +11,52 @@ import type { TaskRubric } from "./Task";
 import { DAY_TASK_LIST_ID, DO_LATER_TASK_LIST_ID, DAY_TASK_LIST_TITLE, DO_LATER_TASK_LIST_TITLE } from "./globals";
 import type { Id } from "./globals";
 
-const useStyles = createStyles((theme: MantineTheme) => {
-    return ({
-        wrapper: {
-            display: "flex",
-            flexDirection: "row",
-            height: "97vh",
-            width: "100%"
-        },
-        leftPanel: {
-            display: "flex",
-            flexDirection: "column",
-            width: "20vw",
-            padding: theme.spacing.sm
-        },
-        taskArea: {
-            display: "flex",
-            flexDirection: "row"
-        }
-    });
-});
+const useStyles = createStyles((theme) => ({
+    wrapper: {
+        display: "flex",
+        flexDirection: "row",
+        height: "100%",
+        width: "100%"
+    },
+    leftPanel: {
+
+    },
+    taskArea: {
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "flex-start"
+    }
+}));
 
 interface LeftPanelProps {
     date: Date | null,
-    setDate: React.Dispatch<React.SetStateAction<Date | null>>
+    setDate: React.Dispatch<React.SetStateAction<Date | null>>,
+    opened: boolean
 };
 
 const LeftPanel = function(props: LeftPanelProps) {
     const { classes } = useStyles();
 
     return (
-        <div className={classes.leftPanel}>
-            <DatePicker
-                value={props.date}
-                onChange={props.setDate}
-                size="xs"
-            />
-        </div>
+        <Navbar
+            className={classes.leftPanel}
+            p="md"
+            hiddenBreakpoint="sm"
+            hidden={!props.opened}
+            width={{ sm: 250, lg: 250 }}
+        >
+            <Navbar.Section>
+                <DatePicker
+                    value={props.date}
+                    onChange={props.setDate}
+                    size="xs"
+                />
+            </Navbar.Section>
+        </Navbar>
     );
 }
 
+// TODO: create a new DashBoardTypes.ts file
 type TaskListCollection = { [key: Id]: TaskListRubric };
 type TaskCollection = { [key: Id]: TaskRubric };
 
@@ -63,16 +69,17 @@ const TaskArea = function(props: TaskAreaProps) {
     const { classes } = useStyles();
 
     return (
-        <div className={classes.taskArea}>
+        <Group>
             <DayCalendar />
             {Object.keys(props.taskLists).map(tlid => {
                 return (
                     <TaskList
+                        key={tlid}
                         mutateTaskLists={props.mutateTaskLists}
                         {...props.taskLists[tlid]}
                     />
                 )})}
-        </div>
+        </Group>
     );
 }
 
@@ -83,6 +90,7 @@ interface DashboardProps {
 const Dashboard = function(props: DashboardProps | undefined) {
     const { classes } = useStyles();
     const [date, setDate] = useState<Date | null>(new Date());
+    const [opened, setOpened] = useState(true);
     
     // TODO: retrieve tasks for date from backend
     const [taskLists, setTaskLists] = useState<TaskListCollection>({
@@ -113,22 +121,43 @@ const Dashboard = function(props: DashboardProps | undefined) {
     }
 
     return (
-        <div className={classes.wrapper}>
-            <LeftPanel
-                date={date}
-                setDate={setDate}
-            />
-            <Divider
-                size="xs"
-                orientation="vertical"
-                variant="solid"
-            />
-            <TaskArea 
-                taskLists={taskLists}
-                mutateTaskLists={mutateTaskLists}
-            />
-        </div>
+        <Paper sx={{ height: "100px" }}>
+            <AppShell
+                navbarOffsetBreakpoint="sm"
+                navbar={
+                    <LeftPanel
+                        date={date}
+                        setDate={setDate}
+                        opened={opened}
+                    />
+                }
+                header={
+                    <Header height={{ base: 50 /* , md: 70 */ }} p="md">
+                        <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+                            <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
+                                <Burger
+                                    opened={opened}
+                                    onClick={() => setOpened((o) => !o)}
+                                    size="sm"
+                                    color="gray"
+                                    mr="xl"
+                                />
+                            </MediaQuery>
+                
+                            <Text>Application header</Text>
+                        </div>
+                    </Header>
+                }
+            >
+                <TaskArea 
+                    taskLists={taskLists}
+                    mutateTaskLists={mutateTaskLists}
+                />
+            </AppShell>
+        </Paper>
     );
+
 }
+
 
 export default Dashboard;
