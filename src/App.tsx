@@ -7,7 +7,7 @@ import "./App.css";
 import * as paths from "./paths";
 import Dashboard from "./Dashboard";
 
-function Root() {
+const Root = function() {
 	const navigate = useNavigate();
 	// TODO: retrieve user and planning info from backend and navigate to dashboard
 	// only if the day has been planned
@@ -20,9 +20,8 @@ function Root() {
 }
 
 
-function App() {
+const App = function() {
 	// overall App state should be stored in this functional component
-
 	const router = createMemoryRouter([
 		{
 			path: paths.ROOT_PATH,

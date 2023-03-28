@@ -1,4 +1,4 @@
-function DayCalendar() {
+const DayCalendar = function() {
     return (
         <div></div>
     );

@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { createStyles, MantineTheme, Divider } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
+import type { DraggableLocation } from "@hello-pangea/dnd";
+
 import DayCalendar from "./DayCalendar";
-import { Settings2 } from "tabler-icons-react";
+import TaskList from "./TaskList";
+import type { TaskListRubric } from "./TaskList";
+import Task from "./Task";
+import type { TaskRubric } from "./Task";
+import { DAY_TASK_LIST_ID, DO_LATER_TASK_LIST_ID, DAY_TASK_LIST_TITLE, DO_LATER_TASK_LIST_TITLE } from "./globals";
+import type { Id } from "./globals";
 
 const useStyles = createStyles((theme: MantineTheme) => {
     return ({
@@ -30,18 +37,12 @@ interface LeftPanelProps {
     setDate: React.Dispatch<React.SetStateAction<Date | null>>
 };
 
-function LeftPanel(props: LeftPanelProps) {
+const LeftPanel = function(props: LeftPanelProps) {
     const { classes } = useStyles();
 
     return (
         <div className={classes.leftPanel}>
-            <Settings2
-                size={25}
-                strokeWidth={1.5}
-                color={'black'}
-            />
             <DatePicker
-                style={{ marginTop: "20px" }}
                 value={props.date}
                 onChange={props.setDate}
                 size="xs"
@@ -50,13 +51,66 @@ function LeftPanel(props: LeftPanelProps) {
     );
 }
 
+type TaskListCollection = { [key: Id]: TaskListRubric };
+type TaskCollection = { [key: Id]: TaskRubric };
+
+interface TaskAreaProps {
+    taskLists: TaskListCollection,
+    mutateTaskLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => void,
+}
+
+const TaskArea = function(props: TaskAreaProps) {
+    const { classes } = useStyles();
+
+    return (
+        <div className={classes.taskArea}>
+            <DayCalendar />
+            {Object.keys(props.taskLists).map(tlid => {
+                return (
+                    <TaskList
+                        mutateTaskLists={props.mutateTaskLists}
+                        {...props.taskLists[tlid]}
+                    />
+                )})}
+        </div>
+    );
+}
+
 interface DashboardProps {
 
 };
 
-function Dashboard(props: DashboardProps | undefined) {
+const Dashboard = function(props: DashboardProps | undefined) {
     const { classes } = useStyles();
     const [date, setDate] = useState<Date | null>(new Date());
+    
+    // TODO: retrieve tasks for date from backend
+    const [taskLists, setTaskLists] = useState<TaskListCollection>({
+        [DAY_TASK_LIST_ID]: {
+            taskListId: DAY_TASK_LIST_ID,
+            title: DAY_TASK_LIST_TITLE,
+            taskIds: []
+        },
+        [DO_LATER_TASK_LIST_ID]: {
+            taskListId: DO_LATER_TASK_LIST_ID,
+            title: DO_LATER_TASK_LIST_TITLE,
+            taskIds: []
+        }
+    });
+
+    const mutateTaskLists = (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id) => {
+        var sourceList = taskLists[sourceOfDrag.droppableId];
+        var destList = taskLists[destinationOfDrag.droppableId];
+
+        sourceList.taskIds.splice(sourceOfDrag.index, 1);
+        destList.taskIds.splice(destinationOfDrag.index, 0, draggableId);
+
+        setTaskLists({
+            ...taskLists,
+            [sourceOfDrag.droppableId]: sourceList,
+            [destinationOfDrag.droppableId]: destList
+        });
+    }
 
     return (
         <div className={classes.wrapper}>
@@ -69,9 +123,10 @@ function Dashboard(props: DashboardProps | undefined) {
                 orientation="vertical"
                 variant="solid"
             />
-            <div className={classes.taskArea}>
-                <DayCalendar />
-            </div>
+            <TaskArea 
+                taskLists={taskLists}
+                mutateTaskLists={mutateTaskLists}
+            />
         </div>
     );
 }
