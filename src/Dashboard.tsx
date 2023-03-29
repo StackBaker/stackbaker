@@ -1,20 +1,20 @@
 import { useState } from "react";
 import { createStyles, AppShell, Navbar, Text, MediaQuery, Header, Burger, Group, Paper } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
-import { v4 as uuid } from "uuid";
 import { DragDropContext } from "@hello-pangea/dnd";
 import type { DropResult, DraggableLocation } from "@hello-pangea/dnd"
 
 import List from "./List";
-import { DAY_LIST_ID, DO_LATER_LIST_ID, DAY_TASK_LIST_TITLE, DO_LATER_TASK_LIST_TITLE } from "./globals";
+import { DAY_LIST_ID, DO_LATER_LIST_ID, DAY_LIST_TITLE, DO_LATER_LIST_TITLE } from "./globals";
 import type { Id } from "./globals";
 import type { ItemCollection, ListCollection, LeftPanelProps, ActionAreaProps, DashboardProps } from "./DashboardTypes";
 import type { ItemRubric } from "./Item";
+import { getHotkeyHandler, useHotkeys } from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
     wrapper: {},
     leftPanel: {},
-    taskArea: {}
+    actionArea: {}
 }));
 
 const LeftPanel = function(props: LeftPanelProps) {
@@ -55,19 +55,21 @@ const ActionArea = function(props: ActionAreaProps) {
 
         props.mutateLists(source, destination, draggableId);
     }
-
+    // TODO: implement undo with mod+Z
 
     return (
         <DragDropContext
             onDragEnd={onDragEnd}
         >
-            <Group className={classes.taskArea} position="left">
+            <Group className={classes.actionArea} position="left">
                 {Object.keys(props.lists).map(tlid => {
                     return (
                         <List
                             key={tlid}
                             items={props.items}
+                            createItem={props.createItem}
                             mutateItem={props.mutateItem}
+                            deleteItem={props.deleteItem}
                             mutateLists={props.mutateLists}
                             {...props.lists[tlid]}
                         />
@@ -82,20 +84,40 @@ const Dashboard = function(props: DashboardProps | undefined) {
     const [opened, setOpened] = useState(false);
     
     // TODO: retrieve tasks for date from backend and remove this
-    const dummyItemId = uuid();
-    const dummyItemId2 = uuid();
-    const [items, changeItems] = useState<ItemCollection>({
-        [dummyItemId]: {
-            itemId: dummyItemId,
-            content: "Get started with StackBaker!",
-            complete: false
+    const [items, changeItems] = useState<ItemCollection>({});
+
+    const [lists, changeLists] = useState<ListCollection>({
+        [DAY_LIST_ID]: {
+            listId: DAY_LIST_ID,
+            title: DAY_LIST_TITLE,
+            itemIds: []
         },
-        [dummyItemId2]: {
-            itemId: dummyItemId2,
-            content: "Bruh",
-            complete: false
+        [DO_LATER_LIST_ID]: {
+            listId: DO_LATER_LIST_ID,
+            title: DO_LATER_LIST_TITLE,
+            itemIds: []
         }
     });
+
+    const createItem = (newItemConfig: ItemRubric, listId: Id): boolean => {
+        // validate?
+        if (!lists.hasOwnProperty(listId)) {
+            return false;
+        }
+
+        var newList = lists[listId];
+        newList.itemIds.push(newItemConfig.itemId);
+        changeItems({
+            ...items,
+            [newItemConfig.itemId]: newItemConfig
+        });
+        changeLists({
+            ...lists,
+            [listId]: newList
+        });
+
+        return true;
+    };
 
     const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>): boolean => {
         if (!items.hasOwnProperty(itemId)) {
@@ -115,18 +137,24 @@ const Dashboard = function(props: DashboardProps | undefined) {
         return true;
     };
 
-    const [lists, changeLists] = useState<ListCollection>({
-        [DAY_LIST_ID]: {
-            listId: DAY_LIST_ID,
-            title: DAY_TASK_LIST_TITLE,
-            itemIds: [dummyItemId]
-        },
-        [DO_LATER_LIST_ID]: {
-            listId: DO_LATER_LIST_ID,
-            title: DO_LATER_TASK_LIST_TITLE,
-            itemIds: [dummyItemId2]
+    const deleteItem = (itemId: Id, listId: Id, index: number): boolean => {
+        if (!items.hasOwnProperty(itemId) || !lists.hasOwnProperty(listId)) {
+            return false;
         }
-    });
+
+        // delete the id from the list
+        var newList = lists[listId];
+        newList.itemIds.splice(index, 1);
+
+        // delete the item
+        var newItems = structuredClone(items);
+        delete newItems[itemId];
+
+        changeLists({ ...lists, [listId]: newList });
+        changeItems(newItems);
+
+        return true;
+    };
 
     const mutateLists = (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id): boolean => {
         if (!lists.hasOwnProperty(sourceOfDrag.droppableId) || !lists.hasOwnProperty(destinationOfDrag.droppableId)) {
@@ -146,7 +174,16 @@ const Dashboard = function(props: DashboardProps | undefined) {
         });
 
         return true;
+    };
+
+    const log = () => {
+        console.log("l", lists);
+        console.log("i", items);
     }
+
+    useHotkeys([
+        ['P', log]
+    ])
 
     // have to do this sx thing because AppShell automatically renders too large
     return (
@@ -180,8 +217,10 @@ const Dashboard = function(props: DashboardProps | undefined) {
             <ActionArea
                 items={items}
                 lists={lists}
-                mutateLists={mutateLists}
+                createItem={createItem}
                 mutateItem={mutateItem}
+                deleteItem={deleteItem}
+                mutateLists={mutateLists}
             />
         </AppShell>
     );

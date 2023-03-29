@@ -15,7 +15,9 @@ export interface LeftPanelProps {
 export interface ActionAreaProps {
     items: ItemCollection,
     lists: ListCollection,
+    createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
+    deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => boolean
 };
 
