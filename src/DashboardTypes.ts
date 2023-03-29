@@ -15,7 +15,8 @@ export interface LeftPanelProps {
 export interface ActionAreaProps {
     items: ItemCollection,
     lists: ListCollection,
-    mutateTaskLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => void
+    mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
+    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => boolean
 };
 
 export interface DashboardProps {

@@ -34,7 +34,15 @@ const App = function() {
 	]);
 
 	return (
-		<MantineProvider theme={{ colorScheme: "light" }} withGlobalStyles>
+		<MantineProvider
+			theme={{
+				colorScheme: "light",
+				colors: {
+					'stackblue': ["#FFFFFF", "#DADAE7", "#6179D4", "#2A29D4", "#13146A", "#000000"]
+				}
+			}}
+			withGlobalStyles
+		>
 			<RouterProvider router={router} />
 		</MantineProvider>
 	);

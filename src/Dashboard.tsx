@@ -7,9 +7,9 @@ import type { DropResult, DraggableLocation } from "@hello-pangea/dnd"
 
 import List from "./List";
 import { DAY_LIST_ID, DO_LATER_LIST_ID, DAY_TASK_LIST_TITLE, DO_LATER_TASK_LIST_TITLE } from "./globals";
-
 import type { Id } from "./globals";
 import type { ItemCollection, ListCollection, LeftPanelProps, ActionAreaProps, DashboardProps } from "./DashboardTypes";
+import type { ItemRubric } from "./Item";
 
 const useStyles = createStyles((theme) => ({
     wrapper: {},
@@ -53,7 +53,7 @@ const ActionArea = function(props: ActionAreaProps) {
             return;
         }
 
-        props.mutateTaskLists(source, destination, draggableId);
+        props.mutateLists(source, destination, draggableId);
     }
 
 
@@ -66,8 +66,9 @@ const ActionArea = function(props: ActionAreaProps) {
                     return (
                         <List
                             key={tlid}
-                            mutateTaskLists={props.mutateTaskLists}
                             items={props.items}
+                            mutateItem={props.mutateItem}
+                            mutateLists={props.mutateLists}
                             {...props.lists[tlid]}
                         />
                     )})}
@@ -87,8 +88,7 @@ const Dashboard = function(props: DashboardProps | undefined) {
         [dummyItemId]: {
             itemId: dummyItemId,
             content: "Get started with StackBaker!",
-            complete: false,
-            location: "At Home"
+            complete: false
         },
         [dummyItemId2]: {
             itemId: dummyItemId2,
@@ -96,6 +96,24 @@ const Dashboard = function(props: DashboardProps | undefined) {
             complete: false
         }
     });
+
+    const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>): boolean => {
+        if (!items.hasOwnProperty(itemId)) {
+            return false;
+        }
+
+        var editedItem = {
+            ...items[itemId],
+            ...newConfig
+        };
+
+        changeItems({
+            ...items,
+            [itemId]: editedItem 
+        });
+
+        return true;
+    };
 
     const [lists, changeLists] = useState<ListCollection>({
         [DAY_LIST_ID]: {
@@ -110,7 +128,11 @@ const Dashboard = function(props: DashboardProps | undefined) {
         }
     });
 
-    const mutateTaskLists = (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id) => {
+    const mutateLists = (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id): boolean => {
+        if (!lists.hasOwnProperty(sourceOfDrag.droppableId) || !lists.hasOwnProperty(destinationOfDrag.droppableId)) {
+            return false;
+        }
+
         var sourceList = lists[sourceOfDrag.droppableId];
         var destList = lists[destinationOfDrag.droppableId];
 
@@ -122,6 +144,8 @@ const Dashboard = function(props: DashboardProps | undefined) {
             [sourceOfDrag.droppableId]: sourceList,
             [destinationOfDrag.droppableId]: destList
         });
+
+        return true;
     }
 
     // have to do this sx thing because AppShell automatically renders too large
@@ -156,7 +180,8 @@ const Dashboard = function(props: DashboardProps | undefined) {
             <ActionArea
                 items={items}
                 lists={lists}
-                mutateTaskLists={mutateTaskLists}
+                mutateLists={mutateLists}
+                mutateItem={mutateItem}
             />
         </AppShell>
     );
