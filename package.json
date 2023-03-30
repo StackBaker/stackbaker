@@ -12,6 +12,10 @@
   "dependencies": {
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
+    "@fullcalendar/core": "^6.1.5",
+    "@fullcalendar/interaction": "^6.1.5",
+    "@fullcalendar/react": "^6.1.5",
+    "@fullcalendar/timegrid": "^6.1.5",
     "@hello-pangea/dnd": "^16.2.0",
     "@mantine/core": "^6.0.4",
     "@mantine/dates": "^6.0.4",

@@ -3,13 +3,15 @@ import { createStyles, AppShell, Navbar, Text, MediaQuery, Header, Burger, Group
 import { DatePicker } from "@mantine/dates";
 import { DragDropContext } from "@hello-pangea/dnd";
 import type { DropResult, DraggableLocation } from "@hello-pangea/dnd"
+import { useHotkeys } from "@mantine/hooks";
+import dayjs from "dayjs";
 
 import List from "./List";
+import DayCalendar from "./Calendars/DayCalendar";
 import { DAY_LIST_ID, DO_LATER_LIST_ID, DAY_LIST_TITLE, DO_LATER_LIST_TITLE } from "./globals";
 import type { Id } from "./globals";
 import type { ItemCollection, ListCollection, LeftPanelProps, ActionAreaProps, DashboardProps } from "./DashboardTypes";
 import type { ItemRubric } from "./Item";
-import { getHotkeyHandler, useHotkeys } from "@mantine/hooks";
 
 const useStyles = createStyles((theme) => ({
     wrapper: {},
@@ -44,6 +46,7 @@ const LeftPanel = function(props: LeftPanelProps) {
 
 const ActionArea = function(props: ActionAreaProps) {
     const { classes } = useStyles();
+    const listWidth = "250px";
 
     const onDragEnd = function(result: DropResult) {
         const { source, destination, draggableId } = result;
@@ -61,7 +64,12 @@ const ActionArea = function(props: ActionAreaProps) {
         <DragDropContext
             onDragEnd={onDragEnd}
         >
-            <Group className={classes.actionArea} position="left">
+            <Group className={classes.actionArea} position="left" spacing="lg">
+                <DayCalendar
+                    height="85vh"
+                    width="310px"
+                    currentDay={dayjs().startOf("day")}
+                />
                 {Object.keys(props.lists).map(tlid => {
                     return (
                         <List
@@ -80,6 +88,7 @@ const ActionArea = function(props: ActionAreaProps) {
 }
 const Dashboard = function(props: DashboardProps | undefined) {
     const { classes } = useStyles();
+    const actionAreaHeight = "95vh";
     const [date, setDate] = useState<Date | null>(new Date());
     const [opened, setOpened] = useState(false);
     
@@ -188,7 +197,7 @@ const Dashboard = function(props: DashboardProps | undefined) {
     // have to do this sx thing because AppShell automatically renders too large
     return (
         <AppShell
-            sx={{ main: { minHeight: "95vh", maxHeight: "95vh" }}}
+            sx={{ main: { minHeight: actionAreaHeight, maxHeight: actionAreaHeight }}}
             navbarOffsetBreakpoint="sm"
             navbar={
                 <LeftPanel

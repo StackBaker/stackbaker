@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react"; 
+import { FormEvent, useEffect, useState } from "react"; 
 import type { Id } from "./globals"
 import { Droppable, DragDropContext } from "@hello-pangea/dnd";
 import type { DraggableLocation } from "@hello-pangea/dnd"
@@ -6,7 +6,7 @@ import { Button, createStyles, Stack, TextInput, Title } from "@mantine/core";
 import Item from "./Item";
 import type { ItemRubric } from "./Item";
 import { ItemCollection } from "./DashboardTypes";
-import { useDisclosure, useHotkeys } from "@mantine/hooks";
+import { useDisclosure, useHotkeys, useClickOutside } from "@mantine/hooks";
 import { v4 as uuid } from "uuid";
 import { useForm } from "@mantine/form";
 
@@ -16,7 +16,7 @@ const useStyles = createStyles((theme) => ({
     list: {
         display: "flex",
         flexDirection: "column",
-        width: "250px",
+        width: "250px", // TODO: make this some constant somewhere, perhaps in globals along with height
         padding: theme.spacing.xs
     },
     addButton: {
@@ -38,12 +38,12 @@ interface ListProps extends ListRubric {
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => boolean
 };
 
-// TODO: implement the add button to the List and keyboard shortcuts
 const List = function(props: ListProps) {
     const { classes } = useStyles();
     const [adding, handlers] = useDisclosure(false);
     const [newItemContent, changeNewItemContent] = useState("");
     const newItemContentInputId = `${props.listId}-new-item-context-text-input`;
+    const newItemContentInputRef = useClickOutside(handlers.close);
 
     const newItemForm = useForm({
         initialValues: {
@@ -57,13 +57,25 @@ const List = function(props: ListProps) {
 
     const handleSubmitNewItem = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        handlers.close();
+
+        if (newItemContent === "") {
+            return;
+        }
+            
         props.createItem({
             itemId: uuid(),
             content: newItemContent,
             complete: false
         }, props.listId);
-        handlers.close();
+        changeNewItemContent("");
     }
+    
+    useEffect(() => {
+        if (adding) {
+            document.getElementById(newItemContentInputId)?.focus();
+        }
+    }, [adding]);
 
     if (props.listId === DAY_LIST_ID) {
         useHotkeys([
@@ -74,9 +86,6 @@ const List = function(props: ListProps) {
             ["K", handlers.toggle]
         ]);
     }
-    useHotkeys([
-        ["Enter", () => (adding) ? document.getElementById(newItemContentInputId)?.focus() : null]
-    ]);
 
     return (
         <Stack justify="flex-start" sx={{ minHeight: "90vh", maxHeight: "90vh" }} p="sm">
@@ -86,6 +95,7 @@ const List = function(props: ListProps) {
                 <form onSubmit={handleSubmitNewItem}>
                     <TextInput
                         id={newItemContentInputId}
+                        ref={newItemContentInputRef}
                         aria-label={`${props.listId}-new-item-content-label`}
                         placeholder="New item..."
                         value={newItemContent}
