@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { createStyles } from "@mantine/core";
+import { createStyles, Stack, Title } from "@mantine/core";
 
 import type { EventCollection } from "./Event";
 import "./fullcalendar-vars.css";
@@ -36,13 +36,17 @@ const DayCalendar = function(props: DayCalendarProps) {
 	// TODO: ability to delete events
 	// TODO: ability to add events through selection
 	return (
-		<div
+		<Stack
 			className={classes.calendarWrapper}
 			style={{
 				height: props.height,
 				width: props.width
 			}}
+			p="sm"
 		>
+			<Title size="h2">
+				{props.currentDay.format("MMMM DD, YYYY")}
+			</Title>
 			<FullCalendar
 				plugins={[
 					timeGridPlugin,
@@ -84,7 +88,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 				slotLabelInterval={60 * 60 * 1000}
 				slotMaxTime={dayDuration}
 			/>
-		</div>
+		</Stack>
 	);
 }
 

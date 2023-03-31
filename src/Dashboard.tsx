@@ -64,7 +64,12 @@ const ActionArea = function(props: ActionAreaProps) {
         <DragDropContext
             onDragEnd={onDragEnd}
         >
-            <Group className={classes.actionArea} position="left" spacing="lg">
+            <Group
+                className={classes.actionArea}
+                position="left"
+                spacing="lg"
+                align="flex-start"
+            >
                 <DayCalendar
                     height="87vh"
                     width="310px"
