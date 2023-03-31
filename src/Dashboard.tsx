@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createStyles, AppShell, Navbar, Text, MediaQuery, Header, Burger, Group, Paper } from "@mantine/core";
+import { createStyles, Button, AppShell, Navbar, Text, MediaQuery, Header, Burger, Group, Paper, Space } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import { DragDropContext } from "@hello-pangea/dnd";
 import type { DropResult, DraggableLocation } from "@hello-pangea/dnd"
@@ -32,13 +32,15 @@ const LeftPanel = function(props: LeftPanelProps) {
         >
             <Navbar.Section>
                 <DatePicker
-                    value={props.date}
-                    onChange={props.setDate}
+                    value={props.date.toDate()}
+                    onChange={(v) => props.setDate(dayjs(v))}
                     size="xs"
                 />
+                <Space h="lg"></Space>
+                <Button fullWidth onClick={() => props.setDate(dayjs().startOf("day"))}>Today</Button>
             </Navbar.Section>
             <Navbar.Section grow>{}</Navbar.Section>
-            <Navbar.Section>TODO: local weather</Navbar.Section>
+            <Navbar.Section>TODO: local weather:maybe WeatherKit?</Navbar.Section>
             <Navbar.Section>TODO: Account Settings</Navbar.Section>
         </Navbar>
     );
@@ -71,9 +73,9 @@ const ActionArea = function(props: ActionAreaProps) {
                 align="flex-start"
             >
                 <DayCalendar
-                    height="87vh"
+                    height="80vh"
                     width="310px"
-                    currentDay={dayjs().startOf("day")}
+                    currentDay={props.date.startOf("day")}
                 />
                 {Object.keys(props.lists).map(tlid => {
                     return (
@@ -95,7 +97,7 @@ const Dashboard = function(props: DashboardProps | undefined) {
     const { classes } = useStyles();
     const actionAreaHeight = "95vh";
     const headerHeight = 50;
-    const [date, setDate] = useState<Date | null>(new Date());
+    const [date, setDate] = useState<dayjs.Dayjs>(dayjs());
     const [opened, setOpened] = useState(false);
     
     // TODO: retrieve tasks for date from backend and remove this
@@ -236,6 +238,7 @@ const Dashboard = function(props: DashboardProps | undefined) {
             }
         >
             <ActionArea
+                date={date}
                 items={items}
                 lists={lists}
                 createItem={createItem}
