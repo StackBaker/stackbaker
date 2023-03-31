@@ -66,7 +66,7 @@ const ActionArea = function(props: ActionAreaProps) {
         >
             <Group className={classes.actionArea} position="left" spacing="lg">
                 <DayCalendar
-                    height="85vh"
+                    height="87vh"
                     width="310px"
                     currentDay={dayjs().startOf("day")}
                 />
@@ -89,6 +89,7 @@ const ActionArea = function(props: ActionAreaProps) {
 const Dashboard = function(props: DashboardProps | undefined) {
     const { classes } = useStyles();
     const actionAreaHeight = "95vh";
+    const headerHeight = 50;
     const [date, setDate] = useState<Date | null>(new Date());
     const [opened, setOpened] = useState(false);
     
@@ -197,7 +198,13 @@ const Dashboard = function(props: DashboardProps | undefined) {
     // have to do this sx thing because AppShell automatically renders too large
     return (
         <AppShell
-            sx={{ main: { minHeight: actionAreaHeight, maxHeight: actionAreaHeight }}}
+            sx={{
+                main: {
+                    minHeight: actionAreaHeight,
+                    maxHeight: actionAreaHeight,
+                    paddingTop: headerHeight
+                }}
+            }
             navbarOffsetBreakpoint="sm"
             navbar={
                 <LeftPanel
@@ -207,7 +214,7 @@ const Dashboard = function(props: DashboardProps | undefined) {
                 />
             }
             header={
-                <Header height={{ base: 50 /* , md: 70 */ }} p="md">
+                <Header height={{ base: headerHeight /* , md: 70 */ }} p="md">
                     <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
                         <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
                             <Burger

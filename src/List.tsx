@@ -13,11 +13,20 @@ import { useForm } from "@mantine/form";
 import { DAY_LIST_ID, DO_LATER_LIST_ID } from "./globals";
 
 const useStyles = createStyles((theme) => ({
+    listWrapper: {
+        minHeight: "90vh",
+        maxHeight: "90vh",
+        overflow: "hidden!important"
+    },
     list: {
-        display: "flex",
-        flexDirection: "column",
         width: "250px", // TODO: make this some constant somewhere, perhaps in globals along with height
-        padding: theme.spacing.xs
+        padding: theme.spacing.xs,
+        overflow: "scroll!important",
+        "-ms-overflow-style": "none",
+        scrollbarWidth: "none",
+        "&::-webkit-scrollbar": {
+            display: "none"
+        }
     },
     addButton: {
         // backgroundColor: theme.colors.stackblue[3]
@@ -88,7 +97,11 @@ const List = function(props: ListProps) {
     }
 
     return (
-        <Stack justify="flex-start" sx={{ minHeight: "90vh", maxHeight: "90vh" }} p="sm">
+        <Stack
+            justify="flex-start"
+            className={classes.listWrapper}
+            p="sm"
+        >
             <Title size="h2" pl="xs">{props.title}</Title>
             {
                 (adding) ?

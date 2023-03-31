@@ -3,19 +3,30 @@ import dayjs from "dayjs";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import { createStyles } from "@mantine/core";
 
 import type { EventCollection } from "./Event";
-
 import "./fullcalendar-vars.css";
+
+const useStyles = createStyles((theme) => ({
+	calendarWrapper: {
+		paddingLeft: "12px",
+		overflow: "hidden",
+	}
+}));
 
 // TODO: implement the calendar
 interface DayCalendarProps {
 	height: string | number,
 	width: string | number
-	currentDay: Date | dayjs.Dayjs
+	currentDay: dayjs.Dayjs
 };
 
 const DayCalendar = function(props: DayCalendarProps) {
+	const { classes } = useStyles();
+	const dayDuration = "30:00:00"; // 30 hour days
+
+	// TODO: events should be a prop, retreived from backend through Dashboard
 	const [events, changeEvents] = useState<EventCollection>({});
 
 	const handleEventChange = () => {};
@@ -26,13 +37,10 @@ const DayCalendar = function(props: DayCalendarProps) {
 	// TODO: ability to add events through selection
 	return (
 		<div
+			className={classes.calendarWrapper}
 			style={{
-				minHeight: props.height,
-				maxHeight: props.height,
-				minWidth: props.width,
-				maxWidth: props.width,
-				padding: "12px",
-				marginTop: "-70px"
+				height: props.height,
+				width: props.width
 			}}
 		>
 			<FullCalendar
@@ -52,11 +60,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 				droppable={true}
 				drop={handleDropIntoDayCal}
 
-				headerToolbar={{
-					start: "null",
-					center: "null",
-					end: "null"
-				}}
+				headerToolbar={false}
 				titleFormat={{
 					year: "numeric",
 					month: "short",
@@ -71,7 +75,14 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 				scrollTime={dayjs().subtract(1, "hour").format("HH:00")}
 				scrollTimeReset={false}
+
 				initialView="timeGridDay"
+				initialDate={props.currentDay.toDate()}
+
+				snapDuration={15 * 60 * 1000}
+				slotDuration={30 * 60 * 1000}
+				slotLabelInterval={60 * 60 * 1000}
+				slotMaxTime={dayDuration}
 			/>
 		</div>
 	);
