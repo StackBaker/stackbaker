@@ -22,7 +22,7 @@ const useStyles = createStyles((theme) => ({
         width: "250px", // TODO: make this some constant somewhere, perhaps in globals along with height
         padding: theme.spacing.xs,
         overflow: "scroll!important",
-        "-ms-overflow-style": "none",
+        msOverflowStyle: "none",
         scrollbarWidth: "none",
         "&::-webkit-scrollbar": {
             display: "none"
