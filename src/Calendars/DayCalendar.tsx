@@ -1,16 +1,17 @@
-import { useMemo, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import dayjs from "dayjs";
 import FullCalendar from "@fullcalendar/react";
-import type { EventChangeArg, EventClickArg, EventInput } from "@fullcalendar/core";
+import type { DateSelectArg, EventChangeArg, EventClickArg, EventInput } from "@fullcalendar/core";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { createStyles, Stack, Title, Modal, Text, TextInput, Group, ActionIcon } from "@mantine/core";
-import { useClickOutside, useDisclosure, useHotkeys } from "@mantine/hooks";
+import { createStyles, Stack, Title, Modal, Button, TextInput, Group, ActionIcon } from "@mantine/core";
+import { getHotkeyHandler, useDisclosure, useHotkeys } from "@mantine/hooks";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
 
-import { EventCollection, EventRubric } from "./Event";
+import type { EventCollection, EventRubric } from "./Event";
+import type { Id } from "../globals";
 import "./fullcalendar-vars.css";
 
 const useStyles = createStyles((theme) => ({
@@ -36,6 +37,7 @@ interface EditEventModalProps {
 
 const EditEventModal = function(props: EditEventModalProps) {
 	const { classes } = useStyles();
+	const inputRef = useRef<HTMLInputElement>(null);
 
 	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
 		props.changeEventBeingEdited({
@@ -50,15 +52,24 @@ const EditEventModal = function(props: EditEventModalProps) {
 			onClose={props.saveEvent}
 			title="Edit Event"
 			centered
+			onKeyDown={getHotkeyHandler([
+				["Enter", () => {
+					if (props.eventBeingEdited?.title.length === 0)
+						inputRef.current?.focus();
+					else
+						props.saveEvent();
+				}]])}
 		>
-			<Group>
+			<Group align="stretch" m="xs">
 				<TextInput
+					ref={inputRef}
 					label="Title"
+					error={(props.eventBeingEdited?.title.length === 0) ? "Title cannot be empty" : ""}
 					value={props.eventBeingEdited?.title}
 					onChange={handleChangeTitle}
 				/>
 			</Group>
-			<Group position="apart">
+			<Group position="right">
 				<ActionIcon
 					className={classes.del}
 					onClick={props.deleteEvent}
@@ -78,34 +89,33 @@ interface DayCalendarProps {
 
 const DayCalendar = function(props: DayCalendarProps) {
 	const { classes } = useStyles();
-	const dayDuration = "30:00:00"; // 30 hour days
+	const dayDuration = "30:00:00"; // 30 hour days: TODO: should be a config value
 
 	// TODO: events should be a prop, retreived from backend through Dashboard
-	// TODO: this looks like a lot of shit
-	const dummy = uuid();
-	const test = uuid();
-	const [events, changeEvents] = useState<EventCollection>({
-		[dummy]: {
-			id: dummy,
-			title: "Dummy event",
-			start: dayjs().subtract(1, "hour").toDate(),
-			end: Date()
-		},
-		[test]: {
-			id: test,
-			title: "test",
-			start: dayjs().subtract(1, "hour").toDate(),
-			end: Date()
-		}
-	});
-	const omitDummy = (evts: EventCollection) => {
-		const { [dummy]: omitted, ...rest } = evts;
-		return rest;
-	}
+	// TODO: this is a lot of shit
+	const dummyEvent = {
+		id: uuid(),
+		title: "",
+		start: dayjs().subtract(1, "hour").startOf("hour").toDate(),
+		end: dayjs().startOf("hour").toDate(),
+	};
+	const [events, changeEvents] = useState<EventCollection>({});
 	const [editingEvent, handlers] = useDisclosure(false);
-	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(events[dummy]);
+	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
+	const [newEventId, setNewEventId] = useState<Id>("");
 
-	const handleEventChange = (changeInfo: EventChangeArg) => {
+	useEffect(() => {
+		// hack for preventing that one long error when adding changing events
+		// and changing eventBeingEdited in the same sequence of actions
+		if (!newEventId) {
+			return;
+		}
+		handlers.open();
+		changeEventBeingEdited(events[newEventId]);
+		setNewEventId("");
+	}, [newEventId]);
+
+	const handleEventDrag = (changeInfo: EventChangeArg) => {
 		const newStart = (changeInfo.event.start) ? changeInfo.event.start : events[changeInfo.event.id].start;
 		const newEnd = (changeInfo.event.start) ? changeInfo.event.end : events[changeInfo.event.id].end;
 
@@ -120,27 +130,52 @@ const DayCalendar = function(props: DayCalendarProps) {
 	};
 
 	const handleEventClick = (clickInfo: EventClickArg) => {
-		// open modal
+		// open the edit modal
 		handlers.open();
 		const id = clickInfo.event.id;
 		changeEventBeingEdited(events[id]);
 	}
 
 	const saveEvent = () => {
+		// don't save events with empty titles
+		if (eventBeingEdited.title === "") {
+			return;
+		}
+
 		handlers.close();
-		changeEvents({
-			...events,
-			[eventBeingEdited.id]: eventBeingEdited
-		});
-		changeEventBeingEdited(events[dummy]);
+		var newEvents = structuredClone(events);
+		newEvents[eventBeingEdited.id] = structuredClone(eventBeingEdited);
+		changeEvents(newEvents);
+		changeEventBeingEdited(dummyEvent);
 	}
 
 	const deleteEvent = () => {
 		handlers.close();
 		var newEvents = structuredClone(events);
-		delete events[eventBeingEdited.id];
-		changeEventBeingEdited(events[dummy]);
+		delete newEvents[eventBeingEdited.id];
 		changeEvents(newEvents);
+		changeEventBeingEdited(dummyEvent);
+	}
+
+	const handleAddEventThroughSelection = (info: DateSelectArg) => {
+		const start = dayjs(info.start);
+		var end = dayjs(info.end);
+
+		// make the minimum event size 15 minutes
+		if (end.diff(start) < 15 * 60 * 1000) {
+			end = start.add(15, "minute");
+		}
+
+		const newEventId = uuid();
+		var newEvents = structuredClone(events);
+		newEvents[newEventId]= {
+			id: newEventId,
+			title: "",
+			start: start.toDate(),
+			end: end.toDate()
+		};
+		changeEvents(newEvents);
+		setNewEventId(newEventId);
 	}
 
 	const log = () => {
@@ -184,10 +219,10 @@ const DayCalendar = function(props: DayCalendarProps) {
 				allDaySlot={false}
 				nowIndicator={true}
 
-				events={
-					Object.keys(events).map(eid => events[eid] as EventInput)}
-				eventChange={handleEventChange}
+				events={Object.keys(events).map(eid => events[eid] as EventInput)}
+				eventChange={handleEventDrag}
 				eventClick={handleEventClick}
+				select={handleAddEventThroughSelection}
 
 				droppable={true}
 				drop={handleDropIntoDayCal}

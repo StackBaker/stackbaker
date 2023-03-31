@@ -116,7 +116,6 @@ const List = function(props: ListProps) {
                         {...newItemForm.getInputProps}
                     />
                 </form>
-
                 : 
                 <Button className={classes.addButton} onClick={() => handlers.open()} mr="xs">
                     Add Item
