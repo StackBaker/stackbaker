@@ -4,15 +4,16 @@ import FullCalendar from "@fullcalendar/react";
 import type { DateSelectArg, EventChangeArg, EventClickArg, EventInput } from "@fullcalendar/core";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { createStyles, Stack, Title, Modal, Button, TextInput, Group, ActionIcon } from "@mantine/core";
+import type { DropArg } from "@fullcalendar/interaction";
+import { createStyles, Stack, Title, Modal, TextInput, Group, ActionIcon } from "@mantine/core";
 import { getHotkeyHandler, useDisclosure, useHotkeys } from "@mantine/hooks";
-import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
 
 import type { EventCollection, EventRubric } from "./Event";
 import type { Id } from "../globals";
 import "./fullcalendar-vars.css";
+import { ItemCollection } from "../DashboardTypes";
 
 const useStyles = createStyles((theme) => ({
 	calendarWrapper: {
@@ -64,7 +65,6 @@ const EditEventModal = function(props: EditEventModalProps) {
 				<TextInput
 					ref={inputRef}
 					label="Title"
-					error={(props.eventBeingEdited?.title.length === 0) ? "Title cannot be empty" : ""}
 					value={props.eventBeingEdited?.title}
 					onChange={handleChangeTitle}
 				/>
@@ -84,8 +84,11 @@ const EditEventModal = function(props: EditEventModalProps) {
 interface DayCalendarProps {
 	height: string | number,
 	width: string | number
-	currentDay: dayjs.Dayjs
+	currentDay: dayjs.Dayjs,
+	readonly items: ItemCollection
 };
+
+// TODO: cleanup types with readonlys
 
 const DayCalendar = function(props: DayCalendarProps) {
 	const { classes } = useStyles();
@@ -178,6 +181,26 @@ const DayCalendar = function(props: DayCalendarProps) {
 		setNewEventId(newEventId);
 	}
 
+	const handleAddEventThroughDrop = (dropInfo: DropArg) => {
+		const el = dropInfo.draggedEl;
+		const id = el.id;
+
+		// NOTE: operating assumption: the div id of the item is exactly the itemId
+		const item = props.items[id];
+
+		const draggedEventId = uuid();
+		const draggedEvent: EventRubric = {
+			id: draggedEventId,
+			title: item.content,
+			start: dropInfo.date,
+			end: dayjs(dropInfo.date).add(1, "hour").toDate()
+		};
+
+		var newEvents = structuredClone(events);
+		newEvents[draggedEventId] = draggedEvent;
+		changeEvents(newEvents);
+	};
+
 	const log = () => {
         console.log("e", events);
     }
@@ -186,11 +209,6 @@ const DayCalendar = function(props: DayCalendarProps) {
         ['E', log]
     ])
 
-	const handleDropIntoDayCal = () => {};
-
-	// TODO: ability to delete events
-	// TODO: ability to add events through selection
-	// TODO: ability to drag and drop events into calendar
 	return (
 		<Stack
 			className={classes.calendarWrapper}
@@ -213,19 +231,20 @@ const DayCalendar = function(props: DayCalendarProps) {
 					interactionPlugin
 				]}
 				viewHeight={props.height}
-				editable={true}
-				selectable={true}
 				height={props.height}
 				allDaySlot={false}
 				nowIndicator={true}
 
+				editable={true}
 				events={Object.keys(events).map(eid => events[eid] as EventInput)}
 				eventChange={handleEventDrag}
 				eventClick={handleEventClick}
+
+				selectable={true}
 				select={handleAddEventThroughSelection}
 
 				droppable={true}
-				drop={handleDropIntoDayCal}
+				drop={handleAddEventThroughDrop}
 
 				headerToolbar={false}
 				titleFormat={{

@@ -76,6 +76,7 @@ const ActionArea = function(props: ActionAreaProps) {
                     height="80vh"
                     width="310px"
                     currentDay={props.date.startOf("day")}
+                    items={props.items}
                 />
                 {Object.keys(props.lists).map(tlid => {
                     return (

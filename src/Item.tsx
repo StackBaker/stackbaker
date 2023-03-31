@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { createStyles, Card, Text, ActionIcon, Stack, Title, TextInput, Textarea, Paper, Group } from "@mantine/core";
 import { useDisclosure, useClickOutside, getHotkeyHandler } from "@mantine/hooks";
@@ -6,6 +6,7 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { ThirdPartyDraggable } from "@fullcalendar/interaction";
 
 import type { Id } from "./globals";
 
@@ -42,6 +43,7 @@ interface ItemProps extends ItemRubric {
 
 const Item = function(props: ItemProps) {
     const { classes } = useStyles();
+    const [loaded, loadHandlers] = useDisclosure(false);
     const [editing, handlers] = useDisclosure(false);
     const editRef = useClickOutside(() => handlers.close());
     
@@ -53,6 +55,22 @@ const Item = function(props: ItemProps) {
         props.mutateItem(props.itemId, { complete: !props.complete });
     }
 
+    useEffect(() => {
+        if (!loaded) {
+            loadHandlers.open();
+            return;
+        }
+
+        // default task length is 1 hour: TODO: make this a config value
+        new ThirdPartyDraggable(document.getElementById(props.itemId)!, {
+            eventData: {
+                title: props.content,
+                duration: "1:00",
+                create: false
+            }
+        });
+    }, [loaded, props.content]);
+
     return (
         <Draggable
             draggableId={props.itemId}
@@ -60,7 +78,7 @@ const Item = function(props: ItemProps) {
         >
             {
                 (provided) => (
-                    <div ref={editRef}>
+                    <div ref={editRef} id={props.itemId}>
                     <Card
                         className={classes.item}
                         ref={provided.innerRef}
