@@ -13,13 +13,15 @@ const Root = function() {
 	// only if the day has been planned
 	const db = useDatabase();
 
-	useEffect(() => { db.items.get("wart").then(console.log) }, []);
+	useEffect(() => {
+		// depending on the existence of a user, route accordingly
+		db.user.get("email").then(u => {
+			if (u)
+				navigate(paths.DASHBOARD_PATH);
+		});
+	}, []);
 
-	return (
-		<div>
-			<button onClick={() => navigate(paths.DASHBOARD_PATH)}>hi</button>
-		</div>
-	);
+	return <div></div>
 }
 
 

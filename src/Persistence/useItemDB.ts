@@ -15,7 +15,8 @@ const useItemDB = function() {
     const [items, setItems] = useState<ItemCollection>();
 
     const get = async (key: Id) => {
-        // use the state as a cache
+        // the use of setState is not as a cache: it's an efficient duplicate
+        // image of the store well suited to the frontend
         if (items!.hasOwnProperty(key)) {
             return items![key];
         }
@@ -29,8 +30,6 @@ const useItemDB = function() {
         if (timeoutRef.current)
             clearTimeout(timeoutRef.current!);
 
-        // set the value in the cache
-        // ISSUE?: sets are expensve
         let newItems: ItemCollection;
         if (items)
             newItems = structuredClone(items);
@@ -50,8 +49,6 @@ const useItemDB = function() {
         if (timeoutRef.current)
             clearTimeout(timeoutRef.current!);
 
-        // set the value in the cache
-        // ISSUE?: sets are expensve
         let newItems: ItemCollection;
         if (items)
             newItems = structuredClone(items);
@@ -59,8 +56,6 @@ const useItemDB = function() {
             newItems = {};
         delete newItems[key];
         setItems(newItems);
-        // wait the store is already a RAM image
-        // the store is already a cache
         
         // then write through to disk
         store.delete(key)
@@ -80,7 +75,7 @@ const useItemDB = function() {
         })
     }
 
-    return { data: items, get, set, loadAll };
+    return { data: items, get, set, del, loadAll };
 }
 
 export default useItemDB;

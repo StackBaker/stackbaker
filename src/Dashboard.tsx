@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createStyles, Button, AppShell, Navbar, Text, MediaQuery, Header, Burger, Group, Paper, Space } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import { DragDropContext } from "@hello-pangea/dnd";
@@ -13,6 +13,7 @@ import type { Id } from "./globals";
 import type { LeftPanelProps, ActionAreaProps, DashboardProps } from "./DashboardTypes";
 import type { ItemRubric, ItemCollection } from "./Item";
 import type { ListCollection } from "./List";
+import useDatabase from "./Persistence/useDatabase";
 
 const useStyles = createStyles((theme) => ({
     wrapper: {},
@@ -102,9 +103,9 @@ const Dashboard = function(props: DashboardProps | undefined) {
     const headerHeight = 50;
     const [date, setDate] = useState<dayjs.Dayjs>(dayjs());
     const [opened, setOpened] = useState(false);
-    
-    // TODO: retrieve tasks for date from backend and remove this
-    const [items, changeItems] = useState<ItemCollection>({});
+
+    const db = useDatabase();
+    useEffect(() => { db.items.loadAll(); }, []);
 
     const [lists, changeLists] = useState<ListCollection>({
         [DAY_LIST_ID]: {
@@ -129,10 +130,7 @@ const Dashboard = function(props: DashboardProps | undefined) {
 
         var newList = lists[listId];
         newList.itemIds.push(newItemConfig.itemId);
-        changeItems({
-            ...items,
-            [newItemConfig.itemId]: newItemConfig
-        });
+        db.items.set(newItemConfig.itemId, newItemConfig);
         changeLists({
             ...lists,
             [listId]: newList
@@ -142,25 +140,22 @@ const Dashboard = function(props: DashboardProps | undefined) {
     };
 
     const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>): boolean => {
-        if (!items.hasOwnProperty(itemId)) {
+        if (!db.items.data!.hasOwnProperty(itemId)) {
             return false;
         }
 
-        var editedItem = {
-            ...items[itemId],
+        var editedItem: ItemRubric = {
+            ...db.items.data![itemId],
             ...newConfig
         };
 
-        changeItems({
-            ...items,
-            [itemId]: editedItem 
-        });
+        db.items.set(itemId, editedItem);
 
         return true;
     };
 
     const deleteItem = (itemId: Id, listId: Id, index: number): boolean => {
-        if (!items.hasOwnProperty(itemId) || !lists.hasOwnProperty(listId)) {
+        if (!db.items.data!.hasOwnProperty(itemId) || !lists.hasOwnProperty(listId)) {
             return false;
         }
 
@@ -169,11 +164,9 @@ const Dashboard = function(props: DashboardProps | undefined) {
         newList.itemIds.splice(index, 1);
 
         // delete the item
-        var newItems = structuredClone(items);
-        delete newItems[itemId];
+        db.items.del(itemId);
 
         changeLists({ ...lists, [listId]: newList });
-        changeItems(newItems);
 
         return true;
     };
@@ -200,7 +193,7 @@ const Dashboard = function(props: DashboardProps | undefined) {
 
     const log = () => {
         console.log("l", lists);
-        console.log("i", items);
+        console.log("i", db.items.data);
     }
 
     useHotkeys([
@@ -244,7 +237,7 @@ const Dashboard = function(props: DashboardProps | undefined) {
         >
             <ActionArea
                 date={date}
-                items={items}
+                items={db.items.data!}
                 lists={lists}
                 createItem={createItem}
                 mutateItem={mutateItem}
