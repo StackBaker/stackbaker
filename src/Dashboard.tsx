@@ -10,8 +10,9 @@ import List from "./List";
 import DayCalendar from "./Calendars/DayCalendar";
 import { DAY_LIST_ID, DO_LATER_LIST_ID, DAY_LIST_TITLE, DO_LATER_LIST_TITLE } from "./globals";
 import type { Id } from "./globals";
-import type { ItemCollection, ListCollection, LeftPanelProps, ActionAreaProps, DashboardProps } from "./DashboardTypes";
-import type { ItemRubric } from "./Item";
+import type { LeftPanelProps, ActionAreaProps, DashboardProps } from "./DashboardTypes";
+import type { ItemRubric, ItemCollection } from "./Item";
+import type { ListCollection } from "./List";
 
 const useStyles = createStyles((theme) => ({
     wrapper: {},
@@ -61,7 +62,8 @@ const ActionArea = function(props: ActionAreaProps) {
         props.mutateLists(source, destination, draggableId);
     }
     // TODO: implement undo with mod+Z
-
+    // TODO: maybe header can display loading messages while retrieving stuff from backend
+    // TODO: or retrieving stuff from GCal
     return (
         <DragDropContext
             onDragEnd={onDragEnd}
@@ -108,12 +110,14 @@ const Dashboard = function(props: DashboardProps | undefined) {
         [DAY_LIST_ID]: {
             listId: DAY_LIST_ID,
             title: DAY_LIST_TITLE,
-            itemIds: []
+            itemIds: [],
+            planned: false
         },
         [DO_LATER_LIST_ID]: {
             listId: DO_LATER_LIST_ID,
             title: DO_LATER_LIST_TITLE,
-            itemIds: []
+            itemIds: [],
+            planned: true
         }
     });
 

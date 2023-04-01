@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { invoke } from "@tauri-apps/api/tauri";
+import { useEffect, useState } from "react";
+import useDatabase from "./Persistence/useDatabase";
 import { useNavigate, createMemoryRouter, RouterProvider } from "react-router-dom";
 import { MantineProvider } from "@mantine/core";
 import "./App.css";
@@ -11,6 +11,9 @@ const Root = function() {
 	const navigate = useNavigate();
 	// TODO: retrieve user and planning info from backend and navigate to dashboard
 	// only if the day has been planned
+	const db = useDatabase();
+
+	useEffect(() => { db.items.get("wart").then(console.log) }, []);
 
 	return (
 		<div>

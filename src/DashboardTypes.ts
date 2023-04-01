@@ -1,12 +1,9 @@
 import type { Dayjs } from "dayjs";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 
-import type { ListRubric } from "./List";
-import type { ItemRubric } from "./Item";
+import type { ItemRubric, ItemCollection } from "./Item";
+import type { ListCollection } from "./List";
 import type { Id } from "./globals";
-
-export type ListCollection = { [key: Id]: ListRubric };
-export type ItemCollection = { [key: Id]: ItemRubric };
 
 export interface LeftPanelProps {
     date: Dayjs,

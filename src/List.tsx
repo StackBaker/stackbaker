@@ -4,8 +4,7 @@ import { Droppable, DragDropContext } from "@hello-pangea/dnd";
 import type { DraggableLocation } from "@hello-pangea/dnd"
 import { Button, createStyles, Stack, TextInput, Title } from "@mantine/core";
 import Item from "./Item";
-import type { ItemRubric } from "./Item";
-import { ItemCollection } from "./DashboardTypes";
+import type { ItemRubric, ItemCollection } from "./Item";
 import { useDisclosure, useHotkeys, useClickOutside } from "@mantine/hooks";
 import { v4 as uuid } from "uuid";
 import { useForm } from "@mantine/form";
@@ -37,7 +36,10 @@ export interface ListRubric {
     listId: Id,
     title: string,
     itemIds: Id[],
+    planned: boolean
 }
+
+export type ListCollection = { [key: Id]: ListRubric };
 
 interface ListProps extends ListRubric {
     items: ItemCollection,

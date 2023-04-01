@@ -13,7 +13,7 @@ import { v4 as uuid } from "uuid";
 import type { EventCollection, EventRubric } from "./Event";
 import type { Id } from "../globals";
 import "./fullcalendar-vars.css";
-import { ItemCollection } from "../DashboardTypes";
+import { ItemCollection } from "../Item";
 
 const useStyles = createStyles((theme) => ({
 	calendarWrapper: {

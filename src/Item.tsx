@@ -34,6 +34,8 @@ export interface ItemRubric {
     complete: boolean
 };
 
+export type ItemCollection = { [key: Id]: ItemRubric };
+
 interface ItemProps extends ItemRubric {
     listId: Id,
     index: number,
