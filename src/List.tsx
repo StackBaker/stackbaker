@@ -88,13 +88,13 @@ const List = function(props: ListProps) {
         }
     }, [adding]);
 
-    if (props.listId === DAY_LIST_ID) {
-        useHotkeys([
-            ["N", handlers.toggle],
-        ]);
-    } else if (props.listId === DO_LATER_LIST_ID) {
+    if (props.listId === DO_LATER_LIST_ID) {
         useHotkeys([
             ["K", handlers.toggle]
+        ]);
+    } else {
+        useHotkeys([
+            ["N", handlers.toggle],
         ]);
     }
 

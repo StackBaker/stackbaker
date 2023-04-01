@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { Store } from "tauri-plugin-store-api";
 
 import { SAVE_DELAY } from "./dbutils";
@@ -26,7 +26,7 @@ const useItemDB = function() {
         return val;
     }
 
-    const set = (key: Id, val: ItemRubric) => {
+    const set = async (key: Id, val: ItemRubric) => {
         if (timeoutRef.current)
             clearTimeout(timeoutRef.current!);
 
@@ -39,13 +39,13 @@ const useItemDB = function() {
         setItems(newItems);
         
         // then write through to disk
-        store.set(key, val)
+        await store.set(key, val)
             .then(() => {
                 timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
             });
     }
 
-    const del = (key: Id) => {
+    const del = async (key: Id) => {
         if (timeoutRef.current)
             clearTimeout(timeoutRef.current!);
 
@@ -58,21 +58,21 @@ const useItemDB = function() {
         setItems(newItems);
         
         // then write through to disk
-        store.delete(key)
+        await store.delete(key)
             .then(() => {
                 timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
             });
     }
 
-    const loadAll = () => {
-        store.entries().then(entries => {
-            var newItems: ItemCollection = {};
-            for (const entry of entries) {
-                const [key, val]: [key: Id, val: unknown] = entry;
-                newItems[key] = val as ItemRubric;
-            }
-            setItems(newItems);
-        })
+    const loadAll = async () => {
+        const entries = await store.entries()
+        
+        var newItems: ItemCollection = {};
+        for (const entry of entries) {
+            const [key, val]: [key: Id, val: unknown] = entry;
+            newItems[key] = val as ItemRubric;
+        }
+        setItems(newItems);
     }
 
     return { data: items, get, set, del, loadAll };

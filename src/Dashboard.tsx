@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createStyles, Button, AppShell, Navbar, Text, MediaQuery, Header, Burger, Group, Paper, Space } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import { DragDropContext } from "@hello-pangea/dnd";
@@ -12,8 +12,9 @@ import { DAY_LIST_ID, DO_LATER_LIST_ID, DAY_LIST_TITLE, DO_LATER_LIST_TITLE } fr
 import type { Id } from "./globals";
 import type { LeftPanelProps, ActionAreaProps, DashboardProps } from "./DashboardTypes";
 import type { ItemRubric, ItemCollection } from "./Item";
-import type { ListCollection } from "./List";
+import type { ListRubric, ListCollection } from "./List";
 import useDatabase from "./Persistence/useDatabase";
+import { dateToDayId } from "./dateutils";
 
 const useStyles = createStyles((theme) => ({
     wrapper: {},
@@ -62,6 +63,7 @@ const ActionArea = function(props: ActionAreaProps) {
 
         props.mutateLists(source, destination, draggableId);
     }
+
     // TODO: implement undo with mod+Z
     // TODO: maybe header can display loading messages while retrieving stuff from backend
     // TODO: or retrieving stuff from GCal
@@ -98,49 +100,77 @@ const ActionArea = function(props: ActionAreaProps) {
     );
 }
 const Dashboard = function(props: DashboardProps | undefined) {
-    const { classes } = useStyles();
     const actionAreaHeight = "95vh";
     const headerHeight = 50;
-    const [date, setDate] = useState<dayjs.Dayjs>(dayjs());
+    const [date, changeDate] = useState<dayjs.Dayjs>(dayjs().startOf("day"));
     const [opened, setOpened] = useState(false);
+    const [loaded, setLoaded] = useState(false);
+
+    const setDate = (newDate: dayjs.Dayjs) => {
+        changeDate(newDate);
+        setLoaded(false);
+    }
 
     const db = useDatabase();
-    useEffect(() => { db.items.loadAll(); }, []);
+    useEffect(() => {
+        db.items.loadAll();
+        db.lists.loadAll();
+    }, []);
 
-    const [lists, changeLists] = useState<ListCollection>({
-        [DAY_LIST_ID]: {
-            listId: DAY_LIST_ID,
-            title: DAY_LIST_TITLE,
-            itemIds: [],
-            planned: false
-        },
-        [DO_LATER_LIST_ID]: {
-            listId: DO_LATER_LIST_ID,
-            title: DO_LATER_LIST_TITLE,
-            itemIds: [],
-            planned: true
+    useEffect(() => {
+        if (loaded) {
+            return;
         }
-    });
+
+        const selectedDayId = dateToDayId(date);
+        if (!db.lists.data?.hasOwnProperty(selectedDayId)) {
+            (async () => {
+                await db.lists.create(date);
+                setLoaded(true);
+            })();
+        } else {
+            setLoaded(true);
+        }
+    }, [date]);
+
+    const getList = (listId: Id): { success: boolean, list: ListRubric } => {
+        const selectedDayId = dateToDayId(date);
+        if (listId !== selectedDayId && listId !== DO_LATER_LIST_ID) {
+            return { success: false, list: {} as ListRubric };
+        }
+        let newList: ListRubric;
+        if (listId === selectedDayId)
+            newList = db.lists.data![selectedDayId];
+        else
+            newList = db.lists.data![DO_LATER_LIST_ID];
+        
+        return { success: true, list: newList };
+    }
+
+    const listsAsCollection = () => {
+        const selectedDayId = dateToDayId(date);
+        return {
+            [selectedDayId]: {
+                ...db.lists.data![selectedDayId],
+                title: DAY_LIST_TITLE
+            },
+            [DO_LATER_LIST_ID]: db.lists.data![DO_LATER_LIST_ID]
+        };
+    }
 
     const createItem = (newItemConfig: ItemRubric, listId: Id): boolean => {
-        // validate?
-        if (!lists.hasOwnProperty(listId)) {
-            return false;
-        }
+        let { success, list } = getList(listId);
+        if (!success) return false;
 
-        var newList = lists[listId];
-        newList.itemIds.push(newItemConfig.itemId);
+        list.itemIds.push(newItemConfig.itemId);
         db.items.set(newItemConfig.itemId, newItemConfig);
-        changeLists({
-            ...lists,
-            [listId]: newList
-        });
+        db.lists.set(listId, list);
 
         return true;
     };
 
     const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>): boolean => {
-        if (!db.items.data!.hasOwnProperty(itemId)) {
+        if (!db.items.data?.hasOwnProperty(itemId)) {
             return false;
         }
 
@@ -155,50 +185,46 @@ const Dashboard = function(props: DashboardProps | undefined) {
     };
 
     const deleteItem = (itemId: Id, listId: Id, index: number): boolean => {
-        if (!db.items.data!.hasOwnProperty(itemId) || !lists.hasOwnProperty(listId)) {
-            return false;
-        }
-
-        // delete the id from the list
-        var newList = lists[listId];
-        newList.itemIds.splice(index, 1);
+        let { success, list } = getList(listId);
+        if (!success) return false;
 
         // delete the item
+        list.itemIds.splice(index, 1);
         db.items.del(itemId);
-
-        changeLists({ ...lists, [listId]: newList });
+        db.lists.set(listId, list);
 
         return true;
     };
 
     const mutateLists = (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id): boolean => {
-        if (!lists.hasOwnProperty(sourceOfDrag.droppableId) || !lists.hasOwnProperty(destinationOfDrag.droppableId)) {
+        let { success: sourceSuccess, list: sourceList } = getList(sourceOfDrag.droppableId);
+        let { success: destSuccess, list: destList } = getList(sourceOfDrag.droppableId);
+
+        if (!sourceSuccess || !destSuccess) {
             return false;
         }
-
-        var sourceList = lists[sourceOfDrag.droppableId];
-        var destList = lists[destinationOfDrag.droppableId];
 
         sourceList.itemIds.splice(sourceOfDrag.index, 1);
         destList.itemIds.splice(destinationOfDrag.index, 0, draggableId);
 
-        changeLists({
-            ...lists,
-            [sourceOfDrag.droppableId]: sourceList,
-            [destinationOfDrag.droppableId]: destList
-        });
+        db.lists.set(sourceOfDrag.droppableId, sourceList);
+        db.lists.set(destinationOfDrag.droppableId, destList);
 
         return true;
     };
 
     const log = () => {
-        console.log("l", lists);
+        console.log("l", db.lists.data);
         console.log("i", db.items.data);
     }
 
     useHotkeys([
         ['P', log]
-    ])
+    ]);
+
+    if (!loaded) {
+        return <div></div>
+    }
 
     // have to do this sx thing because AppShell automatically renders too large
     return (
@@ -238,7 +264,7 @@ const Dashboard = function(props: DashboardProps | undefined) {
             <ActionArea
                 date={date}
                 items={db.items.data!}
-                lists={lists}
+                lists={listsAsCollection()}
                 createItem={createItem}
                 mutateItem={mutateItem}
                 deleteItem={deleteItem}
