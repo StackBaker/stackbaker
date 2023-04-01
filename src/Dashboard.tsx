@@ -35,6 +35,7 @@ const LeftPanel = function(props: LeftPanelProps) {
         >
             <Navbar.Section>
                 <DatePicker
+                    defaultDate={props.date.toDate()}
                     value={props.date.toDate()}
                     onChange={(v) => props.setDate(dayjs(v))}
                     size="xs"
@@ -102,14 +103,9 @@ const ActionArea = function(props: ActionAreaProps) {
 const Dashboard = function(props: DashboardProps | undefined) {
     const actionAreaHeight = "95vh";
     const headerHeight = 50;
-    const [date, changeDate] = useState<dayjs.Dayjs>(dayjs().startOf("day"));
+    const [date, setDate] = useState<dayjs.Dayjs>(dayjs().startOf("day"));
     const [opened, setOpened] = useState(false);
     const [loaded, setLoaded] = useState(false);
-
-    const setDate = (newDate: dayjs.Dayjs) => {
-        changeDate(newDate);
-        setLoaded(false);
-    }
 
     const db = useDatabase();
     useEffect(() => {
@@ -117,19 +113,11 @@ const Dashboard = function(props: DashboardProps | undefined) {
         db.lists.loadAll();
     }, []);
 
-    useEffect(() => {
-        if (loaded) {
-            return;
-        }
-
+    useMemo(() => {
         const selectedDayId = dateToDayId(date);
         if (!db.lists.data?.hasOwnProperty(selectedDayId)) {
-            (async () => {
-                await db.lists.create(date);
-                setLoaded(true);
-            })();
-        } else {
-            setLoaded(true);
+            setLoaded(false);
+            db.lists.create(date).then(() => setLoaded(true));
         }
     }, [date]);
 
@@ -150,10 +138,7 @@ const Dashboard = function(props: DashboardProps | undefined) {
     const listsAsCollection = () => {
         const selectedDayId = dateToDayId(date);
         return {
-            [selectedDayId]: {
-                ...db.lists.data![selectedDayId],
-                title: DAY_LIST_TITLE
-            },
+            [selectedDayId]: db.lists.data![selectedDayId],
             [DO_LATER_LIST_ID]: db.lists.data![DO_LATER_LIST_ID]
         };
     }

@@ -3,7 +3,7 @@ import { Store } from "tauri-plugin-store-api";
 
 import { SAVE_DELAY } from "./dbutils";
 import type { ListRubric, ListCollection } from "../List";
-import { DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, Id } from "../globals";
+import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, Id } from "../globals";
 import dayjs from "dayjs";
 import { dateToDayId } from "../dateutils";
 
@@ -62,7 +62,7 @@ const useListDB = function() {
 
         const newList = {
             listId: listId,
-            title: (date) ? date!.startOf("day").format() : DO_LATER_LIST_TITLE,
+            title: (date) ? DAY_LIST_TITLE : DO_LATER_LIST_TITLE,
             itemIds: [],
             planned: false
         };
