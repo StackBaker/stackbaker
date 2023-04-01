@@ -10,7 +10,7 @@ import { dateToDayId } from "../dateutils";
 const LISTS_FNAME = "lists.dat";
 
 // TODO: properly test this
-// TODO: rewrite everything to async / await?
+// TODO: periodically clean the database
 const useListDB = function() {
     const store = new Store(LISTS_FNAME);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,8 +43,24 @@ const useListDB = function() {
         // then write through to disk
         await store.set(key, val)
             .then(() => {
-                timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
+                timeoutRef.current = setTimeout(() => {
+                    store.save();
+                    console.log("lists saved")
+                }, SAVE_DELAY);
             });
+    }
+
+    const has = async(listId: Id): Promise<boolean> => {
+        if (lists?.hasOwnProperty(listId)) {
+            return true;
+        }
+
+        const listInStore = await store.has(listId);
+        if (listInStore) {
+            return true;
+        }
+
+        return false;
     }
 
     const create = async (date: dayjs.Dayjs | null): Promise<boolean> => {
@@ -56,7 +72,8 @@ const useListDB = function() {
         else
             listId = dateToDayId(date!);
         
-        if (lists?.hasOwnProperty(listId)) {
+        const alreadyThere = await has(listId);
+        if (alreadyThere) {
             return false;
         }
 
@@ -91,6 +108,7 @@ const useListDB = function() {
     }
 
     const loadAll = async () => {
+        await store.load();
         const entries = await store.entries()
 
         var newLists: ListCollection = {};
@@ -102,13 +120,13 @@ const useListDB = function() {
     }
 
     // make sure the do later list is there
-    get(DO_LATER_LIST_ID).then(x => {
+    has(DO_LATER_LIST_ID).then(x => {
         if (!x) {
             create(null);
         }
-    })
+    });
 
-    return { data: lists, get, set, create, del, loadAll };
+    return { data: lists, get, set, has, create, del, loadAll };
 }
 
 export default useListDB;

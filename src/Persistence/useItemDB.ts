@@ -41,7 +41,10 @@ const useItemDB = function() {
         // then write through to disk
         await store.set(key, val)
             .then(() => {
-                timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
+                timeoutRef.current = setTimeout(() => {
+                    store.save();
+                    console.log("items saved");
+                }, SAVE_DELAY);
             });
     }
 

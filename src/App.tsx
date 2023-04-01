@@ -5,13 +5,18 @@ import { MantineProvider } from "@mantine/core";
 import "./App.css";
 
 import * as paths from "./paths";
-import Dashboard from "./Dashboard";
+import Dashboard from "./Dashboard/Dashboard";
 
 const Root = function() {
 	const navigate = useNavigate();
 	// TODO: retrieve user and planning info from backend and navigate to dashboard
 	// only if the day has been planned
 	const db = useDatabase();
+
+	useEffect(() => {
+		db.items.loadAll();
+		db.lists.loadAll();
+	}, [])
 
 	useEffect(() => {
 		// depending on the existence of a user, route accordingly

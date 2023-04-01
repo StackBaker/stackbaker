@@ -1,1 +1,1 @@
-export const SAVE_DELAY = 3000;
+export const SAVE_DELAY = 2000; // milliseconds
