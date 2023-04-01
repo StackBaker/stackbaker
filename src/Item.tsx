@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { createStyles, Card, Text, ActionIcon, Stack, Title, TextInput, Textarea, Paper, Group } from "@mantine/core";
 import { useDisclosure, useClickOutside, getHotkeyHandler } from "@mantine/hooks";
@@ -43,33 +43,35 @@ interface ItemProps extends ItemRubric {
 
 const Item = function(props: ItemProps) {
     const { classes } = useStyles();
-    const [loaded, loadHandlers] = useDisclosure(false);
     const [editing, handlers] = useDisclosure(false);
-    const editRef = useClickOutside(() => handlers.close());
-    
-    const handleChangeContent = (newContent: string) => {
-        props.mutateItem(props.itemId, { content: newContent });
-    }
+    const [editableContent, changeEditableContent] = useState<string>(props.content);
 
     const handleToggleComplete = () => {
         props.mutateItem(props.itemId, { complete: !props.complete });
     }
 
-    useEffect(() => {
-        if (!loaded) {
-            loadHandlers.open();
-            return;
-        }
+    const handleSubmitContent = () => {
+        handlers.close();
+        props.mutateItem(props.itemId, { content: editableContent });
+    }
 
+    const editRef = useClickOutside(handleSubmitContent);
+
+    useEffect(() => {
+        // reference: https://github.com/fullcalendar/fullcalendar-react/issues/118#issuecomment-761278598
         // default task length is 1 hour: TODO: make this a config value
-        new ThirdPartyDraggable(document.getElementById(props.itemId)!, {
+        let draggable = new ThirdPartyDraggable(editRef.current!, {
             eventData: {
-                title: props.content,
+                title: props.content!,
                 duration: "1:00",
                 create: false
             }
         });
-    }, [loaded, props.content]);
+
+        // a cleanup function
+        return () => draggable.destroy();
+    }, [props.content]);
+
 
     return (
         <Draggable
@@ -92,12 +94,12 @@ const Item = function(props: ItemProps) {
                                 aria-label={`item-${props.itemId}-input`}
                                 readOnly={!editing}
                                 variant="unstyled"
-                                value={props.content}
+                                value={editableContent}
                                 onClick={() => handlers.open()}
-                                onChange={(e) => handleChangeContent(e.currentTarget.value)}
+                                onChange={(e) => changeEditableContent(e.currentTarget.value)}
                                 autosize
                                 onKeyDown={getHotkeyHandler([
-                                    ["Enter", () => { if (editing) handlers.close() }]
+                                    ["Enter", () => { if (editing) handleSubmitContent() }]
                                 ])}
                                 size="sm"
                             />
