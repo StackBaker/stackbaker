@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
-import { AppShell, Text, MediaQuery, Header, Burger } from "@mantine/core";
+import { useMemo, useState } from "react";
+import { AppShell, Text, Header } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import dayjs from "dayjs";
 
-import type { Id } from "../globals";
+import { Id } from "../globals";
 import ActionArea from "./ActionArea";
 import LeftPanel from "./LeftPanel";
 import type { ItemRubric } from "../Item";
@@ -26,6 +26,16 @@ const Dashboard = function(props: DashboardProps) {
     
     const db = useDatabase();
 
+    const getListFromDB = (listId: Id): ListRubric | null => {
+        const selectedDayId = dateToDayId(date);
+        if (listId !== selectedDayId && listId !== DO_LATER_LIST_ID)
+            return null;
+        
+        var newList: ListRubric = newList = structuredClone(db.lists.data![listId]);
+        
+        return newList;
+    };
+
     useMemo(() => {
         db.items.loadAll();
         db.lists.loadAll();
@@ -35,44 +45,36 @@ const Dashboard = function(props: DashboardProps) {
         setLoadStage(0);
         const selectedDayId = dateToDayId(date);
         db.lists.has(selectedDayId).then((res) => {
-            if (!res) {
+            if (!res)
                 db.lists.create(date).then(() => setLoadStage(1));
-            } else {
+            else
                 setLoadStage(1);
-            }
         });
     }, [date]);
 
     useMemo(() => {
-        if (loadStage !== 1 || !db.lists.data) {
-            return;
-        }
-
         const selectedDayId = dateToDayId(date);
+        if (loadStage !== 1 || !db.lists.data || !db.lists.data[selectedDayId])
+            return;
+
+        var selectedDayList = null
+        while (selectedDayList === null)
+            selectedDayList = getListFromDB(selectedDayId);
+
+        var laterList = null;
+        while (laterList === null)
+            laterList = getListFromDB(DO_LATER_LIST_ID);
+
         setDashboardListColllection({
-            [selectedDayId]: db.lists.data![selectedDayId],
-            [DO_LATER_LIST_ID]: db.lists.data![DO_LATER_LIST_ID]
+            [selectedDayId]: selectedDayList,
+            [DO_LATER_LIST_ID]: laterList
         });
         setLoadStage(2);
-    }, [loadStage, date, db.lists.data]);
-
-    const getListFromDB = (listId: Id): { success: boolean, list: ListRubric } => {
-        const selectedDayId = dateToDayId(date);
-        if (listId !== selectedDayId && listId !== DO_LATER_LIST_ID) {
-            return { success: false, list: {} as ListRubric };
-        }
-        let newList: ListRubric;
-        if (listId === selectedDayId)
-            newList = db.lists.data![selectedDayId];
-        else
-            newList = db.lists.data![DO_LATER_LIST_ID];
-        
-        return { success: true, list: newList };
-    }
+    }, [loadStage, date, db.lists.data, db.items.data]);
 
     const createItem = (newItemConfig: ItemRubric, listId: Id): boolean => {
-        let { success, list } = getListFromDB(listId);
-        if (!success) return false;
+        let list = getListFromDB(listId);
+        if (list === null) return false;
 
         list.itemIds.push(newItemConfig.itemId);
         db.items.set(newItemConfig.itemId, newItemConfig);
@@ -83,24 +85,23 @@ const Dashboard = function(props: DashboardProps) {
     };
 
     const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>): boolean => {
-        if (!db.items.data?.hasOwnProperty(itemId)) {
+        if (!db.items.data?.hasOwnProperty(itemId))
             return false;
-        }
 
         var editedItem: ItemRubric = {
             ...db.items.data![itemId],
             ...newConfig
         };
 
-        db.items.set(itemId, editedItem);
+        db.items.set(itemId, editedItem)
         setLoadStage(1);
 
         return true;
     };
 
     const deleteItem = (itemId: Id, listId: Id, index: number): boolean => {
-        let { success, list } = getListFromDB(listId);
-        if (!success) return false;
+        let list = getListFromDB(listId);
+        if (list === null) return false;
 
         // delete the item
         list.itemIds.splice(index, 1);
@@ -112,27 +113,28 @@ const Dashboard = function(props: DashboardProps) {
     };
 
     const mutateLists = (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id): boolean => {
-        let { success: sourceSuccess, list: sourceList } = getListFromDB(sourceOfDrag.droppableId);
-        let { success: destSuccess, list: destList } = getListFromDB(sourceOfDrag.droppableId);
+        var sourceList = getListFromDB(sourceOfDrag.droppableId);
+        var destList = getListFromDB(destinationOfDrag.droppableId);
 
-        if (!sourceSuccess || !destSuccess) {
+        if (sourceList === null || destList === null)
             return false;
-        }
 
         sourceList.itemIds.splice(sourceOfDrag.index, 1);
         destList.itemIds.splice(destinationOfDrag.index, 0, draggableId);
 
-        db.lists.set(sourceOfDrag.droppableId, sourceList);
-        db.lists.set(destinationOfDrag.droppableId, destList);
-
+        db.lists.setMany(
+            [sourceOfDrag.droppableId, destinationOfDrag.droppableId],
+            [sourceList, destList]
+        );
         setLoadStage(1);
-
+        
         return true;
     };
 
     const log = () => {
         console.log("l", db.lists.data);
         console.log("i", db.items.data);
+        console.log("d", dashboardListCollection);
     }
 
     useHotkeys([
@@ -167,7 +169,7 @@ const Dashboard = function(props: DashboardProps) {
             }
         >
             {
-                (loadStage < 2) ? <div></div>
+                (loadStage !== 2) ? <div></div>
                 :
                 <ActionArea
                     date={date}

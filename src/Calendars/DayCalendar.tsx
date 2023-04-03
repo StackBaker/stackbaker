@@ -223,7 +223,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 				deleteEvent={deleteEvent}
 			/>
 			<Title size="h2" pl="xs">
-				{props.currentDay.format("MMMM DD, YYYY")}
+				{props.currentDay.format("MMMM D, YYYY")}
 			</Title>
 			<FullCalendar
 				plugins={[

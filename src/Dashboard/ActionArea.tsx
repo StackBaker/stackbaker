@@ -60,7 +60,6 @@ const ActionArea = function(props: ActionAreaProps) {
                             createItem={props.createItem}
                             mutateItem={props.mutateItem}
                             deleteItem={props.deleteItem}
-                            mutateLists={props.mutateLists}
                             {...props.lists[tlid]}
                         />
                     )})}

@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import { Drawer, Navbar, Button, Space } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import SettingsIcon from '@mui/icons-material/Settings';
+import useDatabase from "../Persistence/useDatabase";
 
 interface SettingsProps {
 
@@ -18,6 +19,8 @@ export interface LeftPanelProps {
 };
 
 const LeftPanel = function(props: LeftPanelProps) {
+    const db = useDatabase();
+
     return (
         <Navbar
             p="md"
@@ -38,7 +41,15 @@ const LeftPanel = function(props: LeftPanelProps) {
             <Navbar.Section grow>{}</Navbar.Section>
             <Navbar.Section>TODO: local weather:maybe WeatherKit?</Navbar.Section>
             <Navbar.Section>
-                <Button fullWidth variant="default" leftIcon={<SettingsIcon />}>
+                <Button
+                    fullWidth
+                    variant="default"
+                    leftIcon={<SettingsIcon />}
+                    onClick={() => { 
+                        db.items.clear();
+                        db.lists.clear();
+                    }}
+                >
                     Settings
                 </Button>
             </Navbar.Section>

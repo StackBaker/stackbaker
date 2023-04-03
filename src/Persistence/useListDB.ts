@@ -39,15 +39,41 @@ const useListDB = function() {
             newLists = {};
         newLists[key] = val;
         setLists(newLists);
-        
-        // then write through to disk
+
         await store.set(key, val)
-            .then(() => {
-                timeoutRef.current = setTimeout(() => {
-                    store.save();
-                    console.log("lists saved")
-                }, SAVE_DELAY);
-            });
+        timeoutRef.current = setTimeout(() => {
+            store.save();
+            console.log("lists saved")
+        }, SAVE_DELAY);
+    }
+
+    const setMany = async (keys: Id[], vals: ListRubric[]): Promise<boolean> => {
+        if (keys.length !== vals.length)
+            return false;
+
+        if (timeoutRef.current)
+            clearTimeout(timeoutRef.current!);
+
+        let newLists: ListCollection;
+        if (lists)
+            newLists = structuredClone(lists);
+        else
+            newLists = {};
+        
+        // TODO: inefficient?
+        keys.map((k, i) => {
+            let v = vals[i];
+            newLists[k] = v;
+            store.set(k, v);
+        });
+        setLists(newLists);
+        
+        timeoutRef.current = setTimeout(() => {
+            store.save();
+            console.log("lists saved")
+        }, SAVE_DELAY);
+
+        return true;
     }
 
     const has = async(listId: Id): Promise<boolean> => {
@@ -65,17 +91,11 @@ const useListDB = function() {
 
     const create = async (date: dayjs.Dayjs | null): Promise<boolean> => {
         // create a new empty list for a particular date or the do later list
-        // TODO: this is crap
         let listId;
         if (date === null)
             listId = DO_LATER_LIST_ID
         else
             listId = dateToDayId(date!);
-        
-        const alreadyThere = await has(listId);
-        if (alreadyThere) {
-            return false;
-        }
 
         const newList = {
             listId: listId,
@@ -101,10 +121,8 @@ const useListDB = function() {
         setLists(newLists);
         
         // then write through to disk
-        await store.delete(key)
-            .then(() => {
-                timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
-            });
+        await store.delete(key);
+        timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
     }
 
     const loadAll = async () => {
@@ -119,6 +137,11 @@ const useListDB = function() {
         setLists(newLists);
     }
 
+    const clear = async() => {
+        await store.clear();
+        await store.save();
+    }
+
     // make sure the do later list is there
     has(DO_LATER_LIST_ID).then(x => {
         if (!x) {
@@ -126,7 +149,7 @@ const useListDB = function() {
         }
     });
 
-    return { data: lists, get, set, has, create, del, loadAll };
+    return { data: lists, get, set, setMany, has, create, del, loadAll, clear };
 }
 
 export default useListDB;

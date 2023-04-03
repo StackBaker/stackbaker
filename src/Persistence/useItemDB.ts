@@ -78,7 +78,12 @@ const useItemDB = function() {
         setItems(newItems);
     }
 
-    return { data: items, get, set, del, loadAll };
+    const clear = async() => {
+        await store.clear();
+        await store.save();
+    }
+
+    return { data: items, get, set, del, loadAll, clear };
 }
 
 export default useItemDB;

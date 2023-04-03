@@ -45,8 +45,7 @@ interface ListProps extends ListRubric {
     items: ItemCollection,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
-    deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => boolean
+    deleteItem: (itemId: Id, listId: Id, index: number) => boolean
 };
 
 const List = function(props: ListProps) {
@@ -70,9 +69,8 @@ const List = function(props: ListProps) {
         e.preventDefault();
         handlers.close();
 
-        if (newItemContent === "") {
+        if (newItemContent === "")
             return;
-        }
             
         props.createItem({
             itemId: uuid(),

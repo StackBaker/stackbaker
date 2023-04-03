@@ -57,6 +57,7 @@ const Item = function(props: ItemProps) {
         props.mutateItem(props.itemId, { content: editableContent });
     }
 
+    // TODO: this is not working properly
     const editRef = useClickOutside(handleSubmitContent);
 
     useEffect(() => {
@@ -92,6 +93,7 @@ const Item = function(props: ItemProps) {
                     >
                         <Card.Section p="xs" pl="md" pr="md">
                             <Textarea
+                                sx={{ input: { color: (props.complete) ? "gray" : "black" }}}
                                 placeholder="Item content..."
                                 aria-label={`item-${props.itemId}-input`}
                                 readOnly={!editing}

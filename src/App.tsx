@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import useDatabase from "./Persistence/useDatabase";
-import { useNavigate, createMemoryRouter, RouterProvider } from "react-router-dom";
+import { useNavigate, createMemoryRouter, RouterProvider, Link } from "react-router-dom";
 import { MantineProvider } from "@mantine/core";
 import "./App.css";
 
@@ -9,8 +9,7 @@ import Dashboard from "./Dashboard/Dashboard";
 
 const Root = function() {
 	const navigate = useNavigate();
-	// TODO: retrieve user and planning info from backend and navigate to dashboard
-	// only if the day has been planned
+	// TODO: navigate to dashboard only if the day has been planned
 	const db = useDatabase();
 
 	useEffect(() => {
@@ -26,7 +25,9 @@ const Root = function() {
 		});
 	}, []);
 
-	return <div></div>
+	return <div style={{ display: "flex", flexDirection: "column" }}>
+		<button onClick={() => navigate(paths.DASHBOARD_PATH)}>Dashboard</button>
+	</div>
 }
 
 
