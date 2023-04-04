@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { Drawer, Navbar, Button, Space } from "@mantine/core";
+import { Navbar, Button, Space } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import SettingsIcon from '@mui/icons-material/Settings';
 import useDatabase from "../Persistence/useDatabase";
@@ -13,12 +13,13 @@ const Settings = function(props: SettingsProps) {
     
 };
 
-export interface LeftPanelProps {
+export interface DashLeftPanelProps {
     date: dayjs.Dayjs,
     setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>
 };
 
-const LeftPanel = function(props: LeftPanelProps) {
+const DashboardLeftPanel = function(props: DashLeftPanelProps) {
+    // TODO: remove this: this function shouldn't be using the database
     const db = useDatabase();
 
     return (
@@ -39,7 +40,6 @@ const LeftPanel = function(props: LeftPanelProps) {
                 <Button fullWidth onClick={() => props.setDate(dayjs().startOf("day"))}>Today</Button>
             </Navbar.Section>
             <Navbar.Section grow>{}</Navbar.Section>
-            <Navbar.Section>TODO: local weather:maybe WeatherKit?</Navbar.Section>
             <Navbar.Section>
                 <Button
                     fullWidth
@@ -57,4 +57,4 @@ const LeftPanel = function(props: LeftPanelProps) {
     );
 };
 
-export default LeftPanel;
+export default DashboardLeftPanel;

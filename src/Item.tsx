@@ -93,10 +93,10 @@ const Item = function(props: ItemProps) {
                     >
                         <Card.Section p="xs" pl="md" pr="md">
                             <Textarea
-                                sx={{ input: { color: (props.complete) ? "gray" : "black" }}}
                                 placeholder="Item content..."
                                 aria-label={`item-${props.itemId}-input`}
                                 readOnly={!editing}
+                                disabled={props.complete}
                                 variant="unstyled"
                                 value={editableContent}
                                 onClick={() => handlers.open()}

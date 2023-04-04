@@ -7,7 +7,7 @@ import "./App.css";
 
 import * as paths from "./paths";
 import Dashboard from "./Dashboard/Dashboard";
-import Planner from "./Planner";
+import Planner from "./Planner/Planner";
 import { dateToDayId } from "./dateutils";
 import { ListRubric } from "./List";
 
@@ -63,7 +63,7 @@ const App = function() {
 		},
 		{
 			path: paths.PLANNER_PATH,
-			element: <Planner date={date} />
+			element: <Planner date={date} setDate={setDate} />
 		}
 	]);
 

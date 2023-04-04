@@ -1,38 +1,70 @@
+import React, { useMemo, useState } from "react";
+import { AppShell, Text, Header } from "@mantine/core";
+import { useHotkeys } from "@mantine/hooks";
+import type { DraggableLocation } from "@hello-pangea/dnd";
 import dayjs from "dayjs";
-import { Header, Text } from "@mantine/core";
 
 import { Id } from "../globals";
-import ActionArea from "./ActionArea";
-import type { ActionAreaProps } from "./ActionArea";
-import LeftPanel from "./LeftPanel";
-import type { LeftPanelProps } from "./LeftPanel";
-import AppSkeleton from "../AppSkeleton";
-import type { useAppSkeletonOutput, AppSkeletonProps } from "../AppSkeleton";
+import DashboardMain from "./DashboardMain";
+import DashboardLeftPanel from "./DashboardLeftPanel";
 import type { ItemRubric } from "../Item";
+import type { ListRubric, ListCollection } from "../List";
+import useDatabase from "../Persistence/useDatabase";
+import { dateToDayId } from "../dateutils";
+import { DO_LATER_LIST_ID } from "../globals";
+import coordinateBackendAndState from "../coordinateBackendAndState";
+import type { coordinateBackendAndStateProps } from "../coordinateBackendAndState";
 
-type DashHeaderProps = Pick<useAppSkeletonOutput, "loadStage">
-
-const DashHeader = (props: DashHeaderProps) => {
-    const headerHeight = 50;
-
-    return (
-        <Header height={{ base: headerHeight /* , md: 70 */ }} p="md">
-            <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-                <Text ff="JetBrains Mono">
-                    {(props.loadStage === 2) ? "StackBaker" : "Loading..."}
-                </Text>
-            </div>
-        </Header>
-    );
-}
-
-interface DashboardProps extends AppSkeletonProps {};
+type DashboardProps = coordinateBackendAndStateProps;
 
 const Dashboard = function(props: DashboardProps) {
+    const actionAreaHeight = "95vh";
+    const headerHeight = 50;
+    
+    const coordination = coordinateBackendAndState(props);
+
+    // have to do this sx thing because AppShell automatically renders too large
     return (
-        <AppSkeleton
-            HeaderProps={DashHeaderProps}
-        />
+        <AppShell
+            sx={{
+                main: {
+                    minHeight: actionAreaHeight,
+                    maxHeight: actionAreaHeight,
+                    paddingTop: headerHeight
+                }
+            }}
+            navbarOffsetBreakpoint="sm"
+            navbar={
+                <DashboardLeftPanel
+                    date={props.date}
+                    setDate={props.setDate}
+                />
+            }
+            header={
+                <Header height={{ base: headerHeight /* , md: 70 */ }} p="md">
+                    <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+                        <Text ff="JetBrains Mono">
+                            {(coordination.loadStage === 2) ? "StackBaker" : "Loading..."}
+                        </Text>
+                    </div>
+                </Header>
+            }
+        >
+            {
+                (coordination.loadStage !== 2) ? <div></div>
+                :
+                <DashboardMain
+                    date={props.date}
+                    items={coordination.items}
+                    lists={coordination.lists}
+                    createItem={coordination.createItem}
+                    mutateItem={coordination.mutateItem}
+                    deleteItem={coordination.deleteItem}
+                    mutateLists={coordination.mutateLists}
+                />
+            }
+            
+        </AppShell>
     );
 }
 

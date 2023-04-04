@@ -9,7 +9,7 @@ import type { ItemRubric, ItemCollection } from "../Item";
 import type { ListCollection } from "../List";
 import type { Id } from "../globals";
 
-export interface ActionAreaProps {
+export interface DashboardMainProps {
     date: dayjs.Dayjs,
     items: ItemCollection,
     lists: ListCollection,
@@ -19,8 +19,7 @@ export interface ActionAreaProps {
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => boolean
 };
 
-
-const ActionArea = function(props: ActionAreaProps) {
+const DashboardMain = function(props: DashboardMainProps) {
     const listWidth = "250px";
 
     const onDragEnd = function(result: DropResult) {
@@ -68,4 +67,4 @@ const ActionArea = function(props: ActionAreaProps) {
     );
 };
 
-export default ActionArea;
+export default DashboardMain;

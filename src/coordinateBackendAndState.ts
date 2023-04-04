@@ -1,29 +1,26 @@
 import React, { useMemo, useState } from "react";
-import { AppShell, Header, Navbar, Text } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import dayjs from "dayjs";
 
 import { Id, DO_LATER_LIST_ID } from "./globals";
-// import ActionArea from "./ActionArea";
-// import LeftPanel from "./LeftPanel";
 import type { ItemRubric, ItemCollection } from "./Item";
 import type { ListRubric, ListCollection } from "./List";
 import useDatabase from "./Persistence/useDatabase";
 import { dateToDayId } from "./dateutils";
 
 // 0: nothing loaded; 1: db updated, need to reload; 2: fully loaded
-type stageOfLoading = 0 | 1 | 2;
+type loadingStage = 0 | 1 | 2;
 
-interface useAppSkeletonProps {
+export interface coordinateBackendAndStateProps {
     date: dayjs.Dayjs,
     setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>
 };
 
-export interface useAppSkeletonOutput {
+export interface coordinateBackendAndStateOutput {
     date: dayjs.Dayjs,
     setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
-    loadStage: stageOfLoading,
+    loadStage: loadingStage,
     items: ItemCollection,
     lists: ListCollection,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
@@ -32,9 +29,9 @@ export interface useAppSkeletonOutput {
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id) => boolean,
 };
 
-const useAppSkeleton = function(props: useAppSkeletonProps): useAppSkeletonOutput {
-    const [loadStage, setLoadStage] = useState<stageOfLoading>(0);
-    const [dashboardListCollection, setDashboardListColllection] = useState<ListCollection>({});
+const coordinateBackendAndState = function(props: coordinateBackendAndStateProps): coordinateBackendAndStateOutput {
+    const [loadStage, setLoadStage] = useState<loadingStage>(0);
+    const [relevantListCollection, setRelevantListCollection] = useState<ListCollection>({});
     
     const db = useDatabase();
 
@@ -77,7 +74,7 @@ const useAppSkeleton = function(props: useAppSkeletonProps): useAppSkeletonOutpu
         while (laterList === null)
             laterList = getListFromDB(DO_LATER_LIST_ID);
 
-        setDashboardListColllection({
+        setRelevantListCollection({
             [selectedDayId]: selectedDayList,
             [DO_LATER_LIST_ID]: laterList
         });
@@ -146,7 +143,7 @@ const useAppSkeleton = function(props: useAppSkeletonProps): useAppSkeletonOutpu
     const log = () => {
         console.log("l", db.lists.data);
         console.log("i", db.items.data);
-        console.log("d", dashboardListCollection);
+        console.log("d", relevantListCollection);
     }
 
     useHotkeys([
@@ -157,7 +154,7 @@ const useAppSkeleton = function(props: useAppSkeletonProps): useAppSkeletonOutpu
         setDate: props.setDate,
         loadStage,
         items: db.items.data!,
-        lists: dashboardListCollection,
+        lists: relevantListCollection,
         createItem,
         mutateItem,
         deleteItem,
@@ -165,57 +162,4 @@ const useAppSkeleton = function(props: useAppSkeletonProps): useAppSkeletonOutpu
     };
 }
 
-// TODO: make things readonly?
-interface AppSkeletonComponents {
-    Header: <HeaderProps>(props: HeaderProps) => JSX.Element,
-    LeftPanel: <LeftPanelProps>(props: LeftPanelProps) => ReturnType<typeof Navbar>,
-    ActionArea: <ActionAreaProps>(props: ActionAreaProps) => JSX.Element
-};
-
-export type AppSkeletonProps = useAppSkeletonProps & AppSkeletonComponents;
-
-const AppSkeleton = function (props: AppSkeletonProps) {
-    const actionAreaHeight = "95vh";
-    const headerHeight = 50;
-
-    const skeletonHooks = useAppSkeleton({
-        date: props.date,
-        setDate: props.setDate
-    });
-
-    const getSubsetOfSkeletonFuncs = function<T>(): Partial<useAppSkeletonOutput> {
-        const x = {} as T;
-
-    }
-
-    const HeaderProps = getSubsetOfSkeletonFuncs(props.HeaderProps);
-    const LeftPanelProps = getSubsetOfSkeletonFuncs(props.LeftPanelProps);
-    const ActionAreaProps = getSubsetOfSkeletonFuncs(props.ActionAreaProps);
-
-    // have to do this sx thing because AppShell automatically renders too large
-    return (
-        <AppShell
-            sx={{
-                main: {
-                    minHeight: actionAreaHeight,
-                    maxHeight: actionAreaHeight,
-                    paddingTop: headerHeight
-                }}
-            }
-            navbarOffsetBreakpoint="sm"
-            navbar={props.LeftPanel(LeftPanelProps)}
-            header={props.Header(HeaderProps)}
-        >
-            {
-                (skeletonHooks.loadStage !== 2) ? <div></div>
-                :
-                props.ActionArea(ActionAreaProps)
-            }
-            
-        </AppShell>
-    );
-}
-
-export default AppSkeleton
-
-
+export default coordinateBackendAndState;
