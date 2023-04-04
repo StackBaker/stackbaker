@@ -51,7 +51,7 @@ dependencies:
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
   react-router-dom: 6.9.0_biqbaboplfbrettd7655fr4n2y
-  tauri-plugin-store-api: github.com/tauri-apps/tauri-plugin-store/d21d55684ad444d8cba322f0013e1b2b7e0630a7
+  tauri-plugin-store-api: github.com/tauri-apps/tauri-plugin-store/f0da2d1ac8370bd4cc7c1c0617175f0d5b5833a0
   uuid: 9.0.0
 
 devDependencies:
@@ -2310,8 +2310,8 @@ packages:
     engines: {node: '>= 6'}
     dev: false
 
-  github.com/tauri-apps/tauri-plugin-store/d21d55684ad444d8cba322f0013e1b2b7e0630a7:
-    resolution: {tarball: https://codeload.github.com/tauri-apps/tauri-plugin-store/tar.gz/d21d55684ad444d8cba322f0013e1b2b7e0630a7}
+  github.com/tauri-apps/tauri-plugin-store/f0da2d1ac8370bd4cc7c1c0617175f0d5b5833a0:
+    resolution: {tarball: https://codeload.github.com/tauri-apps/tauri-plugin-store/tar.gz/f0da2d1ac8370bd4cc7c1c0617175f0d5b5833a0}
     name: tauri-plugin-store-api
     version: 0.0.0
     dependencies:
