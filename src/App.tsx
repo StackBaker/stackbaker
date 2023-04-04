@@ -22,25 +22,25 @@ const Root = function() {
 		db.lists.loadAll();
 	}, [])
 
-	// useEffect(() => {
-	// 	// depending on the existence of a user, route accordingly
-	// 	db.user.get("email").then(u => {
-	// 		if (!u) {
-	// 			return;
-	// 		}
-	// 		else {
-	// 			const todayId = dateToDayId(today);
-	// 			db.lists.has(todayId).then((res) => {
-	// 				if (res)
-	// 					db.lists.get(todayId).then((val) =>
-	// 						(!(val as ListRubric).planned) ? navigate(paths.PLANNER_PATH) : navigate(paths.DASHBOARD_PATH));
-	// 				else
-	// 					db.lists.create(today).then((res) =>
-	// 						(res) ? navigate(paths.PLANNER_PATH) : null);
-	// 			});
-	// 		}
-	// 	});
-	// }, []);
+	useEffect(() => {
+		// depending on the existence of a user, route accordingly
+		db.user.get("email").then(u => {
+			if (!u) {
+				return;
+			}
+			else {
+				const todayId = dateToDayId(today);
+				db.lists.has(todayId).then((res) => {
+					if (res)
+						db.lists.get(todayId).then((val) =>
+							(!(val as ListRubric).planned) ? navigate(paths.PLANNER_PATH) : navigate(paths.PLANNER_PATH));
+					else
+						db.lists.create(today).then((res) =>
+							(res) ? navigate(paths.PLANNER_PATH) : null);
+				});
+			}
+		});
+	}, []);
 
 	return <div style={{ display: "flex", flexDirection: "column" }}>
 		<button onClick={() => navigate(paths.DASHBOARD_PATH)}>Dashboard</button>

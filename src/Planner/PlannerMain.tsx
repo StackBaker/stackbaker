@@ -105,7 +105,8 @@ const PlannerMain = function(props: PlannerMainProps) {
         </>
     );
 
-    const stages = [StageZero, StageOne, StageTwo, FinalStage]
+    // TODO: fix this
+    const stages = [StageTwo, StageZero, StageOne, FinalStage]
 
     return (
         <DragDropContext

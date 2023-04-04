@@ -45,6 +45,7 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                     <Text>{tidbits[props.planningStage]}</Text>
                 </Stack>
             </Navbar.Section>
+            <Navbar.Section grow>{}</Navbar.Section>
             <Navbar.Section>
                 <Group position="apart" p={35}>
                     {
@@ -53,7 +54,9 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                             onClick={() => props.setPlanningStage(props.planningStage - 1 as planningStage)}
                             leftIcon={<NavigateBeforeIcon />}
                             variant="default"
-                        >Back</Button>
+                        >
+                            Back
+                        </Button>
                         : <div></div>
                     }
                     {
@@ -62,7 +65,9 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                             onClick={() => props.setPlanningStage(props.planningStage + 1 as planningStage)}
                             rightIcon={<NavigateNextIcon />}
                             variant="default"
-                        >Next</Button>
+                        >
+                            Next
+                        </Button>
                         : <Button onClick={() => navigate(paths.DASHBOARD_PATH)}>Go!</Button>
                     }
                 </Group>

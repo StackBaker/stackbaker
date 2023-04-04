@@ -88,7 +88,7 @@ const List = function(props: ListProps) {
 
     if (props.listId === DO_LATER_LIST_ID) {
         useHotkeys([
-            ["K", handlers.toggle]
+            ["L", handlers.toggle]
         ]);
     } else {
         useHotkeys([

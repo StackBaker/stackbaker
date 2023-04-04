@@ -36,6 +36,7 @@ const DashboardMain = function(props: DashboardMainProps) {
     // TODO: implement undo with mod+Z
     // TODO: maybe header can display loading messages while retrieving stuff from backend
     // TODO: or retrieving stuff from GCal
+    // TODO: make x in event editing delete an event if it has no content
     return (
         <DragDropContext
             onDragEnd={onDragEnd}

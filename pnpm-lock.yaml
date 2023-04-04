@@ -4,6 +4,7 @@ specifiers:
   '@emotion/react': ^11.10.6
   '@emotion/styled': ^11.10.6
   '@fullcalendar/core': ^6.1.5
+  '@fullcalendar/daygrid': ^6.1.5
   '@fullcalendar/interaction': ^6.1.5
   '@fullcalendar/react': ^6.1.5
   '@fullcalendar/timegrid': ^6.1.5
@@ -35,6 +36,7 @@ dependencies:
   '@emotion/react': 11.10.6_k4en7uapxoluuejoeg6o3ic2aa
   '@emotion/styled': 11.10.6_zor2bu4ftuliqy4oeppgoopsea
   '@fullcalendar/core': 6.1.5
+  '@fullcalendar/daygrid': 6.1.5_@fullcalendar+core@6.1.5
   '@fullcalendar/interaction': 6.1.5_@fullcalendar+core@6.1.5
   '@fullcalendar/react': 6.1.5_fmbwmbvmlpc6j77kvpbehkuyfm
   '@fullcalendar/timegrid': 6.1.5_@fullcalendar+core@6.1.5

@@ -91,7 +91,7 @@ interface DayCalendarProps {
 // TODO: cleanup types with readonlys
 
 const DayCalendar = function(props: DayCalendarProps) {
-	const { classes } = useStyles();
+	const { classes, cx } = useStyles();
 	const dayDuration = "30:00:00"; // 30 hour days: TODO: should be a config value
 
 	// TODO: events should be a prop, retreived from backend through Dashboard
@@ -211,7 +211,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 	return (
 		<Stack
-			className={classes.calendarWrapper}
+			className={cx(classes.calendarWrapper, "day-cal")}
 			sx={{ width: props.width }}
 			p="sm"
 		>
@@ -266,7 +266,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 				initialDate={props.currentDay.toDate()}
 
 				snapDuration={5 * 60 * 1000}
-				slotDuration={15 * 60 * 1000}
+				slotDuration={30 * 60 * 1000}
 				slotLabelInterval={60 * 60 * 1000}
 				slotMaxTime={dayDuration}
 			/>
