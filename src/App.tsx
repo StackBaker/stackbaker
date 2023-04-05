@@ -8,11 +8,14 @@ import "./App.css";
 import * as paths from "./paths";
 import Dashboard from "./Dashboard/Dashboard";
 import Planner from "./Planner/Planner";
-import { dateToDayId } from "./dateutils";
+import { dateToDayId, getToday } from "./dateutils";
 import { ListRubric } from "./List";
 
-const Root = function() {
-	const today = dayjs();
+interface RootProps {
+	date: dayjs.Dayjs
+};
+
+const Root = function(props: RootProps) {
 	const navigate = useNavigate();
 	// TODO: navigate to dashboard only if the day has been planned
 	const db = useDatabase();
@@ -29,13 +32,13 @@ const Root = function() {
 				return;
 			}
 			else {
-				const todayId = dateToDayId(today);
+				const todayId = dateToDayId(props.date);
 				db.lists.has(todayId).then((res) => {
 					if (res)
 						db.lists.get(todayId).then((val) =>
 							((!(val as ListRubric).planned) ? navigate(paths.PLANNER_PATH) : navigate(paths.DASHBOARD_PATH)))
 					else
-						db.lists.create(today).then((res) =>
+						db.lists.create(props.date).then((res) =>
 							(res) ? navigate(paths.PLANNER_PATH) : null);
 				});
 			}
@@ -47,12 +50,12 @@ const Root = function() {
 
 const App = function() {
 	// overall App state should be stored in this functional component
-	const [date, setDate] = useState<dayjs.Dayjs>(dayjs().startOf("day"));
+	const [date, setDate] = useState<dayjs.Dayjs>(getToday());
 
 	const router = createMemoryRouter([
 		{
 			path: paths.ROOT_PATH,
-			element: <Root />
+			element: <Root date={date}/>
 		},
 		{
 			path: paths.DASHBOARD_PATH,

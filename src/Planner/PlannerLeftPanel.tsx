@@ -8,7 +8,7 @@ import { DASHBOARD_PATH } from "../paths";
 import type { planningStage, stageStrings } from "./plannerutils";
 import type { ListRubric } from "../List";
 import type { Id } from "../globals";
-import { dateToDayId } from "../dateutils";
+import { dateToDayId, getToday } from "../dateutils";
 
 interface PlannerLeftPanelProps {
     date: dayjs.Dayjs,
@@ -34,7 +34,7 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
         1: "Plan your day. If something can't fit in your schedule, drag it into the Later list.",
         2: "Drag and drop items from your Later list into the days you know \
             you'll be able to deal with them.",
-        3: "Review your items and plan, and get ready for the day."
+        3: "Review your plan, and get ready for the day."
     };
 
     return (
@@ -78,7 +78,7 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                         <>
                             <Button onClick={() => {
                                 // only set today to planned
-                                if (dayjs().startOf("day") === props.date.startOf("day")) {
+                                if (getToday().isSame(props.date, "day")) {
                                     const id = dateToDayId(props.date);
                                     // .then() without a callback properly waits for this to finish
                                     props.mutateList(id, { planned: true }).then();

@@ -188,6 +188,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         console.log("i", db.items.data);
         console.log("d", relevantListCollection);
         console.log("e", db.events.data);
+        console.log("t", props.date);
     }
 
     useHotkeys([

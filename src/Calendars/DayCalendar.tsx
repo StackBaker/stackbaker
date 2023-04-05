@@ -5,8 +5,8 @@ import type { DateSelectArg, EventChangeArg, EventClickArg, EventInput } from "@
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
-import { createStyles, Stack, Button, Title, Modal, TextInput, Group, ActionIcon } from "@mantine/core";
-import { getHotkeyHandler, useDisclosure, useHotkeys } from "@mantine/hooks";
+import { createStyles, Stack, Button, Title, Text, Modal, TextInput, Group, ActionIcon } from "@mantine/core";
+import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
 
@@ -14,7 +14,6 @@ import type { EventCollection, EventRubric } from "./Event";
 import type { Id } from "../globals";
 import "./fullcalendar-vars.css";
 import { ItemCollection } from "../Item";
-import { loadingStage } from "../coordinateBackendAndState";
 import { useNavigate } from "react-router-dom";
 import { PLANNER_PATH } from "../paths";
 
@@ -43,7 +42,7 @@ const useStyles = createStyles((theme) => ({
 interface EditEventModalProps {
 	editingEvent: boolean,
 	saveEditingEvent: () => void,
-	deleteEvent: () => void,
+	deleteEditingEvent: () => void,
 	eventBeingEdited: EventRubric,
 	changeEventBeingEdited: React.Dispatch<React.SetStateAction<EventRubric>>
 };
@@ -63,7 +62,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 		<Modal
 			opened={props.editingEvent}
 			onClose={props.saveEditingEvent}
-			title="Edit Event"
+			title={<Text>Edit Event</Text>}
 			centered
 			onKeyDown={getHotkeyHandler([
 				["Enter", () => {
@@ -84,7 +83,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 			<Group position="right">
 				<ActionIcon
 					className={classes.del}
-					onClick={props.deleteEvent}
+					onClick={props.deleteEditingEvent}
 				>
 					<DeleteIcon />
 				</ActionIcon>
@@ -107,7 +106,7 @@ interface DayCalendarProps {
 
 const DayCalendar = function(props: DayCalendarProps) {
 	const navigate = useNavigate();
-	const { classes, cx } = useStyles();
+	const { classes } = useStyles();
 	const dayDuration = "30:00:00"; // 30 hour days: TODO: should be a config value
 
 	const dummyEvent = {
@@ -153,6 +152,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const saveEditingEvent = () => {
 		// don't save events with empty titles
 		if (eventBeingEdited.title === "") {
+			deleteEditingEvent();
 			return;
 		}
 
@@ -161,7 +161,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 		changeEventBeingEdited(dummyEvent);
 	}
 
-	const deleteEvent = () => {
+	const deleteEditingEvent = () => {
 		handlers.close();
 		props.deleteEvent(eventBeingEdited.id);
 		changeEventBeingEdited(dummyEvent);
@@ -206,7 +206,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 	return (
 		<Stack
-			className={cx(classes.calendarWrapper, "day-cal")}
+			className={classes.calendarWrapper}
 			sx={{ width: props.width }}
 			p="sm"
 		>
@@ -215,7 +215,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 				saveEditingEvent={saveEditingEvent}
 				eventBeingEdited={eventBeingEdited}
 				changeEventBeingEdited={changeEventBeingEdited}
-				deleteEvent={deleteEvent}
+				deleteEditingEvent={deleteEditingEvent}
 			/>
 			<Group position="apart">
 				<Title size="h2" pl="xs">
@@ -229,8 +229,8 @@ const DayCalendar = function(props: DayCalendarProps) {
 					Plan
 				</Button>
 			</Group>
-			{
-				(false) ? <div></div> :
+			<Stack className="day-cal">
+				{(false) ? <div></div> :
 				<FullCalendar
 					plugins={[
 						timeGridPlugin,
@@ -275,8 +275,8 @@ const DayCalendar = function(props: DayCalendarProps) {
 					slotDuration={15 * 60 * 1000}
 					slotLabelInterval={60 * 60 * 1000}
 					slotMaxTime={dayDuration}
-				/>
-			}
+				/>}
+			</Stack>
 		</Stack>
 	);
 }

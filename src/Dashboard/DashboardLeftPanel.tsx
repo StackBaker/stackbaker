@@ -3,6 +3,7 @@ import { Navbar, Button, Space } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import SettingsIcon from '@mui/icons-material/Settings';
 import useDatabase from "../Persistence/useDatabase";
+import { getToday } from "../dateutils";
 
 interface SettingsProps {
 
@@ -37,7 +38,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                     size="xs"
                 />
                 <Space h="lg"></Space>
-                <Button fullWidth onClick={() => props.setDate(dayjs().startOf("day"))}>Today</Button>
+                <Button fullWidth onClick={() => props.setDate(getToday())}>Today</Button>
             </Navbar.Section>
             <Navbar.Section grow>{}</Navbar.Section>
             <Navbar.Section>
