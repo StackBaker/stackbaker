@@ -7,11 +7,11 @@ import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, Id } from "../gl
 import dayjs from "dayjs";
 import { dateToDayId } from "../dateutils";
 
-const EVENTS_FNAME = "lists.dat";
+const EVENTS_FNAME = "events.dat";
 
 // TODO: properly test this
 // TODO: periodically clean the database
-const useListDB = function() {
+const useEventDB = function() {
     const store = new Store(EVENTS_FNAME);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [events, setEvents] = useState<EventCollection>();
@@ -97,4 +97,4 @@ const useListDB = function() {
     return { data: events, get, set, has, del, loadAll, clear };
 }
 
-export default useListDB;
+export default useEventDB;

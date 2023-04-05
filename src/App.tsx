@@ -33,7 +33,7 @@ const Root = function() {
 				db.lists.has(todayId).then((res) => {
 					if (res)
 						db.lists.get(todayId).then((val) =>
-							(!(val as ListRubric).planned) ? navigate(paths.DASHBOARD_PATH) : navigate(paths.PLANNER_PATH));
+							(!(val as ListRubric).planned) ? navigate(paths.PLANNER_PATH) : navigate(paths.DASHBOARD_PATH));
 					else
 						db.lists.create(today).then((res) =>
 							(res) ? navigate(paths.PLANNER_PATH) : null);
@@ -42,10 +42,7 @@ const Root = function() {
 		});
 	}, []);
 
-	return <div style={{ display: "flex", flexDirection: "column" }}>
-		<button onClick={() => navigate(paths.DASHBOARD_PATH)}>Dashboard</button>
-		<button onClick={() => navigate(paths.PLANNER_PATH)}>Planner</button>
-	</div>
+	return <div></div>
 }
 
 const App = function() {
@@ -75,7 +72,6 @@ const App = function() {
 					'stackblue': ["#FFFFFF", "#DADAE7", "#6179D4", "#2A29D4", "#13146A", "#000000"]
 				}
 			}}
-			withGlobalStyles
 		>
 			<RouterProvider router={router} />
 		</MantineProvider>

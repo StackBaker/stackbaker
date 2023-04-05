@@ -7,8 +7,8 @@ import type { Id } from "../globals";
 
 const ITEMS_FNAME = "items.dat";
 
-// IDEA: build it out only using the filesystem for now
-// TODO: think about caching in RAM with useState
+// TODO: periodically clean
+// TODO: items seem to be being saved a lot, including when I just click the screen
 const useItemDB = function() {
     const store = new Store(ITEMS_FNAME);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -1,14 +1,20 @@
-import { Navbar, Space, Title, Text, Stack, Group, ActionIcon, Button } from "@mantine/core";
+import dayjs from "dayjs";
+import { Navbar, Space, Title, Text, Stack, Group, Button } from "@mantine/core";
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import { useNavigate } from "react-router-dom";
 
 import * as paths from "../paths";
 import type { planningStage, stageStrings } from "./plannerutils";
+import type { ListRubric } from "../List";
+import type { Id } from "../globals";
+import { dateToDayId } from "../dateutils";
 
 interface PlannerLeftPanelProps {
+    date: dayjs.Dayjs,
     planningStage: planningStage,
-    setPlanningStage: React.Dispatch<React.SetStateAction<planningStage>>
+    setPlanningStage: React.Dispatch<React.SetStateAction<planningStage>>,
+    mutateList: (listId: Id, newListConfig: Partial<ListRubric>) => boolean,
 };
 
 const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
@@ -68,9 +74,14 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                         >
                             Next
                         </Button>
-                        : <Button onClick={() => {
-                            navigate(paths.DASHBOARD_PATH)}
-                        }>Go!</Button>
+                        :
+                        <Button onClick={() => {
+                            // const id = dateToDayId(props.date);
+                            // props.mutateList(id, { planned: true });
+                            navigate(paths.DASHBOARD_PATH);
+                        }}>
+                            Go!
+                        </Button>
                     }
                 </Group>
             </Navbar.Section>

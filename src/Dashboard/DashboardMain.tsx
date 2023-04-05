@@ -13,7 +13,6 @@ import type { loadingStage } from "../coordinateBackendAndState";
 
 export interface DashboardMainProps {
     date: dayjs.Dayjs,
-    loadStage: loadingStage,
     items: ItemCollection,
     lists: ListCollection,
     events: EventCollection,
@@ -56,7 +55,6 @@ const DashboardMain = function(props: DashboardMainProps) {
                     height="80vh"
                     width="310px"
                     date={props.date.startOf("day")}
-                    loadStage={props.loadStage}
                     items={props.items}
                     events={props.events}
                     saveEvent={props.saveEvent}

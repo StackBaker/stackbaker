@@ -16,7 +16,6 @@ import { loadingStage } from "../coordinateBackendAndState";
 
 interface PlannerMainProps {
     date: dayjs.Dayjs,
-    loadStage: loadingStage,
     planningStage: planningStage,
     items: ItemCollection,
     lists: ListCollection,
@@ -63,7 +62,6 @@ const PlannerMain = function(props: PlannerMainProps) {
                 height="80vh"
                 width="310px"
                 date={props.date}
-                loadStage={props.loadStage}
                 items={props.items}
                 events={props.events}
                 saveEvent={props.saveEvent}
@@ -103,7 +101,6 @@ const PlannerMain = function(props: PlannerMainProps) {
                 height="80vh"
                 width="310px"
                 date={props.date}
-                loadStage={props.loadStage}
                 items={props.items}
                 events={props.events}
                 saveEvent={props.saveEvent}

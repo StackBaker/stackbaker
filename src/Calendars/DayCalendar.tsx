@@ -5,7 +5,7 @@ import type { DateSelectArg, EventChangeArg, EventClickArg, EventInput } from "@
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
-import { createStyles, Stack, Title, Modal, TextInput, Group, ActionIcon } from "@mantine/core";
+import { createStyles, Stack, Button, Title, Modal, TextInput, Group, ActionIcon } from "@mantine/core";
 import { getHotkeyHandler, useDisclosure, useHotkeys } from "@mantine/hooks";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
@@ -15,11 +15,19 @@ import type { Id } from "../globals";
 import "./fullcalendar-vars.css";
 import { ItemCollection } from "../Item";
 import { loadingStage } from "../coordinateBackendAndState";
+import { useNavigate } from "react-router-dom";
+import { PLANNER_PATH } from "../paths";
 
 const useStyles = createStyles((theme) => ({
 	calendarWrapper: {
 		paddingLeft: "12px",
 		overflow: "hidden",
+	},
+	planButton: {
+		opacity: 0,
+		"&:hover": {
+			opacity: 1
+		}
 	},
     editSignal: {
         color: theme.colors.stackblue[4]
@@ -28,6 +36,9 @@ const useStyles = createStyles((theme) => ({
         color: theme.colors.red[7]
     }
 }));
+
+// TODO: put edit modal in a different file
+// TODO: get rid of loading stage param
 
 interface EditEventModalProps {
 	editingEvent: boolean,
@@ -87,7 +98,6 @@ interface DayCalendarProps {
 	width: string | number
 	date: dayjs.Dayjs,
 	readonly items: ItemCollection,
-	loadStage: loadingStage,
 	events: EventCollection,
 	saveEvent: (newEventConfig: EventRubric) => boolean,
 	deleteEvent: (eventId: Id) => boolean
@@ -96,6 +106,7 @@ interface DayCalendarProps {
 // TODO: cleanup types with readonlys
 
 const DayCalendar = function(props: DayCalendarProps) {
+	const navigate = useNavigate();
 	const { classes, cx } = useStyles();
 	const dayDuration = "30:00:00"; // 30 hour days: TODO: should be a config value
 
@@ -206,54 +217,66 @@ const DayCalendar = function(props: DayCalendarProps) {
 				changeEventBeingEdited={changeEventBeingEdited}
 				deleteEvent={deleteEvent}
 			/>
-			<Title size="h2" pl="xs">
-				{props.date.format("MMMM D, YYYY")}
-			</Title>
-			<FullCalendar
-				plugins={[
-					timeGridPlugin,
-					interactionPlugin
-				]}
-				viewHeight={props.height}
-				height={props.height}
-				allDaySlot={false}
-				nowIndicator={true}
+			<Group position="apart">
+				<Title size="h2" pl="xs">
+					{props.date.format("MMMM D, YYYY")}
+				</Title>
+				<Button
+					className={classes.planButton}
+					variant="subtle"
+					onClick={() => navigate(PLANNER_PATH)}
+				>
+					Plan
+				</Button>
+			</Group>
+			{
+				(false) ? <div></div> :
+				<FullCalendar
+					plugins={[
+						timeGridPlugin,
+						interactionPlugin
+					]}
+					viewHeight={props.height}
+					height={props.height}
+					allDaySlot={false}
+					nowIndicator={true}
 
-				editable={true}
-				events={Object.keys(props.events).map(eid => props.events[eid] as EventInput)}
-				eventChange={handleEventDrag}
-				eventClick={handleEventClick}
+					editable={true}
+					events={Object.keys(props.events).map(eid => props.events[eid] as EventInput)}
+					eventChange={handleEventDrag}
+					eventClick={handleEventClick}
 
-				selectable={true}
-				select={handleAddEventThroughSelection}
+					selectable={true}
+					select={handleAddEventThroughSelection}
 
-				droppable={true}
-				drop={handleAddEventThroughDrop}
+					droppable={true}
+					drop={handleAddEventThroughDrop}
 
-				headerToolbar={false}
-				titleFormat={{
-					year: "numeric",
-					month: "short",
-					day: "numeric"
-				}}
-				dayHeaderFormat={{
-					day: "numeric",
-					month: "short",
-					year: "numeric",
-					omitCommas: true
-				}}
+					headerToolbar={false}
+					titleFormat={{
+						year: "numeric",
+						month: "short",
+						day: "numeric"
+					}}
+					dayHeaderFormat={{
+						day: "numeric",
+						month: "short",
+						year: "numeric",
+						omitCommas: true
+					}}
 
-				scrollTime={dayjs().subtract(1, "hour").format("HH:00")}
-				scrollTimeReset={false}
+					scrollTime={dayjs().subtract(1, "hour").format("HH:00")}
+					scrollTimeReset={false}
 
-				initialView="timeGridDay"
-				initialDate={props.date.toDate()}
+					initialView="timeGridDay"
+					initialDate={props.date.toDate()}
 
-				snapDuration={5 * 60 * 1000}
-				slotDuration={15 * 60 * 1000}
-				slotLabelInterval={60 * 60 * 1000}
-				slotMaxTime={dayDuration}
-			/>
+					snapDuration={5 * 60 * 1000}
+					slotDuration={15 * 60 * 1000}
+					slotLabelInterval={60 * 60 * 1000}
+					slotMaxTime={dayDuration}
+				/>
+			}
 		</Stack>
 	);
 }

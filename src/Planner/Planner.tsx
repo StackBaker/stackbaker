@@ -32,8 +32,10 @@ const Planner = function(props: PlannerProps) {
             navbarOffsetBreakpoint="sm"
             navbar={
                 <PlannerLeftPanel
+                    date={props.date}
                     planningStage={planningStage}
                     setPlanningStage={setPlanningStage}
+                    mutateList={coordination.mutateList}
                 />
             }
         >
@@ -42,7 +44,6 @@ const Planner = function(props: PlannerProps) {
                 :
                 <PlannerMain
                     date={coordination.date}
-                    loadStage={coordination.loadStage}
                     planningStage={planningStage}
                     items={coordination.items}
                     lists={coordination.lists}

@@ -55,7 +55,6 @@ const Dashboard = function(props: DashboardProps) {
                 :
                 <DashboardMain
                     date={props.date}
-                    loadStage={coordination.loadStage}
                     items={coordination.items}
                     lists={coordination.lists}
                     events={coordination.events}

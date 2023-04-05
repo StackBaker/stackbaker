@@ -28,6 +28,7 @@ export interface coordinateBackendAndStateOutput {
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
+    mutateList: (listId: Id, newConfig: Partial<ListRubric>) => boolean,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean
@@ -102,7 +103,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         if (!db.items.data?.hasOwnProperty(itemId))
             return false;
 
-        var editedItem: ItemRubric = {
+        const editedItem: ItemRubric = {
             ...db.items.data![itemId],
             ...newConfig
         };
@@ -125,6 +126,21 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
 
         return true;
     };
+
+    const mutateList = (listId: Id, newConfig: Partial<ListRubric>): boolean => {
+        if (!db.lists.data?.hasOwnProperty(listId))
+            return false;
+
+        const editedList: ListRubric = {
+            ...db.lists.data![listId],
+            ...newConfig
+        };
+
+        db.lists.set(listId, editedList)
+        setLoadStage(0);
+
+        return true;
+    }
 
     const mutateLists = (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id): boolean => {
         var sourceList = getListFromDB(sourceOfDrag.droppableId);
@@ -174,6 +190,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         createItem,
         mutateItem,
         deleteItem,
+        mutateList,
         mutateLists,
         events: db.events.data!,
         saveEvent,
