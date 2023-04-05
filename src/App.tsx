@@ -33,7 +33,7 @@ const Root = function() {
 				db.lists.has(todayId).then((res) => {
 					if (res)
 						db.lists.get(todayId).then((val) =>
-							(!(val as ListRubric).planned) ? navigate(paths.PLANNER_PATH) : navigate(paths.DASHBOARD_PATH));
+							((!(val as ListRubric).planned) ? navigate(paths.PLANNER_PATH) : navigate(paths.DASHBOARD_PATH)))
 					else
 						db.lists.create(today).then((res) =>
 							(res) ? navigate(paths.PLANNER_PATH) : null);

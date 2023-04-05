@@ -4,7 +4,7 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import { useNavigate } from "react-router-dom";
 
-import * as paths from "../paths";
+import { DASHBOARD_PATH } from "../paths";
 import type { planningStage, stageStrings } from "./plannerutils";
 import type { ListRubric } from "../List";
 import type { Id } from "../globals";
@@ -14,7 +14,7 @@ interface PlannerLeftPanelProps {
     date: dayjs.Dayjs,
     planningStage: planningStage,
     setPlanningStage: React.Dispatch<React.SetStateAction<planningStage>>,
-    mutateList: (listId: Id, newListConfig: Partial<ListRubric>) => boolean,
+    mutateList: (listId: Id, newListConfig: Partial<ListRubric>) => Promise<boolean>,
 };
 
 const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
@@ -22,7 +22,7 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
 
     const titles: stageStrings = {
         0: "What do you want to get done today?",
-        1: "Make a rough plan.",
+        1: "Make a plan.",
         2: "Plan to deal with what you can't get to today.",
         3: "Finalize your day."
     };
@@ -75,13 +75,19 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                             Next
                         </Button>
                         :
-                        <Button onClick={() => {
-                            // const id = dateToDayId(props.date);
-                            // props.mutateList(id, { planned: true });
-                            navigate(paths.DASHBOARD_PATH);
-                        }}>
-                            Go!
-                        </Button>
+                        <>
+                            <Button onClick={() => {
+                                // only set today to planned
+                                if (dayjs().startOf("day") === props.date.startOf("day")) {
+                                    const id = dateToDayId(props.date);
+                                    // .then() without a callback properly waits for this to finish
+                                    props.mutateList(id, { planned: true }).then();
+                                }
+                                navigate(DASHBOARD_PATH);
+                            }}>
+                                Let's Go!
+                            </Button>
+                        </>
                     }
                 </Group>
             </Navbar.Section>

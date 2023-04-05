@@ -28,7 +28,7 @@ export interface coordinateBackendAndStateOutput {
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-    mutateList: (listId: Id, newConfig: Partial<ListRubric>) => boolean,
+    mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean
@@ -127,19 +127,21 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         return true;
     };
 
-    const mutateList = (listId: Id, newConfig: Partial<ListRubric>): boolean => {
-        if (!db.lists.data?.hasOwnProperty(listId))
-            return false;
+    const mutateList = async (listId: Id, newConfig: Partial<ListRubric>): Promise<boolean> => {
+        const listThere = await db.lists.has(listId);
+        if (!listThere)
+            return new Promise((resolve, reject) => reject("List not there"));
 
         const editedList: ListRubric = {
             ...db.lists.data![listId],
             ...newConfig
         };
 
-        db.lists.set(listId, editedList)
-        setLoadStage(0);
+        console.log("s", editedList);
 
-        return true;
+        await db.lists.set(listId, editedList);
+
+        return new Promise((resolve, reject) => resolve(true));
     }
 
     const mutateLists = (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id): boolean => {

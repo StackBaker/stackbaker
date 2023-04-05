@@ -1,16 +1,7 @@
-import React, { useMemo, useState } from "react";
-import { AppShell, Text, Header } from "@mantine/core";
-import { useHotkeys } from "@mantine/hooks";
-import type { DraggableLocation } from "@hello-pangea/dnd";
-import dayjs from "dayjs";
+import { AppShell, Text, Header, Button } from "@mantine/core";
 
-import { Id } from "../globals";
 import DashboardMain from "./DashboardMain";
 import DashboardLeftPanel from "./DashboardLeftPanel";
-import type { ItemRubric } from "../Item";
-import type { ListRubric, ListCollection } from "../List";
-import useDatabase from "../Persistence/useDatabase";
-import { dateToDayId } from "../dateutils";
 import { DO_LATER_LIST_ID } from "../globals";
 import coordinateBackendAndState from "../coordinateBackendAndState";
 import type { coordinateBackendAndStateProps } from "../coordinateBackendAndState";

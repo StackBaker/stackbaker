@@ -21,7 +21,7 @@ const GridCalendar = function(props: GridCalendarProps) {
         {
             start: dayjs().toDate(),
             end: dayjs().add(2, "hours").toDate(),
-            title: "hi",
+            title: "dummy",
             id: uuid()
         }
     ]);
@@ -38,7 +38,7 @@ const GridCalendar = function(props: GridCalendarProps) {
 		const newEventId = uuid();
 		const newEvent= {
 			id: newEventId,
-			title: "Much larger than hi",
+			title: "Select",
 			start: start.toDate(),
 			end: end.toDate()
 		};
