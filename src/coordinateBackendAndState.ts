@@ -45,7 +45,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         if (listId !== selectedDayId && listId !== DO_LATER_LIST_ID)
             return null;
         
-        var newList: ListRubric = newList = structuredClone(db.lists.data![listId]);
+        var newList: ListRubric = structuredClone(db.lists.data![listId]);
         
         return newList;
     };
@@ -143,19 +143,29 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     }
 
     const mutateLists = (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id): boolean => {
-        var sourceList = getListFromDB(sourceOfDrag.droppableId);
-        var destList = getListFromDB(destinationOfDrag.droppableId);
+        if (sourceOfDrag.droppableId === destinationOfDrag.droppableId) {
+            var list = getListFromDB(sourceOfDrag.droppableId);
+            if (list === null)
+                return false;
 
-        if (sourceList === null || destList === null)
-            return false;
+            var temp = list.itemIds[sourceOfDrag.index];
+            list.itemIds[sourceOfDrag.index] = list.itemIds[destinationOfDrag.index];
+            list.itemIds[destinationOfDrag.index] = temp;
+            db.lists.set(sourceOfDrag.droppableId, list);
+        } else {
+            var sourceList = getListFromDB(sourceOfDrag.droppableId);
+            var destList = getListFromDB(destinationOfDrag.droppableId);
 
-        sourceList.itemIds.splice(sourceOfDrag.index, 1);
-        destList.itemIds.splice(destinationOfDrag.index, 0, draggableId);
+            if (sourceList === null || destList === null)
+                return false;
+            sourceList.itemIds.splice(sourceOfDrag.index, 1);
+            destList.itemIds.splice(destinationOfDrag.index, 0, draggableId);
+            db.lists.setMany(
+                [sourceOfDrag.droppableId, destinationOfDrag.droppableId],
+                [sourceList, destList]
+            );
+        }
 
-        db.lists.setMany(
-            [sourceOfDrag.droppableId, destinationOfDrag.droppableId],
-            [sourceList, destList]
-        );
         setLoadStage(1);
         
         return true;

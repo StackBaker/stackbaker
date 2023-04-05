@@ -60,11 +60,13 @@ const useListDB = function() {
         else
             newLists = {};
         
+        console.log(keys, vals);
+
         // TODO: inefficient?
         keys.map((k, i) => {
             let v = vals[i];
             newLists[k] = v;
-            store.set(k, v);
+            store.set(k, v).then();
         });
         setLists(newLists);
         
