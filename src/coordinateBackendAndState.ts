@@ -6,11 +6,12 @@ import dayjs from "dayjs";
 import { Id, DO_LATER_LIST_ID } from "./globals";
 import type { ItemRubric, ItemCollection } from "./Item";
 import type { ListRubric, ListCollection } from "./List";
+import type { EventRubric, EventCollection } from "./Calendars/Event";
 import useDatabase from "./Persistence/useDatabase";
 import { dateToDayId } from "./dateutils";
 
 // 0: nothing loaded; 1: db updated, need to reload; 2: fully loaded
-type loadingStage = 0 | 1 | 2;
+export type loadingStage = 0 | 1 | 2;
 
 export interface coordinateBackendAndStateProps {
     date: dayjs.Dayjs,
@@ -23,10 +24,13 @@ export interface coordinateBackendAndStateOutput {
     loadStage: loadingStage,
     items: ItemCollection,
     lists: ListCollection,
+    events: EventCollection,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id) => boolean,
+    saveEvent: (newEventConfig: EventRubric) => boolean,
+    deleteEvent: (eventId: Id) => boolean
 };
 
 const coordinateBackendAndState = function(props: coordinateBackendAndStateProps): coordinateBackendAndStateOutput {
@@ -48,6 +52,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     useMemo(() => {
         db.items.loadAll();
         db.lists.loadAll();
+        db.events.loadAll();
     }, []);
 
     useMemo(() => {
@@ -140,10 +145,21 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         return true;
     };
 
+    const saveEvent = (newEventConfig: EventRubric): boolean => {
+        db.events.set(newEventConfig.id, newEventConfig);
+        return true;
+    }
+
+    const deleteEvent = (eventId: Id): boolean => {
+        db.events.del(eventId);
+        return true;
+    }
+
     const log = () => {
         console.log("l", db.lists.data);
         console.log("i", db.items.data);
         console.log("d", relevantListCollection);
+        console.log("e", db.events.data);
     }
 
     useHotkeys([
@@ -158,7 +174,10 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         createItem,
         mutateItem,
         deleteItem,
-        mutateLists
+        mutateLists,
+        events: db.events.data!,
+        saveEvent,
+        deleteEvent
     };
 }
 

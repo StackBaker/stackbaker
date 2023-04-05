@@ -1,17 +1,19 @@
 import useUserDB from "./useUserDB";
 import useItemDB from "./useItemDB";
 import useListDB from "./useListDB";
-import { DO_LATER_LIST_ID } from "../globals";
+import useEventDB from "./useEventDB";
 
 const useDatabase = function() {
     const userDB = useUserDB();
     const itemDB = useItemDB();
     const listDB = useListDB();
+    const eventDB = useEventDB();
 
     return {
         user: userDB,
         items: itemDB,
-        lists: listDB
+        lists: listDB,
+        events: useEventDB()
     };
 };
 

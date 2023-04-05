@@ -45,9 +45,8 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                     fullWidth
                     variant="default"
                     leftIcon={<SettingsIcon />}
-                    onClick={() => { 
-                        db.items.clear();
-                        db.lists.clear();
+                    onClick={() => {
+                        db.events.clear();
                     }}
                 >
                     Settings

@@ -42,13 +42,17 @@ const Planner = function(props: PlannerProps) {
                 :
                 <PlannerMain
                     date={coordination.date}
+                    loadStage={coordination.loadStage}
                     planningStage={planningStage}
                     items={coordination.items}
                     lists={coordination.lists}
+                    events={coordination.events}
                     createItem={coordination.createItem}
                     mutateItem={coordination.mutateItem}
                     deleteItem={coordination.deleteItem}
                     mutateLists={coordination.mutateLists}
+                    saveEvent={coordination.saveEvent}
+                    deleteEvent={coordination.deleteEvent}
                 />
             }
         </AppShell>

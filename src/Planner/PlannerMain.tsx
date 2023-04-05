@@ -7,20 +7,26 @@ import { dateToDayId } from "../dateutils";
 import { planningStage } from "./plannerutils";
 import { ItemRubric, ItemCollection } from "../Item";
 import List from "../List";
-import type { ListRubric, ListCollection } from "../List";
+import type { ListCollection } from "../List";
+import type { EventRubric, EventCollection } from "../Calendars/Event";
 import { DO_LATER_LIST_ID, Id } from "../globals";
 import DayCalendar from "../Calendars/DayCalendar";
 import GridCalendar from "../Calendars/GridCalendar";
+import { loadingStage } from "../coordinateBackendAndState";
 
 interface PlannerMainProps {
     date: dayjs.Dayjs,
+    loadStage: loadingStage,
     planningStage: planningStage,
     items: ItemCollection,
     lists: ListCollection,
+    events: EventCollection,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id) => boolean,
+    saveEvent: (newEventConfig: EventRubric) => boolean,
+    deleteEvent: (eventId: Id) => boolean
 };
 
 // TODO: buttons should be bigger
@@ -56,8 +62,12 @@ const PlannerMain = function(props: PlannerMainProps) {
             <DayCalendar
                 height="80vh"
                 width="310px"
-                currentDay={props.date.startOf("day")}
+                date={props.date}
+                loadStage={props.loadStage}
                 items={props.items}
+                events={props.events}
+                saveEvent={props.saveEvent}
+                deleteEvent={props.deleteEvent}
             />
             {Object.keys(props.lists).map(tlid => {
                 return (
@@ -92,8 +102,12 @@ const PlannerMain = function(props: PlannerMainProps) {
             <DayCalendar
                 height="80vh"
                 width="310px"
-                currentDay={props.date.startOf("day")}
+                date={props.date}
+                loadStage={props.loadStage}
                 items={props.items}
+                events={props.events}
+                saveEvent={props.saveEvent}
+                deleteEvent={props.deleteEvent}
             />
             <List
                 items={props.items}
@@ -106,7 +120,7 @@ const PlannerMain = function(props: PlannerMainProps) {
     );
 
     // TODO: fix this
-    const stages = [StageTwo, StageZero, StageOne, FinalStage]
+    const stages = [StageZero, StageOne, StageTwo, FinalStage]
 
     return (
         <DragDropContext

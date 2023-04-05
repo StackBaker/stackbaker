@@ -8,15 +8,21 @@ import DayCalendar from "../Calendars/DayCalendar";
 import type { ItemRubric, ItemCollection } from "../Item";
 import type { ListCollection } from "../List";
 import type { Id } from "../globals";
+import { EventRubric, EventCollection } from "../Calendars/Event";
+import type { loadingStage } from "../coordinateBackendAndState";
 
 export interface DashboardMainProps {
     date: dayjs.Dayjs,
+    loadStage: loadingStage,
     items: ItemCollection,
     lists: ListCollection,
+    events: EventCollection,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => boolean
+    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => boolean,
+    saveEvent: (newEventConfig: EventRubric) => boolean,
+    deleteEvent: (eventId: Id) => boolean
 };
 
 const DashboardMain = function(props: DashboardMainProps) {
@@ -49,8 +55,12 @@ const DashboardMain = function(props: DashboardMainProps) {
                 <DayCalendar
                     height="80vh"
                     width="310px"
-                    currentDay={props.date.startOf("day")}
+                    date={props.date.startOf("day")}
+                    loadStage={props.loadStage}
                     items={props.items}
+                    events={props.events}
+                    saveEvent={props.saveEvent}
+                    deleteEvent={props.deleteEvent}
                 />
                 {Object.keys(props.lists).map(tlid => {
                     return (

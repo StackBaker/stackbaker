@@ -68,7 +68,9 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                         >
                             Next
                         </Button>
-                        : <Button onClick={() => navigate(paths.DASHBOARD_PATH)}>Go!</Button>
+                        : <Button onClick={() => {
+                            navigate(paths.DASHBOARD_PATH)}
+                        }>Go!</Button>
                     }
                 </Group>
             </Navbar.Section>

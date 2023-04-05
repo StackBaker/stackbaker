@@ -1,9 +1,5 @@
 import type { Id } from "../globals";
-import type { DateInput, EventContentArg } from "@fullcalendar/core";
-import { TextInput, Text, ActionIcon } from "@mantine/core";
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import dayjs from "dayjs";
+import type { DateInput } from "@fullcalendar/core";
 
 export interface EventRubric {
     id: Id,
