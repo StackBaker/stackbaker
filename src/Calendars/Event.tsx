@@ -9,3 +9,5 @@ export interface EventRubric {
 };
 
 export type EventCollection = { [key: Id]: EventRubric };
+
+export type EventList = EventRubric[];

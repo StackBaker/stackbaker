@@ -26,6 +26,7 @@ const Root = function(props: RootProps) {
 	}, [])
 
 	useEffect(() => {
+		// TODO: fix
 		// depending on the existence of a user, route accordingly
 		db.user.get("email").then(u => {
 			if (!u) {
@@ -36,7 +37,7 @@ const Root = function(props: RootProps) {
 				db.lists.has(todayId).then((res) => {
 					if (res)
 						db.lists.get(todayId).then((val) =>
-							((!(val as ListRubric).planned) ? navigate(paths.PLANNER_PATH) : navigate(paths.DASHBOARD_PATH)))
+							((!(val as ListRubric).planned) ? navigate(paths.PLANNER_PATH) : navigate(paths.PLANNER_PATH)))
 					else
 						db.lists.create(props.date).then((res) =>
 							(res) ? navigate(paths.PLANNER_PATH) : null);

@@ -45,7 +45,9 @@ interface ListProps extends ListRubric {
     items: ItemCollection,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
-    deleteItem: (itemId: Id, listId: Id, index: number) => boolean
+    deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
+    
+    collapseItems?: boolean
 };
 
 const List = function(props: ListProps) {
@@ -143,6 +145,7 @@ const List = function(props: ListProps) {
                                     index={idx}
                                     mutateItem={props.mutateItem}
                                     deleteItem={props.deleteItem}
+                                    collapseItem={props.collapseItems}
                                     {...props.items[tid]}
                                 />
                             ))}

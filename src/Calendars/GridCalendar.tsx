@@ -3,10 +3,11 @@ import { Stack } from "@mantine/core";
 import FullCalendar from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/interaction";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import type { DateSelectArg } from "@fullcalendar/core";
+import type { DateSelectArg, EventInput } from "@fullcalendar/core";
 import { v4 as uuid } from "uuid";
 import dayjs from "dayjs";
 
+import type { EventList } from "./Event";
 import "./fullcalendar-vars.css";
 
 interface GridCalendarProps {
@@ -14,17 +15,11 @@ interface GridCalendarProps {
 };
 
 const GridCalendar = function(props: GridCalendarProps) {
-    const height = "85vh";
-    const width = "45vw";
+    const wrapperHeight = "85vh";
+    const wrapperWidth = "45vw";
+    const actualHeight = "140vh";
 
-    const [events, setEvents] = useState([
-        {
-            start: dayjs().toDate(),
-            end: dayjs().add(2, "hours").toDate(),
-            title: "dummy",
-            id: uuid()
-        }
-    ]);
+    const [events, setEvents] = useState<EventList>([]);
 
 	const handleAddTaskThroughSelection = (info: DateSelectArg) => {
 		const start = dayjs(info.start);
@@ -47,26 +42,34 @@ const GridCalendar = function(props: GridCalendarProps) {
 	}
 
     return (
-        <Stack className="grid-cal" h={height} w={width}>
-            <FullCalendar
-                height={height}
-                aspectRatio={9 / 16}
-                plugins={[dayGridPlugin, interactionPlugin]}
-                initialView="dayGridMonth"
-                headerToolbar={{
-                  left: "prev",
-                  center: "title",
-                  right: "next"
-                }}
+        <Stack className="grid-cal" h={wrapperHeight} w={wrapperWidth} sx={{ overflow: "hidden" }}>
+            <Stack sx={{ overflow: "scroll" }}>
+                <FullCalendar
+                    plugins={[dayGridPlugin, interactionPlugin]}
+                    viewHeight={actualHeight}
+                    height={actualHeight}
+                    nowIndicator={true}
+                    
+                    editable={true}
+                    events={events.map(x => x as EventInput)}
 
-                selectable={true}
-                select={handleAddTaskThroughSelection}
+                    selectable={false}
+                    select={handleAddTaskThroughSelection}
 
-                events={events}
-                
-                editable={true}
+                    droppable={true}
+                    drop={(i) => console.log('s', i)}
 
-            />
+                    headerToolbar={{
+                        left: "prev",
+                        center: "title",
+                        right: "next"
+                    }}
+
+                    initialView="dayGridMonth"
+                    displayEventTime={false}
+                    dayMaxEventRows={true}
+                />
+            </Stack>
         </Stack>
     );
 }

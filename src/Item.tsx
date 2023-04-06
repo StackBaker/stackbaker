@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
-import { createStyles, Card, Text, ActionIcon, Stack, Title, TextInput, Textarea, Paper, Group } from "@mantine/core";
+import { createStyles, Card, Text, ActionIcon, Textarea, Group } from "@mantine/core";
 import { useDisclosure, useClickOutside, getHotkeyHandler } from "@mantine/hooks";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { ThirdPartyDraggable } from "@fullcalendar/interaction";
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { ThirdPartyDraggable, Draggable as FCDraggable } from "@fullcalendar/interaction";
 
 import type { Id } from "./globals";
 
 const useStyles = createStyles((theme) => ({
     item: {
         maxWidth: "250px",
-        minHeight: "84px",
         alignItems: "center",
         marginBottom: theme.spacing.sm,
     },
@@ -41,12 +42,15 @@ interface ItemProps extends ItemRubric {
     index: number,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
+
+    collapseItem?: boolean
 };
 
 const Item = function(props: ItemProps) {
     const { classes } = useStyles();
     const [editing, handlers] = useDisclosure(false);
     const [editableContent, changeEditableContent] = useState<string>(props.content);
+    const [collapse, collapseHandlers] = useDisclosure(true);
 
     const handleToggleComplete = () => {
         props.mutateItem(props.itemId, { complete: !props.complete });
@@ -75,6 +79,7 @@ const Item = function(props: ItemProps) {
         return () => draggable.destroy();
     }, [props.content]);
 
+    const collapseDefined = (props.collapseItem !== undefined) && (props.collapseItem);
 
     return (
         <Draggable
@@ -86,56 +91,81 @@ const Item = function(props: ItemProps) {
                     <div ref={editRef} id={props.itemId}>
                     <Card
                         className={classes.item}
+                        mah={(collapseDefined && collapse) ? "54px" : "initial"}
                         ref={provided.innerRef}
                         withBorder
                         {...provided.dragHandleProps}
                         {...provided.draggableProps}
                     >
-                        <Card.Section p="xs" pl="md" pr="md">
-                            <Textarea
-                                placeholder="Item content..."
-                                aria-label={`item-${props.itemId}-input`}
-                                readOnly={!editing}
-                                disabled={props.complete}
-                                variant="unstyled"
-                                value={editableContent}
-                                onClick={() => handlers.open()}
-                                onChange={(e) => changeEditableContent(e.currentTarget.value)}
-                                autosize
-                                onKeyDown={getHotkeyHandler([
-                                    ["Enter", () => { if (editing) handleSubmitContent() }]
-                                ])}
-                                size="sm"
-                            />
+                        <Card.Section
+                            p={(collapseDefined && collapse) ? 0 : "xs"}
+                            px={(collapseDefined && collapse) ? 0 : "md"}
+                        >
+                            {
+                                (collapseDefined && collapse) ? 
+                                <Group position="apart" p="xs">
+                                    <Text size="sm" maw="75%" truncate>{editableContent}</Text>
+                                    <ActionIcon onClick={() => {collapseHandlers.close(); handlers.close()}}>
+                                        <KeyboardArrowDownIcon />
+                                    </ActionIcon>
+                                </Group> :
+                                <Textarea
+                                    placeholder="Item content..."
+                                    aria-label={`item-${props.itemId}-input`}
+                                    readOnly={!editing}
+                                    disabled={props.complete}
+                                    variant="unstyled"
+                                    value={editableContent}
+                                    onClick={() => handlers.open()}
+                                    onChange={(e) => changeEditableContent(e.currentTarget.value)}
+                                    autosize
+                                    onKeyDown={getHotkeyHandler([
+                                        ["Enter", () => { if (editing) handleSubmitContent() }]
+                                    ])}
+                                    size="sm"
+                                />
+                            }
                         </Card.Section>
                         <Card.Section>
-                            <Group pb="sm" pl="md" pr="md" pt={0} position="apart">
-                                <Group position="left" spacing="sm">
-                                    <ActionIcon
-                                        className={classes.check}
-                                        onClick={handleToggleComplete}
-                                    >
+                            {
+                                (collapseDefined && collapse) ? <></> :
+                                <Group pb="sm" pl="md" pr="xs" pt={0} position="apart">
+                                    <Group position="left" spacing="sm">
+                                        <ActionIcon
+                                            className={classes.check}
+                                            onClick={handleToggleComplete}
+                                        >
+                                            {
+                                                (props.complete) ?
+                                                <CheckCircleIcon />
+                                                : <CheckCircleOutlineIcon />
+                                            }
+                                        </ActionIcon>
+                                        <ActionIcon
+                                            className={classes.del}
+                                            onClick={() => props.deleteItem(props.itemId, props.listId, props.index)}
+                                        >
+                                            <DeleteIcon />
+                                        </ActionIcon>
+                                    </Group>
+                                    <Group position="right" spacing="xs">
                                         {
-                                            (props.complete) ?
-                                            <CheckCircleIcon />
-                                            : <CheckCircleOutlineIcon />
+                                            (editing) ?
+                                            <EditIcon className={classes.editSignal}/>
+                                            : null
                                         }
-                                    </ActionIcon>
-                                    <ActionIcon
-                                        className={classes.del}
-                                        onClick={() => props.deleteItem(props.itemId, props.listId, props.index)}
-                                    >
-                                        <DeleteIcon />
-                                    </ActionIcon>
+                                        {
+                                            (collapseDefined) ? 
+                                            <ActionIcon onClick={collapseHandlers.open}>
+                                                <KeyboardArrowUpIcon />
+                                            </ActionIcon>
+                                            : null
+                                        }
+                                    </Group>
+                                    
                                 </Group>
-                                {
-                                    (editing) ?
-                                    <EditIcon className={classes.editSignal}/>
-                                    : null
-                                }
-                            </Group>
+                            }
                         </Card.Section>
-                        {/* pretty formatting, check mark for complete, text wrap */}
                     </Card>
                     </div>
                 )

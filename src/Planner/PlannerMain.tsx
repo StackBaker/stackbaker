@@ -90,6 +90,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 createItem={props.createItem}
                 mutateItem={props.mutateItem}
                 deleteItem={props.deleteItem}
+                collapseItems={props.planningStage === 0}
                 {...props.lists[DO_LATER_LIST_ID]}
             />
         </>
@@ -117,7 +118,7 @@ const PlannerMain = function(props: PlannerMainProps) {
     );
 
     // TODO: fix this
-    const stages = [StageZero, StageOne, StageTwo, FinalStage]
+    const stages = [StageTwo, StageZero, StageOne, FinalStage]
 
     return (
         <DragDropContext

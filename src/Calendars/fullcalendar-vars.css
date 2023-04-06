@@ -1,17 +1,14 @@
 :root {
     --fc-button-text-color: black;
     --fc-button-bg-color: transparent;
-    --fc-page-bg-color: white;
     --fc-button-hover-bg-color: transparent;
     --fc-button-hover-border-color: transparent;
     --fc-button-active-bg-color: transparent;
     --fc-button-active-border-color: transparent;
-    --fc-daygrid-event-dot-width: 0px;
 }
 
 .fc {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background-color: white;
 }
 
 .fc .fc-scroller {
@@ -28,7 +25,8 @@
 }
 
 .grid-cal .fc-day-today {
-    background-color: #617ad434!important;
+    background-color: #e0e4f4!important;
+    opacity: 1;
 }
 
 .day-cal th.fc-timegrid-axis {
@@ -80,7 +78,7 @@
     border: none;
 }
 
-.fc .fc-state-highlight {
+.day-cal .fc-state-highlight {
     opacity: 0;
     border: none;
 }
@@ -88,7 +86,6 @@
 /* Styling for each event from Schedule */
 .fc .fc-time-grid-event.fc-v-event.fc-event {
     border: none;
-    opacity: .65;
     left: 5% !important;
     right: 5% !important;
 }
@@ -130,10 +127,8 @@
 }
 
 /* Inherits background for each event from Schedule. */
-.fc .fc-event .fc-bg {
-    z-index: 1 !important;
-    background: inherit !important;
-    opacity: .25 !important;
+.fc .fc-event {
+    opacity: 1 !important;
 }
 
 /* Apply same opacity to all day events */

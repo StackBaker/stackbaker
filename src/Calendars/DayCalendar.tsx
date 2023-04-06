@@ -37,7 +37,7 @@ const useStyles = createStyles((theme) => ({
 }));
 
 // TODO: put edit modal in a different file
-// TODO: get rid of loading stage param
+// TODO: and give it more params like *recurring* and start time and end time
 
 interface EditEventModalProps {
 	editingEvent: boolean,
@@ -204,6 +204,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 		props.saveEvent(draggedEvent);
 	};
 
+	// TODO: keep in mind eventAdd eventChange eventRemove params of FullCalendar
 	return (
 		<Stack
 			className={classes.calendarWrapper}
