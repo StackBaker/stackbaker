@@ -29,7 +29,7 @@ const Root = function(props: RootProps) {
 		// TODO: fix
 		// depending on the existence of a user, route accordingly
 		db.user.get("email").then(u => {
-			if (!u) {
+			if (u) {
 				return;
 			}
 			else {

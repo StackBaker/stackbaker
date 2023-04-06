@@ -47,7 +47,7 @@ const useEventDB = function() {
         }, SAVE_DELAY);
     }
 
-    const has = async(eventId: Id): Promise<boolean> => {
+    const has = async (eventId: Id): Promise<boolean> => {
         if (events?.hasOwnProperty(eventId)) {
             return true;
         }

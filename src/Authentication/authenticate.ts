@@ -5,7 +5,7 @@ const CLIENT_ID = "870687804326-74jdf4np4ve2cn9usl45giblnud12ah6.apps.googleuser
 const CLIENT_SECRET = "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";
 
 // The redirect URI for the Desktop OAuth2 flow
-// TODO: do this in rust?
+// TODO: do this in rust
 const REDIRECT_URI = 'urn:ietf:wg:oauth:2.0:oob';
 
 const SCOPES = [

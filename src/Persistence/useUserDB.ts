@@ -15,15 +15,15 @@ const useUserDB = function() {
         return val;
     }
 
-    const set = (key: UKEY, val: string | number | Object) => {
+    const set = async (key: UKEY, val: string | number | Object) => {
         clearTimeout(timeoutRef.current!);
-        store.set(key, val)
-            .then(() => {
-                timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
-            });
+        await store.set(key, val);
+        timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
     }
 
-    return { get, set };
+    const clear = store.clear;
+
+    return { get, set, clear };
 };
 
 export default useUserDB;
