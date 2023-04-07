@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
+import type { DraggableStateSnapshot, DraggableStyle } from "@hello-pangea/dnd";
 import { createStyles, Card, Text, ActionIcon, Textarea, Group } from "@mantine/core";
 import { useDisclosure, useClickOutside, getHotkeyHandler } from "@mantine/hooks";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -8,9 +9,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import { ThirdPartyDraggable, Draggable as FCDraggable } from "@fullcalendar/interaction";
+import { ThirdPartyDraggable } from "@fullcalendar/interaction";
 
 import type { Id } from "./globals";
+
+export const ID_IDX_DELIM = "~";
 
 const useStyles = createStyles((theme) => ({
     item: {
@@ -81,14 +84,22 @@ const Item = function(props: ItemProps) {
 
     const collapseDefined = (props.collapseItem !== undefined) && (props.collapseItem);
 
+    const getStyle = (style: DraggableStyle, snapshot: DraggableStateSnapshot) => {
+        if (!snapshot.isDropAnimating || !collapseDefined) {
+            return style;
+        }
+
+        return { ...style, transitionDuration: "0.0001s" };
+    }
+
     return (
         <Draggable
             draggableId={props.itemId}
             index={props.index}
         >
             {
-                (provided) => (
-                    <div ref={editRef} id={props.itemId}>
+                (provided, snapshot) => (
+                    <div ref={editRef} id={`${props.itemId}${ID_IDX_DELIM}${props.index}`}>
                     <Card
                         className={classes.item}
                         mah={(collapseDefined && collapse) ? "54px" : "initial"}
@@ -96,6 +107,7 @@ const Item = function(props: ItemProps) {
                         withBorder
                         {...provided.dragHandleProps}
                         {...provided.draggableProps}
+                        style={getStyle(provided.draggableProps.style!, snapshot)}
                     >
                         <Card.Section
                             p={(collapseDefined && collapse) ? 0 : "xs"}
@@ -103,7 +115,7 @@ const Item = function(props: ItemProps) {
                         >
                             {
                                 (collapseDefined && collapse) ? 
-                                <Group position="apart" p="xs">
+                                <Group position="apart" p="xs" pl="md">
                                     <Text size="sm" maw="75%" truncate>{editableContent}</Text>
                                     <ActionIcon onClick={() => {collapseHandlers.close(); handlers.close()}}>
                                         <KeyboardArrowDownIcon />

@@ -19,7 +19,7 @@ export interface DashboardMainProps {
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, taskId: Id) => boolean,
+    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean
 };

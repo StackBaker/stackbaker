@@ -3,7 +3,7 @@ import { useHotkeys } from "@mantine/hooks";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import dayjs from "dayjs";
 
-import { Id, DO_LATER_LIST_ID } from "./globals";
+import { Id, DO_LATER_LIST_ID, DAY_LIST_ID, DAY_LIST_TITLE } from "./globals";
 import type { ItemRubric, ItemCollection } from "./Item";
 import type { ListRubric, ListCollection } from "./List";
 import type { EventRubric, EventCollection } from "./Calendars/Event";
@@ -24,12 +24,14 @@ export interface coordinateBackendAndStateOutput {
     loadStage: loadingStage,
     items: ItemCollection,
     lists: ListCollection,
+    relevantListCollection: ListCollection,
     events: EventCollection,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
+    attemptCreateList: (date: dayjs.Dayjs | Date) => Promise<boolean>,
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
-    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id) => boolean,
+    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean
 };
@@ -41,11 +43,9 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     const db = useDatabase();
 
     const getListFromDB = (listId: Id): ListRubric | null => {
-        const selectedDayId = dateToDayId(props.date);
-        if (listId !== selectedDayId && listId !== DO_LATER_LIST_ID)
-            return null;
-        
         var newList: ListRubric = structuredClone(db.lists.data![listId]);
+        if (!newList)
+            return null;
         
         return newList;
     };
@@ -127,28 +127,55 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         return true;
     };
 
+    const attemptCreateList = async (_date: dayjs.Dayjs | Date): Promise<boolean> => {
+        const date = dayjs(_date);
+        const listId = dateToDayId(date);
+        const listThere = await db.lists.has(listId);
+        if (listThere)
+            return false;
+        
+        await db.lists.create(date);
+        setLoadStage(1);
+
+        return true;
+    }
+
     const mutateList = async (listId: Id, newConfig: Partial<ListRubric>): Promise<boolean> => {
         const listThere = await db.lists.has(listId);
         if (!listThere)
-            return new Promise((resolve, reject) => reject("List not there"));
+            return false;
 
         const editedList: ListRubric = {
             ...db.lists.data![listId],
             ...newConfig
         };
 
-        console.log("s", editedList);
-
         await db.lists.set(listId, editedList);
+        // not setting load stage because this function is used mainly to store that
+        // a particular day has been planned, which occurs just before a navigate
+        // TODO: test this, see if it still works: setLoadStage(1);
 
-        return new Promise((resolve, reject) => resolve(true));
+        return true;
     }
 
-    const mutateLists = (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id): boolean => {
+    const mutateLists = (
+        sourceOfDrag: DraggableLocation,
+        destinationOfDrag: DraggableLocation,
+        draggableId: Id,
+        createNewLists: boolean = false,
+    ): boolean => {
         if (sourceOfDrag.droppableId === destinationOfDrag.droppableId) {
             var list = getListFromDB(sourceOfDrag.droppableId);
             if (list === null)
-                return false;
+                if (createNewLists)
+                    list = {
+                        listId: sourceOfDrag.droppableId,
+                        title: DAY_LIST_TITLE,
+                        itemIds: [],
+                        planned: false
+                    };
+                else
+                    return false;
 
             var temp = list.itemIds[sourceOfDrag.index];
             list.itemIds[sourceOfDrag.index] = list.itemIds[destinationOfDrag.index];
@@ -158,8 +185,29 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
             var sourceList = getListFromDB(sourceOfDrag.droppableId);
             var destList = getListFromDB(destinationOfDrag.droppableId);
 
-            if (sourceList === null || destList === null)
-                return false;
+            // Assume that a list can only be null if it is a day list
+            if (sourceList === null)
+                if (createNewLists)
+                    sourceList = {
+                        listId: sourceOfDrag.droppableId,
+                        title: DAY_LIST_TITLE,
+                        itemIds: [],
+                        planned: false
+                    };
+                else
+                    return false;
+            
+            if (destList === null)
+                if (createNewLists)
+                    destList = {
+                        listId: sourceOfDrag.droppableId,
+                        title: DAY_LIST_TITLE,
+                        itemIds: [],
+                        planned: false
+                    };
+                else
+                    return false;
+                
             sourceList.itemIds.splice(sourceOfDrag.index, 1);
             destList.itemIds.splice(destinationOfDrag.index, 0, draggableId);
             db.lists.setMany(
@@ -188,7 +236,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         console.log("i", db.items.data);
         console.log("d", relevantListCollection);
         console.log("e", db.events.data);
-        console.log("t", props.date);
     }
 
     useHotkeys([
@@ -199,10 +246,12 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         setDate: props.setDate,
         loadStage,
         items: db.items.data!,
-        lists: relevantListCollection,
+        lists: db.lists.data!,
+        relevantListCollection,
         createItem,
         mutateItem,
         deleteItem,
+        attemptCreateList,
         mutateList,
         mutateLists,
         events: db.events.data!,

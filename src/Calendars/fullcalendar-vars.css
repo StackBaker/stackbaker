@@ -126,6 +126,11 @@
     vertical-align: top !important;
 }
 
+.grid-cal .fc-event-title {
+    font-weight: normal !important;
+    /* NOTE: can change the font of events in the grid here if you want */
+}
+
 /* Inherits background for each event from Schedule. */
 .fc .fc-event {
     opacity: 1 !important;

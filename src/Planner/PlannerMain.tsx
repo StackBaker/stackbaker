@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import type { DraggableLocation, DropResult } from "@hello-pangea/dnd";
 import { Group } from "@mantine/core";
@@ -12,18 +13,22 @@ import type { EventRubric, EventCollection } from "../Calendars/Event";
 import { DO_LATER_LIST_ID, Id } from "../globals";
 import DayCalendar from "../Calendars/DayCalendar";
 import GridCalendar from "../Calendars/GridCalendar";
+import type { overrideDragEndAttrs } from "../Calendars/GridCalendar";
 import { loadingStage } from "../coordinateBackendAndState";
 
 interface PlannerMainProps {
     date: dayjs.Dayjs,
+    loadStage: loadingStage,
     planningStage: planningStage,
     items: ItemCollection,
     lists: ListCollection,
+    relevantListCollection: ListCollection,
     events: EventCollection,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id) => boolean,
+    attemptCreateList: (date: dayjs.Dayjs | Date) => Promise<boolean>,
+    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean
 };
@@ -33,9 +38,18 @@ interface PlannerMainProps {
 // TODO: Change the StageOne message
 // TODO: finish the grid calendar
 
-
 const PlannerMain = function(props: PlannerMainProps) {
+    // hack idea: manage the drop source and destination in parent state here
+    const [override, setDragOverride] = useState<overrideDragEndAttrs | null>(null);
+
     const onDragEnd = function(result: DropResult) {
+        console.log("fired");
+        if (override !== null) {
+            props.mutateLists(override.sourceOfDrag, override.destinationOfDrag, override.draggableId, true);
+            setDragOverride(null);
+            return;
+        }
+
         const { source, destination, draggableId } = result;
 
         if (!destination || (source.droppableId === destination.droppableId &&
@@ -52,7 +66,7 @@ const PlannerMain = function(props: PlannerMainProps) {
             createItem={props.createItem}
             mutateItem={props.mutateItem}
             deleteItem={props.deleteItem}
-            {...props.lists[dateToDayId(props.date)]}
+            {...props.relevantListCollection[dateToDayId(props.date)]}
         />
     );
 
@@ -67,7 +81,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 saveEvent={props.saveEvent}
                 deleteEvent={props.deleteEvent}
             />
-            {Object.keys(props.lists).map(tlid => {
+            {Object.keys(props.relevantListCollection).map(tlid => {
                 return (
                     <List
                         key={tlid}
@@ -75,15 +89,21 @@ const PlannerMain = function(props: PlannerMainProps) {
                         createItem={props.createItem}
                         mutateItem={props.mutateItem}
                         deleteItem={props.deleteItem}
-                        {...props.lists[tlid]}
+                        {...props.relevantListCollection[tlid]}
                     />
                 )})}
         </>
     );
 
-    const StageTwo = (
+    const StageTwo = (props.loadStage === 2) ? (
         <>
             <GridCalendar
+                setDragOverride={setDragOverride}
+                loadStage={props.loadStage}
+                items={props.items}
+                lists={props.lists}
+                attemptCreateList={props.attemptCreateList}
+                mutateLists={props.mutateLists}
             />
             <List
                 items={props.items}
@@ -91,9 +111,11 @@ const PlannerMain = function(props: PlannerMainProps) {
                 mutateItem={props.mutateItem}
                 deleteItem={props.deleteItem}
                 collapseItems={props.planningStage === 0}
-                {...props.lists[DO_LATER_LIST_ID]}
+                {...props.relevantListCollection[DO_LATER_LIST_ID]}
             />
         </>
+    ) : (
+        <></>
     );
 
     const FinalStage = (
@@ -112,7 +134,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 createItem={props.createItem}
                 mutateItem={props.mutateItem}
                 deleteItem={props.deleteItem}
-                {...props.lists[dateToDayId(props.date)]}
+                {...props.relevantListCollection[dateToDayId(props.date)]}
             />
         </>
     );

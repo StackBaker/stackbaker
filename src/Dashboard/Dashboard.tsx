@@ -47,7 +47,7 @@ const Dashboard = function(props: DashboardProps) {
                 <DashboardMain
                     date={props.date}
                     items={coordination.items}
-                    lists={coordination.lists}
+                    lists={coordination.relevantListCollection}
                     events={coordination.events}
                     createItem={coordination.createItem}
                     mutateItem={coordination.mutateItem}

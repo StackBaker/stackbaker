@@ -13,7 +13,7 @@ import { v4 as uuid } from "uuid";
 import type { EventCollection, EventRubric } from "./Event";
 import type { Id } from "../globals";
 import "./fullcalendar-vars.css";
-import { ItemCollection } from "../Item";
+import { ID_IDX_DELIM, ItemCollection } from "../Item";
 import { useNavigate } from "react-router-dom";
 import { PLANNER_PATH } from "../paths";
 
@@ -189,7 +189,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 	const handleAddEventThroughDrop = (dropInfo: DropArg) => {
 		const el = dropInfo.draggedEl;
-		const id = el.id;
+		const [id, _] = el.id.split(ID_IDX_DELIM);
 
 		// NOTE: operating assumption: the div id of the item is exactly the itemId
 		const item = props.items[id];
