@@ -2,15 +2,16 @@ import dayjs from "dayjs";
 import { Navbar, Button, Space } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import SettingsIcon from '@mui/icons-material/Settings';
-import useDatabase from "../Persistence/useDatabase";
+
 import { getToday } from "../dateutils";
+import "../styles.css";
 
 interface SettingsProps {
 
 };
 
 const Settings = function(props: SettingsProps) {
-    // TODO: maybe create a React context to know user information like email, etc
+
     
 };
 
@@ -20,12 +21,11 @@ export interface DashLeftPanelProps {
 };
 
 const DashboardLeftPanel = function(props: DashLeftPanelProps) {
-    // TODO: remove this: this function shouldn't be using the database
-    const db = useDatabase();
 
     return (
         <Navbar
             p="md"
+            className="fade-in"
             hiddenBreakpoint="sm"
             hidden={false}
             width={{ sm: 250, lg: 250 }}
@@ -46,11 +46,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                     fullWidth
                     variant="default"
                     leftIcon={<SettingsIcon />}
-                    onClick={() => {
-                        db.events.clear();
-                        db.items.clear();
-                        db.lists.clear();
-                    }}
+                    onClick={() => {}}
                 >
                     Settings
                 </Button>

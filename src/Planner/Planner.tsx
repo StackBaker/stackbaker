@@ -7,12 +7,11 @@ import coordinateBackendAndState from "../coordinateBackendAndState";
 import type { coordinateBackendAndStateProps } from "../coordinateBackendAndState";
 import PlannerLeftPanel from "./PlannerLeftPanel";
 import PlannerMain from "./PlannerMain";
-import "./planner.css";
+import "../styles.css";
 
 type PlannerProps = coordinateBackendAndStateProps;
 
 const Planner = function(props: PlannerProps) {
-    // TODO: at 6am when you initiate the window switch to the planner at boot up (from root)
     // TODO: at the same time, search for unfinished tasks from the previous day
     // TODO: and actually store them in the listdb for the new day: CREATE A NEW ATOMIC useListDB function
     const actionAreaHeight = "95vh";

@@ -65,10 +65,11 @@ const EditItemModal = function(props: EditItemModalProps) {
 						props.saveEditingItem();
 				}]])}
 		>
-			<Group align="stretch" m="xs">
+			<Group w="100%" align="stretch" m="xs">
 				<TextInput
 					ref={inputRef}
 					label="Content"
+					miw="90%"
 					value={props.itemBeingEdited?.content}
 					onChange={handleChangeTitle}
 				/>
@@ -182,7 +183,7 @@ const GridCalendar = function(props: GridCalendarProps) {
     }
 
     // TODO: be able to change the month while dragging?
-    // TODO: BUG: list id getting changed to later list
+    // TODO: POTENITAL BUG: list id getting changed to later list: haven't been seeing this happening
 
     const handleEventDrag = (changeInfo: EventChangeArg) => {
         const sourceListId = dateToDayId(changeInfo.oldEvent.start!);

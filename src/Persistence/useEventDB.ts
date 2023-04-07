@@ -3,14 +3,10 @@ import { Store } from "tauri-plugin-store-api";
 
 import { SAVE_DELAY } from "./dbutils";
 import type { EventRubric, EventCollection } from "../Calendars/Event";
-import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, Id } from "../globals";
-import dayjs from "dayjs";
-import { dateToDayId } from "../dateutils";
+import { Id } from "../globals";
 
 const EVENTS_FNAME = "events.dat";
 
-// TODO: properly test this
-// TODO: periodically clean the database
 const useEventDB = function() {
     const store = new Store(EVENTS_FNAME);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

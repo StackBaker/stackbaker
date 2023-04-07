@@ -36,9 +36,6 @@ const useStyles = createStyles((theme) => ({
     }
 }));
 
-// TODO: put edit modal in a different file
-// TODO: and give it more params like *recurring* and start time and end time
-
 interface EditEventModalProps {
 	editingEvent: boolean,
 	saveEditingEvent: () => void,
@@ -72,10 +69,11 @@ const EditEventModal = function(props: EditEventModalProps) {
 						props.saveEditingEvent();
 				}]])}
 		>
-			<Group align="stretch" m="xs">
+			<Group w="100%" m="xs">
 				<TextInput
 					ref={inputRef}
 					label="Title"
+					miw="90%"
 					value={props.eventBeingEdited?.title}
 					onChange={handleChangeTitle}
 				/>
@@ -101,8 +99,6 @@ interface DayCalendarProps {
 	saveEvent: (newEventConfig: EventRubric) => boolean,
 	deleteEvent: (eventId: Id) => boolean
 };
-
-// TODO: cleanup types with readonlys
 
 const DayCalendar = function(props: DayCalendarProps) {
 	const navigate = useNavigate();
@@ -203,7 +199,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 		props.saveEvent(draggedEvent);
 	};
 
-	// TODO: keep in mind eventAdd eventChange eventRemove params of FullCalendar
 	return (
 		<Stack
 			className={classes.calendarWrapper}

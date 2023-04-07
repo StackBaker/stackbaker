@@ -9,7 +9,7 @@ import type { ItemRubric, ItemCollection } from "../Item";
 import type { ListCollection } from "../List";
 import type { Id } from "../globals";
 import { EventRubric, EventCollection } from "../Calendars/Event";
-import type { loadingStage } from "../coordinateBackendAndState";
+import "../styles.css";
 
 export interface DashboardMainProps {
     date: dayjs.Dayjs,
@@ -39,14 +39,12 @@ const DashboardMain = function(props: DashboardMainProps) {
     }
 
     // TODO: implement undo with mod+Z
-    // TODO: maybe header can display loading messages while retrieving stuff from backend
-    // TODO: or retrieving stuff from GCal
-    // TODO: make x in event editing delete an event if it has no content
     return (
         <DragDropContext
             onDragEnd={onDragEnd}
         >
             <Group
+                className="fade-in"
                 position="left"
                 spacing="lg"
                 align="flex-start"

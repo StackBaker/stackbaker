@@ -41,6 +41,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     const [relevantListCollection, setRelevantListCollection] = useState<ListCollection>({});
     
     const db = useDatabase();
+    // TODO: potential bug: events not being loaded
 
     const getListFromDB = (listId: Id): ListRubric | null => {
         var newList: ListRubric = structuredClone(db.lists.data![listId]);
@@ -51,13 +52,15 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     };
 
     useMemo(() => {
-        db.items.loadAll();
-        db.lists.loadAll();
-        db.events.loadAll();
+        db.items.loadAll().then();
+        db.lists.loadAll().then();
+        db.events.loadAll().then();
+        setLoadStage(0);
     }, []);
 
     useMemo(() => {
-        setLoadStage(0);
+        if (loadStage !== 0)
+            return;
         const selectedDayId = dateToDayId(props.date);
         db.lists.has(selectedDayId).then((res) => {
             if (!res)
@@ -151,9 +154,9 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         };
 
         await db.lists.set(listId, editedList);
-        // not setting load stage because this function is used mainly to store that
+        // testing setting load stage because this function is used mainly to store that
         // a particular day has been planned, which occurs just before a navigate
-        // TODO: test this, see if it still works: setLoadStage(1);
+        setLoadStage(1);
 
         return true;
     }

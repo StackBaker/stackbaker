@@ -6,6 +6,10 @@ import { SAVE_DELAY } from "./dbutils";
 const USER_FNAME = "users.dat";
 type UKEY = "email" | "auth";
 
+// Config values
+// day duration (min 24 hours), default duration of dropping events into calendar
+// clear tasks database (DANGER)
+
 const useUserDB = function() {
     const store = new Store(USER_FNAME);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
