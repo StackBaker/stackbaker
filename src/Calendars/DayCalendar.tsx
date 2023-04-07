@@ -118,7 +118,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [editingEvent, handlers] = useDisclosure(false);
 	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
 	const [newEventId, setNewEventId] = useState<Id>("");
-	// TODO: this will probably need loading stages in the coordinate backend and state
 
 	useEffect(() => {
 		// hack for preventing that one long error when adding changing events

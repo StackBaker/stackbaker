@@ -127,8 +127,8 @@
 }
 
 .grid-cal .fc-event-title {
-    font-weight: normal !important;
     /* NOTE: can change the font of events in the grid here if you want */
+    font-weight: normal !important;
 }
 
 /* Inherits background for each event from Schedule. */

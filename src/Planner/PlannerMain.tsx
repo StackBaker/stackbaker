@@ -27,7 +27,6 @@ interface PlannerMainProps {
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-    attemptCreateList: (date: dayjs.Dayjs | Date) => Promise<boolean>,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean
@@ -102,7 +101,9 @@ const PlannerMain = function(props: PlannerMainProps) {
                 loadStage={props.loadStage}
                 items={props.items}
                 lists={props.lists}
-                attemptCreateList={props.attemptCreateList}
+                createItem={props.createItem}
+                mutateItem={props.mutateItem}
+                deleteItem={props.deleteItem}
                 mutateLists={props.mutateLists}
             />
             <List
