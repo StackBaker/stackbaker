@@ -17,7 +17,6 @@ interface RootProps {
 
 const Root = function(props: RootProps) {
 	const navigate = useNavigate();
-	// TODO: navigate to dashboard only if the day has been planned
 	const db = useDatabase();
 
 	useEffect(() => {
@@ -26,7 +25,6 @@ const Root = function(props: RootProps) {
 	}, [])
 
 	useEffect(() => {
-		// TODO: fix
 		// depending on the existence of a user, route accordingly
 		db.user.get("email").then(u => {
 			if (u) {
@@ -37,11 +35,19 @@ const Root = function(props: RootProps) {
 				const todayId = dateToDayId(props.date);
 				db.lists.has(todayId).then((res) => {
 					if (res)
-						db.lists.get(todayId).then((val) =>
-							((!(val as ListRubric).planned) ? navigate(paths.PLANNER_PATH) : navigate(paths.DASHBOARD_PATH)))
+						db.lists.get(todayId).then((val) => {
+							if (getToday().isSame(props.date, "day") && !(val as ListRubric).planned)
+								navigate(paths.PLANNER_PATH);
+							else
+								navigate(paths.DASHBOARD_PATH)
+						});
 					else
-						db.lists.create(props.date).then((res) =>
-							(res) ? navigate(paths.PLANNER_PATH) : null);
+						db.lists.create(props.date).then(() => {
+							if (getToday().isSame(props.date, "day"))
+								navigate(paths.PLANNER_PATH);
+							else
+								navigate(paths.DASHBOARD_PATH)
+						});
 				});
 			}
 		});
