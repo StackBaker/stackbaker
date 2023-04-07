@@ -159,24 +159,6 @@ const GridCalendar = function(props: GridCalendarProps) {
         changeItemBeingEdited(dummyItem);
     };
 
-	const handleAddItemThroughSelection = (info: DateSelectArg) => {
-		const start = dayjs(info.start);
-        const listId = dateToDayId(start);
-
-        const newItem: ItemWithMutationInfo = {
-            itemId: uuid(),
-            content: "",
-            complete: false,
-            listId: listId,
-            index: props.lists[listId].itemIds.length
-        };
-
-        console.log("hi");
-
-		props.createItem({ itemId: newItem.itemId, content: newItem.content, complete: newItem.complete }, listId);
-        changeItemBeingEdited(newItem);
-	}
-
     const handleAddItemThroughDrop = (info: DropArg) => {
         const el = info.draggedEl;
 		const [id, sourceIndex] = el.id.split(ID_IDX_DELIM);
@@ -245,8 +227,7 @@ const GridCalendar = function(props: GridCalendarProps) {
                     eventChange={handleEventDrag}
                     eventClick={handleEventClick}
 
-                    selectable={true}
-                    select={handleAddItemThroughSelection}
+                    selectable={false}
 
                     droppable={true}
                     drop={handleAddItemThroughDrop}

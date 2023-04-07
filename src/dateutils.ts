@@ -22,3 +22,7 @@ export const dayIdToDay = function(dayid: DayId): dayjs.Dayjs {
 export const getToday = function(offset: ReturnType<typeof dayjs.duration> = DEFAULT_OFFSET) {
     return dayjs().add(offset).startOf("day");
 }
+
+export const getNow = function(offset: ReturnType<typeof dayjs.duration> = DEFAULT_OFFSET) {
+    return dayjs().add(offset);
+}
