@@ -249,10 +249,10 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     }
 
     const clearEverything = (): void => {
-        db.user.clear().then();
-        db.lists.clear().then();
-        db.items.clear().then();
-        db.events.clear().then();
+        db.user.clear();
+        db.lists.clear();
+        db.items.clear();
+        db.events.clear();
     }
 
     const log = () => {

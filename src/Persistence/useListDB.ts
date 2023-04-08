@@ -132,14 +132,11 @@ const useListDB = function() {
         setLists(newLists);
     }
 
-    const clear = async () => {
-        if (timeoutRef.current)
-            clearTimeout(timeoutRef.current!);
-
+    // TODO: should these functions be async?
+    const clear = () => {
         setLists({});
-        await store.clear();
-        // await store.save();
-        timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
+        store.clear();
+        store.save();
     }
 
     // make sure the do later list is there

@@ -85,10 +85,10 @@ const useEventDB = function() {
         setEvents(newEvents);
     }
 
-    const clear = async() => {
+    const clear = () => {
         setEvents({});
-        await store.clear();
-        await store.save();
+        store.clear();
+        store.save();
     }
 
     return { data: events, get, set, has, del, loadAll, clear };
