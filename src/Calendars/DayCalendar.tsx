@@ -224,7 +224,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 				deleteEditingEvent={deleteEditingEvent}
 			/>
 			<Group position="apart">
-				<Title size="h2" pl="xs">
+				<Title order={2} pl="xs">
 					{props.date.format("MMMM D, YYYY")}
 				</Title>
 				<Button

@@ -1,15 +1,44 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import dayjs from "dayjs";
-import { Stack, Navbar, Button, Space, TextInput, Title } from "@mantine/core";
+import { Modal, Group, Stack, Navbar, Button, Space, TextInput, Text, Title } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import SettingsIcon from '@mui/icons-material/Settings';
+import DangerousIcon from '@mui/icons-material/Dangerous';
 import { useDisclosure } from "@mantine/hooks";
-import { getHotkeyHandler } from "@mantine/hooks";
-import { useForm } from "@mantine/form";
+import { useNavigate } from "react-router-dom";
 
 import { getToday } from "../dateutils";
 import "../styles.css";
 import type { UserRubric } from "../Persistence/useUserDB";
+import { ROOT_PATH } from "../paths";
+import useDatabase from "../Persistence/useDatabase";
+
+interface ConfirmModalProps {
+    opened: boolean,
+    confirm: () => void
+    cancel: () => void
+};
+
+const ConfirmModal = (props: ConfirmModalProps) => {
+    return (
+        <Modal
+            opened={props.opened}
+            title={<Text>Confirm deletion</Text>}
+            onClose={props.cancel}
+            centered
+        >
+            <Stack spacing="xl">
+                <Text pl="xs">Are you sure you want to delete all app data?</Text>
+                <Space h="md" />
+                <Group position="apart">
+                    <Button onClick={props.cancel}>Cancel</Button>
+                    <Button variant="outline" color="red" onClick={props.confirm}>Confirm</Button>
+                </Group>
+            </Stack>
+        </Modal>
+    );
+}
+
 
 export interface DashLeftPanelProps {
     user: UserRubric,
@@ -19,7 +48,10 @@ export interface DashLeftPanelProps {
 };
 
 const DashboardLeftPanel = function(props: DashLeftPanelProps) {
+    const db = useDatabase();
+    const navigate = useNavigate();
     const [settingsOpen, handlers] = useDisclosure(false);
+    const [confirmOpen, confirmHandlers] = useDisclosure(false);
     const [accountBeingEdited, setAccountBeingEdited] = useState<{ [k in keyof UserRubric]: string }>();
 
     useEffect(() => {
@@ -51,6 +83,19 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
         props.editUser({ defaultEventLength: newEvtLen, hoursInDay: newHours, });
     }
 
+    const confirmDeleteEverything = () => {
+        db.user.clear();
+        db.items.clear();
+        db.lists.clear();
+        db.events.clear();
+        confirmHandlers.close();
+        navigate(ROOT_PATH);
+    }
+
+    const confirmCancel = () => {
+        confirmHandlers.close();
+    }
+
     return (
         <Navbar
             p="md"
@@ -60,6 +105,11 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
             width={{ sm: 250, lg: 250 }}
         >
             <Navbar.Section>
+                <ConfirmModal
+                    opened={confirmOpen}
+                    confirm={confirmDeleteEverything}
+                    cancel={confirmCancel}
+                />
                 { (settingsOpen) ? 
                     <Stack spacing="md">
                         <Title order={2}>Settings</Title>
@@ -102,13 +152,24 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
             <Navbar.Section>
                 {
                     (settingsOpen) ?
-                    <Button
-                        fullWidth
-                        variant="outline"
-                        onClick={() => props.editUser(null)}
-                    >
-                        Reset to defaults
-                    </Button>
+                    <Stack>
+                        <Button
+                            fullWidth
+                            variant="outline"
+                            onClick={() => props.editUser(null)}
+                        >
+                            Reset to defaults
+                        </Button>
+                        <Button
+                            fullWidth
+                            variant="outline"
+                            color="red"
+                            leftIcon={<DangerousIcon />}
+                            onClick={() => confirmHandlers.open()}
+                        >
+                            Clear data
+                        </Button>
+                    </Stack>
                     : null
                 }
                 <Space h="lg"></Space>

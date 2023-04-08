@@ -64,7 +64,11 @@ const useUserDB = function() {
         setUser(newUser);
     }
 
-    const clear = store.clear;
+    const clear = async () => {
+        const email: string = (await get("email")) as string;
+        await store.clear();
+        await set("email", email);
+    }
 
     return { data: user, get, set, replaceUser, load, clear };
 };

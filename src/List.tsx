@@ -106,7 +106,7 @@ const List = function(props: ListProps) {
             className={classes.listWrapper}
             p="sm"
         >
-            <Title size="h2" pl="xs">{props.title}</Title>
+            <Title order={2} pl="xs">{props.title}</Title>
             {
                 (adding) ?
                 <form onSubmit={handleSubmitNewItem}>

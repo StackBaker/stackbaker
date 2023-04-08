@@ -107,7 +107,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         let list = getListFromDB(listId);
         if (list === null) return false;
 
-        list.itemIds.push(newItemConfig.itemId);
+        list.itemIds.unshift(newItemConfig.itemId);
         db.items.set(newItemConfig.itemId, newItemConfig);
         db.lists.set(listId, list);
         setLoadStage(1);
