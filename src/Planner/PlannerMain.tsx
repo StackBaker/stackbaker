@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import type { DraggableLocation, DropResult } from "@hello-pangea/dnd";
 import { Group } from "@mantine/core";
@@ -15,8 +15,10 @@ import DayCalendar from "../Calendars/DayCalendar";
 import GridCalendar from "../Calendars/GridCalendar";
 import type { overrideDragEndAttrs } from "../Calendars/GridCalendar";
 import { loadingStage } from "../coordinateBackendAndState";
+import { UserRubric } from "../Persistence/useUserDB";
 
 interface PlannerMainProps {
+    readonly user: UserRubric,
     date: dayjs.Dayjs,
     loadStage: loadingStage,
     planningStage: planningStage,
@@ -40,7 +42,14 @@ interface PlannerMainProps {
 const PlannerMain = function(props: PlannerMainProps) {
     // hack idea: manage the drop source and destination in parent state here
     const [override, setDragOverride] = useState<overrideDragEndAttrs | null>(null);
+    const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
 
+    useEffect(() => {
+        if (!props.user)
+            return;
+        setEventDuration(props.user.defaultEventLength);
+    }, [props.user.defaultEventLength])
+    
     const onDragEnd = function(result: DropResult) {
         console.log("fired");
         if (override !== null) {
@@ -65,6 +74,7 @@ const PlannerMain = function(props: PlannerMainProps) {
             createItem={props.createItem}
             mutateItem={props.mutateItem}
             deleteItem={props.deleteItem}
+            eventDuration={eventDuration}
             {...props.relevantListCollection[dateToDayId(props.date)]}
         />
     );
@@ -72,6 +82,7 @@ const PlannerMain = function(props: PlannerMainProps) {
     const StageOne = (
         <>
             <DayCalendar
+                user={props.user}
                 height="80vh"
                 width="310px"
                 date={props.date}
@@ -88,6 +99,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                         createItem={props.createItem}
                         mutateItem={props.mutateItem}
                         deleteItem={props.deleteItem}
+                        eventDuration={eventDuration}
                         {...props.relevantListCollection[tlid]}
                     />
                 )})}
@@ -111,6 +123,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 createItem={props.createItem}
                 mutateItem={props.mutateItem}
                 deleteItem={props.deleteItem}
+                eventDuration={eventDuration}
                 collapseItems={props.planningStage === 2}
                 {...props.relevantListCollection[DO_LATER_LIST_ID]}
             />
@@ -122,6 +135,7 @@ const PlannerMain = function(props: PlannerMainProps) {
     const FinalStage = (
         <>
             <DayCalendar
+                user={props.user}
                 height="80vh"
                 width="310px"
                 date={props.date}
@@ -135,6 +149,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 createItem={props.createItem}
                 mutateItem={props.mutateItem}
                 deleteItem={props.deleteItem}
+                eventDuration={eventDuration}
                 {...props.relevantListCollection[dateToDayId(props.date)]}
             />
         </>

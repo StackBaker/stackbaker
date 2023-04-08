@@ -10,6 +10,7 @@ import { v4 as uuid } from "uuid";
 import { useForm } from "@mantine/form";
 
 import { DAY_LIST_ID, DO_LATER_LIST_ID } from "./globals";
+import { UserRubric } from "./Persistence/useUserDB";
 
 const useStyles = createStyles((theme) => ({
     listWrapper: {
@@ -47,6 +48,7 @@ interface ListProps extends ListRubric {
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     
+    eventDuration: number,
     collapseItems?: boolean
 };
 
@@ -139,12 +141,13 @@ const List = function(props: ListProps) {
                             pl={0}
                         >
                             {props.itemIds.map((tid, idx) => (
-                                <Item 
+                                <Item
                                     key={tid}
                                     listId={props.listId}
                                     index={idx}
                                     mutateItem={props.mutateItem}
                                     deleteItem={props.deleteItem}
+                                    eventDuration={props.eventDuration}
                                     collapseItem={props.collapseItems}
                                     {...props.items[tid]}
                                 />

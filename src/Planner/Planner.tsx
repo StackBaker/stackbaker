@@ -42,6 +42,7 @@ const Planner = function(props: PlannerProps) {
                 (coordination.loadStage !== 2) ? <div></div>
                 :
                 <PlannerMain
+                    user={coordination.user}
                     date={coordination.date}
                     loadStage={coordination.loadStage}
                     planningStage={planningStage}

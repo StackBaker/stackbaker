@@ -9,6 +9,7 @@ import type { ListRubric, ListCollection } from "./List";
 import type { EventRubric, EventCollection } from "./Calendars/Event";
 import useDatabase from "./Persistence/useDatabase";
 import { dateToDayId } from "./dateutils";
+import type { UserRubric } from "./Persistence/useUserDB";
 
 // 0: nothing loaded; 1: db updated, need to reload; 2: fully loaded
 export type loadingStage = 0 | 1 | 2;
@@ -19,6 +20,7 @@ export interface coordinateBackendAndStateProps {
 };
 
 export interface coordinateBackendAndStateOutput {
+    user: UserRubric,
     date: dayjs.Dayjs,
     setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
     loadStage: loadingStage,
@@ -26,6 +28,7 @@ export interface coordinateBackendAndStateOutput {
     lists: ListCollection,
     relevantListCollection: ListCollection,
     events: EventCollection,
+    editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
@@ -52,10 +55,11 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     };
 
     useMemo(() => {
+        setLoadStage(0);
+        db.user.load().then();
         db.items.loadAll().then();
         db.lists.loadAll().then();
         db.events.loadAll().then();
-        setLoadStage(0);
     }, []);
 
     useMemo(() => {
@@ -89,6 +93,15 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         });
         setLoadStage(2);
     }, [loadStage, props.date, db.lists.data, db.items.data]);
+
+    const editUser = (newUserConfig: Partial<UserRubric> | null): boolean => {
+        let newUserData: UserRubric = { ...db.user.data!, ...newUserConfig };
+        if (newUserConfig === null)
+            db.user.replaceUser(null);
+        else
+            db.user.replaceUser(newUserData);
+        return true;
+    }
 
     const createItem = (newItemConfig: ItemRubric, listId: Id): boolean => {
         let list = getListFromDB(listId);
@@ -239,18 +252,21 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         console.log("i", db.items.data);
         console.log("d", relevantListCollection);
         console.log("e", db.events.data);
+        console.log("u", db.user.data);
     }
 
     useHotkeys([
         ['P', log]
     ]);
     return {
+        user: db.user.data!,
         date: props.date,
         setDate: props.setDate,
         loadStage,
         items: db.items.data!,
         lists: db.lists.data!,
         relevantListCollection,
+        editUser: editUser,
         createItem,
         mutateItem,
         deleteItem,

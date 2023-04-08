@@ -12,6 +12,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { ThirdPartyDraggable } from "@fullcalendar/interaction";
 
 import type { Id } from "./globals";
+import { UserRubric } from "./Persistence/useUserDB";
 
 export const ID_IDX_DELIM = "~";
 
@@ -46,6 +47,7 @@ interface ItemProps extends ItemRubric {
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
 
+    eventDuration: number,
     collapseItem?: boolean
 };
 
@@ -73,14 +75,14 @@ const Item = function(props: ItemProps) {
         let draggable = new ThirdPartyDraggable(editRef.current!, {
             eventData: {
                 title: props.content!,
-                duration: "1:00",
+                duration: props.eventDuration * 60 * 1000,
                 create: false
             }
         });
 
         // a cleanup function
         return () => draggable.destroy();
-    }, [props.content]);
+    }, [props.content, props.eventDuration]);
 
     const collapseDefined = (props.collapseItem !== undefined) && (props.collapseItem);
 

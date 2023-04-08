@@ -20,8 +20,10 @@ const Root = function(props: RootProps) {
 	const db = useDatabase();
 
 	useEffect(() => {
+		db.user.load().then();
 		db.items.loadAll();
 		db.lists.loadAll();
+		db.events.loadAll();
 	}, [])
 
 	useEffect(() => {

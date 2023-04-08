@@ -26,8 +26,11 @@ const Dashboard = function(props: DashboardProps) {
             }}
             navbarOffsetBreakpoint="sm"
             navbar={
+                (coordination.loadStage !== 2) ? <div></div> :
                 <DashboardLeftPanel
+                    user={coordination.user}
                     date={props.date}
+                    editUser={coordination.editUser}
                     setDate={props.setDate}
                 />
             }
@@ -45,6 +48,7 @@ const Dashboard = function(props: DashboardProps) {
                 (coordination.loadStage !== 2) ? <div></div>
                 :
                 <DashboardMain
+                    user={coordination.user}
                     date={props.date}
                     items={coordination.items}
                     lists={coordination.relevantListCollection}

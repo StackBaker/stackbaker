@@ -16,6 +16,7 @@ import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM, ItemCollection } from "../Item";
 import { useNavigate } from "react-router-dom";
 import { PLANNER_PATH } from "../paths";
+import type { UserRubric } from "../Persistence/useUserDB";
 
 const useStyles = createStyles((theme) => ({
 	calendarWrapper: {
@@ -94,6 +95,7 @@ interface DayCalendarProps {
 	height: string | number,
 	width: string | number
 	date: dayjs.Dayjs,
+	readonly user: UserRubric,
 	readonly items: ItemCollection,
 	events: EventCollection,
 	saveEvent: (newEventConfig: EventRubric) => boolean,
@@ -103,7 +105,6 @@ interface DayCalendarProps {
 const DayCalendar = function(props: DayCalendarProps) {
 	const navigate = useNavigate();
 	const { classes } = useStyles();
-	const dayDuration = "30:00:00"; // 30 hour days: TODO: should be a config value
 
 	const dummyEvent = {
 		id: uuid(),
@@ -114,6 +115,8 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [editingEvent, handlers] = useDisclosure(false);
 	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
 	const [newEventId, setNewEventId] = useState<Id>("");
+	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay * 60 * 60 * 1000);
+	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
 
 	useEffect(() => {
 		// hack for preventing that one long error when adding changing events
@@ -125,6 +128,14 @@ const DayCalendar = function(props: DayCalendarProps) {
 		changeEventBeingEdited(props.events[newEventId]);
 		setNewEventId("");
 	}, [newEventId]);
+
+	useEffect(() => {
+		if (!props.user)
+			return;
+		
+		setDayDuration(props.user.hoursInDay * 60 * 60 * 1000);
+		setEventDuration(props.user.defaultEventLength);
+	}, [props.user]);
 
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
 		const newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[changeInfo.event.id].start;
@@ -193,13 +204,13 @@ const DayCalendar = function(props: DayCalendarProps) {
 			id: uuid(),
 			title: item.content,
 			start: dropInfo.date,
-			end: dayjs(dropInfo.date).add(1, "hour").toDate()
+			end: dayjs(dropInfo.date).add(eventDuration, "minutes").toDate()
 		};
 
 		props.saveEvent(draggedEvent);
 	};
 
-	return (
+	return ( (!props.user) ? <div></div> :
 		<Stack
 			className={classes.calendarWrapper}
 			sx={{ width: props.width }}

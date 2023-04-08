@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { Group } from "@mantine/core";
 import dayjs from "dayjs";
@@ -8,10 +9,12 @@ import DayCalendar from "../Calendars/DayCalendar";
 import type { ItemRubric, ItemCollection } from "../Item";
 import type { ListCollection } from "../List";
 import type { Id } from "../globals";
+import type { UserRubric } from "../Persistence/useUserDB";
 import { EventRubric, EventCollection } from "../Calendars/Event";
 import "../styles.css";
 
 export interface DashboardMainProps {
+    readonly user: UserRubric,
     date: dayjs.Dayjs,
     items: ItemCollection,
     lists: ListCollection,
@@ -26,6 +29,13 @@ export interface DashboardMainProps {
 
 const DashboardMain = function(props: DashboardMainProps) {
     const listWidth = "250px";
+    const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
+
+    useEffect(() => {
+        if (!props.user)
+            return;
+        setEventDuration(props.user.defaultEventLength);
+    }, [props.user.defaultEventLength])
 
     const onDragEnd = function(result: DropResult) {
         const { source, destination, draggableId } = result;
@@ -50,6 +60,7 @@ const DashboardMain = function(props: DashboardMainProps) {
                 align="flex-start"
             >
                 <DayCalendar
+                    user={props.user}
                     height="80vh"
                     width="310px"
                     date={props.date.startOf("day")}
@@ -66,6 +77,7 @@ const DashboardMain = function(props: DashboardMainProps) {
                             createItem={props.createItem}
                             mutateItem={props.mutateItem}
                             deleteItem={props.deleteItem}
+                            eventDuration={eventDuration}
                             {...props.lists[tlid]}
                         />
                     )})}
