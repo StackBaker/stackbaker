@@ -44,7 +44,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     const [relevantListCollection, setRelevantListCollection] = useState<ListCollection>({});
     
     const db = useDatabase();
-    // TODO: potential bug: events not being loaded
 
     const getListFromDB = (listId: Id): ListRubric | null => {
         var newList: ListRubric = structuredClone(db.lists.data![listId]);

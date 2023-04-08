@@ -12,7 +12,7 @@ import "../styles.css";
 type PlannerProps = coordinateBackendAndStateProps;
 
 const Planner = function(props: PlannerProps) {
-    // TODO: at the same time, search for unfinished tasks from the previous day
+    // TODO: FEATURE FOR NEXT RELEASE: search for unfinished tasks from the previous day
     // TODO: and actually store them in the listdb for the new day: CREATE A NEW ATOMIC useListDB function
     const actionAreaHeight = "95vh";
     const [planningStage, setPlanningStage] = useState<planningStage>(0);

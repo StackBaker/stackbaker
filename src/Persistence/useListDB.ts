@@ -60,7 +60,6 @@ const useListDB = function() {
         else
             newLists = {};
         
-        // TODO: inefficient?
         keys.map((k, i) => {
             let v = vals[i];
             newLists[k] = v;

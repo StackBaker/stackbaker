@@ -71,7 +71,6 @@ const Item = function(props: ItemProps) {
 
     useEffect(() => {
         // reference: https://github.com/fullcalendar/fullcalendar-react/issues/118#issuecomment-761278598
-        // default task length is 1 hour: TODO: make this a config value
         let draggable = new ThirdPartyDraggable(editRef.current!, {
             eventData: {
                 title: props.content!,

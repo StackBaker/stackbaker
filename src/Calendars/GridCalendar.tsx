@@ -183,7 +183,7 @@ const GridCalendar = function(props: GridCalendarProps) {
     }
 
     // TODO: be able to change the month while dragging?
-    // TODO: POTENITAL BUG: list id getting changed to later list: haven't been seeing this happening
+    // TODO: POTENTIAL BUG: list id getting changed to later list: haven't been seeing this happening
 
     const handleEventDrag = (changeInfo: EventChangeArg) => {
         const sourceListId = dateToDayId(changeInfo.oldEvent.start!);

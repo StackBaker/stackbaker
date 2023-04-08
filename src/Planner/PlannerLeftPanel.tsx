@@ -26,12 +26,11 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
         2: "Plan to deal with what you can't get to today.",
         3: "Finalize your day."
     };
-    // TODO: trigger animation
 
     const tidbits: stageStrings = {
         0: "Don't worry about when or how – we'll go through that later.\
             Simply, empty your mind.",
-        1: "Plan your day. If something can't fit in your schedule, drag it into the Later list.",
+        1: "Plan your day. If something can't fit in your schedule, drag it into the Later list. Or maybe, something you saved for later can fit in your schedule today.",
         2: "Drag and drop items from your Later list into the days you know \
             you'll be able to deal with them.",
         3: "Review your plan, and get ready for the day."

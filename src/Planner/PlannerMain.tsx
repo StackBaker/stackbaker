@@ -34,11 +34,6 @@ interface PlannerMainProps {
     deleteEvent: (eventId: Id) => boolean
 };
 
-// TODO: buttons should be bigger
-// TODO: calendar events are not stored persistently
-// TODO: Change the StageOne message
-// TODO: finish the grid calendar
-
 const PlannerMain = function(props: PlannerMainProps) {
     // hack idea: manage the drop source and destination in parent state here
     const [override, setDragOverride] = useState<overrideDragEndAttrs | null>(null);
