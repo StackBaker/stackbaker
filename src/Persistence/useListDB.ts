@@ -28,7 +28,9 @@ const useListDB = function() {
         return val;
     }
 
-    const set = async (key: Id, val: ListRubric) => {
+    // NOTE: the calls to setList should be synchronous, but the calls to store.set perhaps should be async
+    // TODO: if changing around async stuff works here, propagate it to other dbs
+    const set = (key: Id, val: ListRubric) => {
         if (timeoutRef.current)
             clearTimeout(timeoutRef.current!);
 
@@ -40,14 +42,14 @@ const useListDB = function() {
         newLists[key] = val;
         setLists(newLists);
 
-        await store.set(key, val)
+        store.set(key, val)
         timeoutRef.current = setTimeout(() => {
             store.save();
             console.log("lists saved")
         }, SAVE_DELAY);
     }
 
-    const setMany = async (keys: Id[], vals: ListRubric[]): Promise<boolean> => {
+    const setMany = (keys: Id[], vals: ListRubric[]): boolean => {
         if (keys.length !== vals.length)
             return false;
 
@@ -63,7 +65,7 @@ const useListDB = function() {
         keys.map((k, i) => {
             let v = vals[i];
             newLists[k] = v;
-            store.set(k, v).then();
+            store.set(k, v);
         });
         setLists(newLists);
         
@@ -75,7 +77,7 @@ const useListDB = function() {
         return true;
     }
 
-    const has = async(listId: Id): Promise<boolean> => {
+    const has = async( listId: Id): Promise<boolean> => {
         const listInStore = await store.has(listId);
         if (listInStore) {
             return true;
@@ -84,7 +86,7 @@ const useListDB = function() {
         return false;
     }
 
-    const create = async (date: dayjs.Dayjs | null): Promise<boolean> => {
+    const create = (date: dayjs.Dayjs | null): boolean => {
         // create a new empty list for a particular date or the do later list
         let listId;
         if (date === null)
@@ -94,16 +96,16 @@ const useListDB = function() {
 
         const newList = {
             listId: listId,
-            title: (date) ? DAY_LIST_TITLE : DO_LATER_LIST_TITLE,
+            title: (!date) ? DO_LATER_LIST_TITLE: DAY_LIST_TITLE,
             itemIds: [],
             planned: false
         };
-        await set(listId, newList);
+        set(listId, newList);
         
         return true;
     }
 
-    const del = async (key: Id) => {
+    const del = (key: Id) => {
         if (timeoutRef.current)
             clearTimeout(timeoutRef.current!);
 
@@ -116,7 +118,7 @@ const useListDB = function() {
         setLists(newLists);
         
         // then write through to disk
-        await store.delete(key);
+        store.delete(key);
         timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
     }
 

@@ -30,6 +30,7 @@ const Planner = function(props: PlannerProps) {
             }}
             navbarOffsetBreakpoint="sm"
             navbar={
+                (coordination.loadStage !== 2) ? <div></div> :
                 <PlannerLeftPanel
                     date={props.date}
                     planningStage={planningStage}
@@ -39,8 +40,7 @@ const Planner = function(props: PlannerProps) {
             }
         >
             {
-                (coordination.loadStage !== 2) ? <div></div>
-                :
+                (coordination.loadStage !== 2) ? <div></div> :
                 <PlannerMain
                     user={coordination.user}
                     date={coordination.date}

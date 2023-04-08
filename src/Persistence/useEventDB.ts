@@ -24,7 +24,7 @@ const useEventDB = function() {
         return val;
     }
 
-    const set = async (key: Id, val: EventRubric) => {
+    const set = (key: Id, val: EventRubric) => {
         if (timeoutRef.current)
             clearTimeout(timeoutRef.current!);
 
@@ -36,7 +36,7 @@ const useEventDB = function() {
         newEvents[key] = val;
         setEvents(newEvents);
 
-        await store.set(key, val)
+        store.set(key, val)
         timeoutRef.current = setTimeout(() => {
             store.save();
             console.log("events saved")
@@ -44,10 +44,6 @@ const useEventDB = function() {
     }
 
     const has = async (eventId: Id): Promise<boolean> => {
-        if (events?.hasOwnProperty(eventId)) {
-            return true;
-        }
-
         const eventInStore = await store.has(eventId);
         if (eventInStore) {
             return true;
@@ -56,7 +52,7 @@ const useEventDB = function() {
         return false;
     }
 
-    const del = async (key: Id) => {
+    const del = (key: Id) => {
         if (timeoutRef.current)
             clearTimeout(timeoutRef.current!);
 
@@ -69,7 +65,7 @@ const useEventDB = function() {
         setEvents(newEvents);
         
         // then write through to disk
-        await store.delete(key);
+        store.delete(key);
         timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
     }
 

@@ -30,10 +30,10 @@ const useUserDB = function() {
         return new Promise((resolve, reject) => resolve(val));
     }
 
-    const set = async (key: keyof UserRubric, val: ValidAttr) => {
+    const set = (key: keyof UserRubric, val: ValidAttr) => {
         clearTimeout(timeoutRef.current!);
         setUser({ ...user!, [key]: val });
-        await store.set(key, val);
+        store.set(key, val);
         timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
     }
 

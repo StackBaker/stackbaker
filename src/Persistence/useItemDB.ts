@@ -26,7 +26,7 @@ const useItemDB = function() {
         return val;
     }
 
-    const set = async (key: Id, val: ItemRubric) => {
+    const set = (key: Id, val: ItemRubric) => {
         if (timeoutRef.current)
             clearTimeout(timeoutRef.current!);
 
@@ -39,16 +39,14 @@ const useItemDB = function() {
         setItems(newItems);
         
         // then write through to disk
-        await store.set(key, val)
-            .then(() => {
-                timeoutRef.current = setTimeout(() => {
-                    store.save();
-                    console.log("items saved");
-                }, SAVE_DELAY);
-            });
+        store.set(key, val);
+        timeoutRef.current = setTimeout(() => {
+            store.save();
+            console.log("items saved");
+        }, SAVE_DELAY);
     }
 
-    const del = async (key: Id) => {
+    const del = (key: Id) => {
         if (timeoutRef.current)
             clearTimeout(timeoutRef.current!);
 
@@ -61,10 +59,8 @@ const useItemDB = function() {
         setItems(newItems);
         
         // then write through to disk
-        await store.delete(key)
-            .then(() => {
-                timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
-            });
+        store.delete(key);
+        timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
     }
 
     const loadAll = async () => {

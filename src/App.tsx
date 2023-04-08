@@ -45,7 +45,7 @@ const Root = function(props: RootProps) {
 						});
 					} else {
 						console.log("here")
-						db.lists.create(props.date).then();
+						db.lists.create(props.date);
 						if (getToday().isSame(props.date, "day"))
 							navigate(paths.PLANNER_PATH);
 						else

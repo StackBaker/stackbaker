@@ -8,11 +8,11 @@ import type { ItemRubric, ItemCollection } from "./Item";
 import type { ListRubric, ListCollection } from "./List";
 import type { EventRubric, EventCollection } from "./Calendars/Event";
 import useDatabase from "./Persistence/useDatabase";
-import { dateToDayId } from "./dateutils";
+import { dateToDayId, getToday } from "./dateutils";
 import type { UserRubric } from "./Persistence/useUserDB";
 
-// 0: nothing loaded; 1: db updated, need to reload; 2: fully loaded
-export type loadingStage = 0 | 1 | 2;
+// -1: nothing loaded 0: db loaded; 1: db updated, need to reload; 2: fully loaded
+export type loadingStage = -1 | 0 | 1 | 2;
 
 export interface coordinateBackendAndStateProps {
     date: dayjs.Dayjs,
@@ -32,7 +32,6 @@ export interface coordinateBackendAndStateOutput {
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-    attemptCreateList: (date: dayjs.Dayjs | Date) => Promise<boolean>,
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
@@ -42,7 +41,7 @@ export interface coordinateBackendAndStateOutput {
 };
 
 const coordinateBackendAndState = function(props: coordinateBackendAndStateProps): coordinateBackendAndStateOutput {
-    const [loadStage, setLoadStage] = useState<loadingStage>(0);
+    const [loadStage, setLoadStage] = useState<loadingStage>(-1);
     const [relevantListCollection, setRelevantListCollection] = useState<ListCollection>({});
     
     const db = useDatabase();
@@ -56,24 +55,30 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     };
 
     useMemo(() => {
+        if (loadStage !== -1)
+            return;
         db.user.load().then();
         db.items.loadAll().then();
         db.lists.loadAll().then();
         db.events.loadAll().then();
         setLoadStage(0);
-    }, []);
+    }, [loadStage]);
 
+    // TODO: try making the DB functions not async
     useMemo(() => {
         if (loadStage !== 0)
             return;
         const selectedDayId = dateToDayId(props.date);
         db.lists.has(selectedDayId).then((res) => {
-            if (!res)
-                db.lists.create(props.date).then(() => setLoadStage(1));
-            else
-                setLoadStage(1);
+            if (!res) {
+                db.lists.create(props.date);
+                setLoadStage(-1)
+                return;
+            }
+            
+            setLoadStage(1);
         });
-    }, [props.date]);
+    }, [loadStage, props.date]);
 
     useMemo(() => {
         const selectedDayId = dateToDayId(props.date);
@@ -144,19 +149,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         return true;
     };
 
-    const attemptCreateList = async (_date: dayjs.Dayjs | Date): Promise<boolean> => {
-        const date = dayjs(_date);
-        const listId = dateToDayId(date);
-        const listThere = await db.lists.has(listId);
-        if (listThere)
-            return false;
-        
-        await db.lists.create(date);
-        setLoadStage(1);
-
-        return true;
-    }
-
     const mutateList = async (listId: Id, newConfig: Partial<ListRubric>): Promise<boolean> => {
         const listThere = await db.lists.has(listId);
         if (!listThere)
@@ -167,7 +159,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
             ...newConfig
         };
 
-        await db.lists.set(listId, editedList);
+        db.lists.set(listId, editedList);
         // testing setting load stage because this function is used mainly to store that
         // a particular day has been planned, which occurs just before a navigate
         setLoadStage(1);
@@ -249,6 +241,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     }
 
     const clearEverything = (): void => {
+        props.setDate(getToday());
         db.user.clear();
         db.lists.clear();
         db.items.clear();
@@ -261,6 +254,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         console.log("d", relevantListCollection);
         console.log("e", db.events.data);
         console.log("u", db.user.data);
+        console.log("s", loadStage);
     }
 
     useHotkeys([
@@ -278,7 +272,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         createItem,
         mutateItem,
         deleteItem,
-        attemptCreateList,
         mutateList,
         mutateLists,
         events: db.events.data!,
