@@ -79,6 +79,7 @@ const useItemDB = function() {
     }
 
     const clear = async() => {
+        setItems({});
         await store.clear();
         await store.save();
     }

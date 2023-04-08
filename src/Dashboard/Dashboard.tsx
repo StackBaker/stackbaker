@@ -32,6 +32,7 @@ const Dashboard = function(props: DashboardProps) {
                     date={props.date}
                     editUser={coordination.editUser}
                     setDate={props.setDate}
+                    clearEverything={coordination.clearEverything}
                 />
             }
             header={

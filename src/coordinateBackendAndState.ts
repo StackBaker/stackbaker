@@ -36,7 +36,9 @@ export interface coordinateBackendAndStateOutput {
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
-    deleteEvent: (eventId: Id) => boolean
+    deleteEvent: (eventId: Id) => boolean,
+
+    clearEverything: () => void,
 };
 
 const coordinateBackendAndState = function(props: coordinateBackendAndStateProps): coordinateBackendAndStateOutput {
@@ -54,11 +56,11 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     };
 
     useMemo(() => {
-        setLoadStage(0);
         db.user.load().then();
         db.items.loadAll().then();
         db.lists.loadAll().then();
         db.events.loadAll().then();
+        setLoadStage(0);
     }, []);
 
     useMemo(() => {
@@ -246,6 +248,13 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         return true;
     }
 
+    const clearEverything = (): void => {
+        db.user.clear().then();
+        db.lists.clear().then();
+        db.items.clear().then();
+        db.events.clear().then();
+    }
+
     const log = () => {
         console.log("l", db.lists.data);
         console.log("i", db.items.data);
@@ -274,7 +283,8 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         mutateLists,
         events: db.events.data!,
         saveEvent,
-        deleteEvent
+        deleteEvent,
+        clearEverything
     };
 }
 

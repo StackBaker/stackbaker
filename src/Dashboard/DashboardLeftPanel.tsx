@@ -11,7 +11,6 @@ import { getToday } from "../dateutils";
 import "../styles.css";
 import type { UserRubric } from "../Persistence/useUserDB";
 import { ROOT_PATH } from "../paths";
-import useDatabase from "../Persistence/useDatabase";
 
 interface ConfirmModalProps {
     opened: boolean,
@@ -44,11 +43,11 @@ export interface DashLeftPanelProps {
     user: UserRubric,
     date: dayjs.Dayjs,
     editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
-    setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>
+    setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
+    clearEverything: () => void,
 };
 
 const DashboardLeftPanel = function(props: DashLeftPanelProps) {
-    const db = useDatabase();
     const navigate = useNavigate();
     const [settingsOpen, handlers] = useDisclosure(false);
     const [confirmOpen, confirmHandlers] = useDisclosure(false);
@@ -84,11 +83,8 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
     }
 
     const confirmDeleteEverything = () => {
-        db.user.clear();
-        db.items.clear();
-        db.lists.clear();
-        db.events.clear();
         confirmHandlers.close();
+        props.clearEverything();
         navigate(ROOT_PATH);
     }
 

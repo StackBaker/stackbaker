@@ -10,7 +10,7 @@ const EVENTS_FNAME = "events.dat";
 const useEventDB = function() {
     const store = new Store(EVENTS_FNAME);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [events, setEvents] = useState<EventCollection>();
+    const [events, setEvents] = useState<EventCollection>({});
 
     const get = async (key: Id) => {
         // the use of setState is not as a cache: it's an efficient duplicate
@@ -86,6 +86,7 @@ const useEventDB = function() {
     }
 
     const clear = async() => {
+        setEvents({});
         await store.clear();
         await store.save();
     }

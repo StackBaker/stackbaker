@@ -76,10 +76,6 @@ const useListDB = function() {
     }
 
     const has = async(listId: Id): Promise<boolean> => {
-        if (lists?.hasOwnProperty(listId)) {
-            return true;
-        }
-
         const listInStore = await store.has(listId);
         if (listInStore) {
             return true;
@@ -136,9 +132,14 @@ const useListDB = function() {
         setLists(newLists);
     }
 
-    const clear = async() => {
+    const clear = async () => {
+        if (timeoutRef.current)
+            clearTimeout(timeoutRef.current!);
+
+        setLists({});
         await store.clear();
-        await store.save();
+        // await store.save();
+        timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
     }
 
     // make sure the do later list is there

@@ -21,9 +21,9 @@ const Root = function(props: RootProps) {
 
 	useEffect(() => {
 		db.user.load().then();
-		db.items.loadAll();
-		db.lists.loadAll();
-		db.events.loadAll();
+		db.items.loadAll().then();
+		db.lists.loadAll().then();
+		db.events.loadAll().then();
 	}, [])
 
 	useEffect(() => {
@@ -35,21 +35,22 @@ const Root = function(props: RootProps) {
 			}
 			else {
 				const todayId = dateToDayId(props.date);
-				db.lists.has(todayId).then((res) => {
-					if (res)
+				db.lists.has(todayId).then((res: boolean) => {
+					if (res) {
 						db.lists.get(todayId).then((val) => {
 							if (getToday().isSame(props.date, "day") && !(val as ListRubric).planned)
 								navigate(paths.PLANNER_PATH);
 							else
 								navigate(paths.DASHBOARD_PATH)
 						});
-					else
-						db.lists.create(props.date).then(() => {
-							if (getToday().isSame(props.date, "day"))
-								navigate(paths.PLANNER_PATH);
-							else
-								navigate(paths.DASHBOARD_PATH)
-						});
+					} else {
+						console.log("here")
+						db.lists.create(props.date).then();
+						if (getToday().isSame(props.date, "day"))
+							navigate(paths.PLANNER_PATH);
+						else
+							navigate(paths.DASHBOARD_PATH);
+					}
 				});
 			}
 		});
