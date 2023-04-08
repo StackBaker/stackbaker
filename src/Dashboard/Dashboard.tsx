@@ -5,6 +5,7 @@ import DashboardLeftPanel from "./DashboardLeftPanel";
 import { DO_LATER_LIST_ID } from "../globals";
 import coordinateBackendAndState from "../coordinateBackendAndState";
 import type { coordinateBackendAndStateProps } from "../coordinateBackendAndState";
+import "../styles.css"
 
 type DashboardProps = coordinateBackendAndStateProps;
 
@@ -38,7 +39,7 @@ const Dashboard = function(props: DashboardProps) {
             header={
                 <Header height={{ base: headerHeight /* , md: 70 */ }} p="md">
                     <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-                        <Text ff="JetBrains Mono">
+                        <Text className="dash-header">
                             {(coordination.loadStage === 2) ? "StackBaker" : "Loading..."}
                         </Text>
                     </div>

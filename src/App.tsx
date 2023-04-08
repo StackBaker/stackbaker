@@ -4,6 +4,7 @@ import useDatabase from "./Persistence/useDatabase";
 import { useNavigate, createMemoryRouter, RouterProvider, Link } from "react-router-dom";
 import { MantineProvider } from "@mantine/core";
 import "./App.css";
+import "./styles.css";
 
 import * as paths from "./paths";
 import Dashboard from "./Dashboard/Dashboard";

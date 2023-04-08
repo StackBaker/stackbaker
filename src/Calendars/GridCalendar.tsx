@@ -7,7 +7,7 @@ import FullCalendar from "@fullcalendar/react";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import type { DateSelectArg, EventChangeArg, EventClickArg, EventInput } from "@fullcalendar/core";
+import type { EventAddArg, EventRemoveArg, EventClickArg, EventInput } from "@fullcalendar/core";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -118,6 +118,10 @@ const GridCalendar = function(props: GridCalendarProps) {
     const [events, setEvents] = useState<EventList>([]);
     const [editingItem, handlers] = useDisclosure(false);
     const [itemBeingEdited, changeItemBeingEdited] = useState<ItemWithMutationInfo>(dummyItem);
+    
+    const [draggedCalItemId, setDraggedCalItemId] = useState<Id | null>(null);
+    const [calendarItemOldDate, setCalItemOldDate] = useState<Date | null>(null);
+    const [calendarItemNewDate, setCalItemNewDate] = useState<Date | null>(null);
 
     useEffect(() => {
         // run once on render to initialize the events
@@ -185,11 +189,9 @@ const GridCalendar = function(props: GridCalendarProps) {
     // TODO: be able to change the month while dragging?
     // TODO: POTENTIAL BUG: list id getting changed to later list: haven't been seeing this happening
 
-    const handleEventDrag = (changeInfo: EventChangeArg) => {
-        const sourceListId = dateToDayId(changeInfo.oldEvent.start!);
-        const destListId = dateToDayId(changeInfo.event.start!);
-        
-        const itemId = getIdFromEventRepr(changeInfo.event.id);
+    const handleEventDrag = (oldDate: Date, newDate: Date, itemId: Id) => {
+        const sourceListId = dateToDayId(oldDate);
+        const destListId = dateToDayId(newDate);
 
         const sourceIndex = props.lists[sourceListId].itemIds.indexOf(itemId);
         const destIndex = 0;
@@ -208,6 +210,26 @@ const GridCalendar = function(props: GridCalendarProps) {
         );
     }
 
+    const handleEventAdd = (addInfo: EventAddArg) => {
+        setDraggedCalItemId(getIdFromEventRepr(addInfo.event.id));
+        setCalItemNewDate(addInfo.event.start!);
+    }
+
+    const handleEventRemove = (removeInfo: EventRemoveArg) => {
+        setCalItemOldDate(removeInfo.event.start!);
+    }
+
+    useEffect(() => {
+        if (!draggedCalItemId || !calendarItemOldDate || !calendarItemNewDate)
+            return;
+        
+        handleEventDrag(calendarItemOldDate!, calendarItemNewDate!, draggedCalItemId!)
+        
+        setDraggedCalItemId(null);
+        setCalItemNewDate(null);
+        setCalItemOldDate(null);
+    }, [draggedCalItemId, calendarItemOldDate, calendarItemNewDate]);
+
     return (
         <Stack className="grid-cal" h={wrapperHeight} w={wrapperWidth} sx={{ overflow: "hidden" }}>
             <EditItemModal
@@ -225,9 +247,10 @@ const GridCalendar = function(props: GridCalendarProps) {
                     nowIndicator={true}
                     
                     editable={true}
-                    events={events.map(x => x as EventInput)}
-                    eventChange={handleEventDrag}
+                    eventAdd={handleEventAdd}
+                    eventRemove={handleEventRemove}
                     eventClick={handleEventClick}
+                    events={events.map(x => x as EventInput)}
 
                     selectable={false}
 

@@ -66,7 +66,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
 
     // TODO: try making the DB functions not async
     useMemo(() => {
-        if (loadStage !== 0)
+        if (loadStage !== 0 && loadStage !== 1)
             return;
         const selectedDayId = dateToDayId(props.date);
         db.lists.has(selectedDayId).then((res) => {
@@ -246,6 +246,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         db.lists.clear();
         db.items.clear();
         db.events.clear();
+        setLoadStage(-1);
     }
 
     const log = () => {
