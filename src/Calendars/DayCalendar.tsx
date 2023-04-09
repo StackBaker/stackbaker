@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import dayjs from "dayjs";
 import FullCalendar from "@fullcalendar/react";
-import type { DateSelectArg, EventChangeArg, EventClickArg, EventInput } from "@fullcalendar/core";
+import type { DateSelectArg, EventAddArg, EventRemoveArg, EventChangeArg, EventClickArg, EventInput } from "@fullcalendar/core";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
@@ -11,6 +11,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
 
 import type { EventCollection, EventRubric } from "./Event";
+import { createEventReprId, getIdFromEventRepr } from "./Event";
 import type { Id } from "../globals";
 import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM, ItemCollection } from "../Item";
@@ -107,7 +108,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const { classes } = useStyles();
 
 	const dummyEvent = {
-		id: uuid(),
+		id: createEventReprId(uuid()),
 		title: "",
 		start: dayjs().subtract(1, "hour").startOf("hour").toDate(),
 		end: dayjs().startOf("hour").toDate(),
@@ -117,6 +118,13 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [newEventId, setNewEventId] = useState<Id>("");
 	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay * 60 * 60 * 1000);
 	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
+
+	// again a stupid hack to deal with fullcalendar
+	const [draggedCalEventInfo, setDraggedCalEventInfo] =
+		useState<{ newId: Id | null, newStart: Date | null, newEnd: Date | null }>({
+			newId: null, newStart: null, newEnd: null
+		});
+	const [draggedCalEventOldId, setDraggedCalEventOldId] = useState<Id | null>(null);
 
 	useEffect(() => {
 		// hack for preventing that one long error when adding changing events
@@ -137,9 +145,31 @@ const DayCalendar = function(props: DayCalendarProps) {
 		setEventDuration(props.user.defaultEventLength);
 	}, [props.user]);
 
+	useEffect(() => {
+		console.log("dr", draggedCalEventInfo, draggedCalEventOldId)
+		if (Object.values(draggedCalEventInfo).some(x => (!x)) || !draggedCalEventOldId)
+			return;
+		
+		if (draggedCalEventOldId === draggedCalEventInfo.newId)
+			props.saveEvent({
+				...props.events[draggedCalEventInfo.newId!],
+				start: draggedCalEventInfo.newStart!,
+				end: draggedCalEventInfo.newEnd!
+			});
+		
+		setDraggedCalEventInfo({ newId: null, newStart: null, newEnd: null });
+		setDraggedCalEventOldId(null);
+	}, [draggedCalEventInfo])
+
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
 		const newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[changeInfo.event.id].start;
 		const newEnd = (changeInfo.event.start) ? changeInfo.event.end : props.events[changeInfo.event.id].end;
+
+		// hack for dealing with fullcalendar
+		// FC fires eventChange, eventAdd, eventRemove and eventDrop when dragging events
+		// this function should only handle dragging the ending of an event
+		if (newStart !== props.events[changeInfo.event.id].start)
+			return;
 
 		props.saveEvent({
 			...props.events[changeInfo.event.id],
@@ -147,6 +177,14 @@ const DayCalendar = function(props: DayCalendarProps) {
 			end: newEnd
 		});
 	};
+
+	const handleEventAdd = (addInfo: EventAddArg) => {
+		setDraggedCalEventInfo({ newId: addInfo.event.id, newStart: addInfo.event.start!, newEnd: addInfo.event.end! });
+	}
+
+	const handleEventRemove = (removeInfo: EventRemoveArg) => {
+		setDraggedCalEventOldId(removeInfo.event.id);
+	}
 
 	const handleEventClick = (clickInfo: EventClickArg) => {
 		// open the edit modal
@@ -182,7 +220,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 			end = start.add(15, "minute");
 		}
 
-		const newEventId = uuid();
+		const newEventId = createEventReprId(uuid());
 		const newEvent = {
 			id: newEventId,
 			title: "",
@@ -194,11 +232,14 @@ const DayCalendar = function(props: DayCalendarProps) {
 	}
 
 	const handleAddEventThroughDrop = (dropInfo: DropArg) => {
+		console.log("drop", dropInfo);
 		const el = dropInfo.draggedEl;
 		const [id, _] = el.id.split(ID_IDX_DELIM);
 
 		// NOTE: operating assumption: the div id of the item is exactly the itemId
 		const item = props.items[id];
+		if (!item)
+			return;
 
 		const draggedEvent: EventRubric = {
 			id: uuid(),
@@ -251,6 +292,8 @@ const DayCalendar = function(props: DayCalendarProps) {
 					events={Object.keys(props.events).map(eid => props.events[eid] as EventInput)}
 					eventChange={handleEventDrag}
 					eventClick={handleEventClick}
+					eventAdd={handleEventAdd}
+					eventRemove={handleEventRemove}
 
 					selectable={true}
 					select={handleAddEventThroughSelection}

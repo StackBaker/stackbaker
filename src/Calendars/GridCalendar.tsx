@@ -11,6 +11,7 @@ import type { EventAddArg, EventRemoveArg, EventClickArg, EventInput } from "@fu
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import DeleteIcon from "@mui/icons-material/Delete";
 
+import { createEventReprId, getIdFromEventRepr } from "./Event";
 import type { EventList } from "./Event";
 import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM } from "../Item";
@@ -19,10 +20,6 @@ import type { ListCollection } from "../List";
 import type { loadingStage } from "../coordinateBackendAndState";
 import { dateToDayId, dayIdToDay } from "../dateutils";
 import { DO_LATER_LIST_ID, Id } from "../globals";
-
-const EVENT_ID_PREFIX = "event-"
-const createEventReprId = (id: Id): Id => `${EVENT_ID_PREFIX}${id}`;
-const getIdFromEventRepr = (eventId: Id) => eventId.split(EVENT_ID_PREFIX)[1];
 
 type ItemWithMutationInfo = ItemRubric & { listId: Id, index: number };
 
@@ -119,6 +116,7 @@ const GridCalendar = function(props: GridCalendarProps) {
     const [editingItem, handlers] = useDisclosure(false);
     const [itemBeingEdited, changeItemBeingEdited] = useState<ItemWithMutationInfo>(dummyItem);
     
+    // TODO: starter: can this be cleaned up, made into one setState object?
     const [draggedCalItemId, setDraggedCalItemId] = useState<Id | null>(null);
     const [calendarItemOldDate, setCalItemOldDate] = useState<Date | null>(null);
     const [calendarItemNewDate, setCalItemNewDate] = useState<Date | null>(null);
