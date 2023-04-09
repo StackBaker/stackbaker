@@ -209,7 +209,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
             if (destList === null)
                 if (createNewLists)
                     destList = {
-                        listId: sourceOfDrag.droppableId,
+                        listId: destinationOfDrag.droppableId,
                         title: DAY_LIST_TITLE,
                         itemIds: [],
                         planned: false

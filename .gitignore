@@ -13,6 +13,7 @@ dist
 dist-ssr
 *.local
 .env*
+.apple_env_vars
 client_secret*.json
 tests.md
 
