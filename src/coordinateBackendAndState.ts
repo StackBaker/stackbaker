@@ -258,9 +258,10 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         console.log("s", loadStage);
     }
 
-    useHotkeys([
-        ['P', log]
-    ]);
+    // TODO: put this back for debugging
+    // useHotkeys([
+    //     ['P', log]
+    // ]);
     return {
         user: db.user.data!,
         date: props.date,
