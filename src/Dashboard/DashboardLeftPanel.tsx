@@ -77,8 +77,6 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
         newHours = Math.max(24, Math.min(newHours, 120));
         newEvtLen = Math.max(1, Math.min(newEvtLen, 300));
 
-        console.log(newHours, newEvtLen);
-
         props.editUser({ defaultEventLength: newEvtLen, hoursInDay: newHours, });
     }
 

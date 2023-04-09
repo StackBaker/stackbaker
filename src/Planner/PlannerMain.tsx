@@ -46,7 +46,6 @@ const PlannerMain = function(props: PlannerMainProps) {
     }, [props.user.defaultEventLength])
     
     const onDragEnd = function(result: DropResult) {
-        console.log("fired");
         if (override !== null) {
             props.mutateLists(override.sourceOfDrag, override.destinationOfDrag, override.draggableId, true);
             setDragOverride(null);

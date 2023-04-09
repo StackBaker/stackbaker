@@ -45,7 +45,6 @@ const Root = function(props: RootProps) {
 								navigate(paths.DASHBOARD_PATH)
 						});
 					} else {
-						console.log("here")
 						db.lists.create(props.date);
 						if (getToday().isSame(props.date, "day"))
 							navigate(paths.PLANNER_PATH);

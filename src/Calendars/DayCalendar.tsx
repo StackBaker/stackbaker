@@ -146,7 +146,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 	}, [props.user]);
 
 	useEffect(() => {
-		console.log("dr", draggedCalEventInfo, draggedCalEventOldId)
 		if (Object.values(draggedCalEventInfo).some(x => (!x)) || !draggedCalEventOldId)
 			return;
 		
@@ -162,14 +161,16 @@ const DayCalendar = function(props: DayCalendarProps) {
 	}, [draggedCalEventInfo])
 
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
+		// console.log("drag", changeInfo);
 		const newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[changeInfo.event.id].start;
 		const newEnd = (changeInfo.event.start) ? changeInfo.event.end : props.events[changeInfo.event.id].end;
 
 		// hack for dealing with fullcalendar
 		// FC fires eventChange, eventAdd, eventRemove and eventDrop when dragging events
 		// this function should only handle dragging the ending of an event
-		if (newStart !== props.events[changeInfo.event.id].start)
+		if (!dayjs(newStart! as Date).isSame(dayjs(props.events[changeInfo.event.id].start! as Date)))
 			return;
+		
 
 		props.saveEvent({
 			...props.events[changeInfo.event.id],
@@ -232,7 +233,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	}
 
 	const handleAddEventThroughDrop = (dropInfo: DropArg) => {
-		console.log("drop", dropInfo);
+		// console.log("drop", dropInfo);
 		const el = dropInfo.draggedEl;
 		const [id, _] = el.id.split(ID_IDX_DELIM);
 
