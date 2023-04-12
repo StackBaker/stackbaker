@@ -64,3 +64,15 @@ jobs:
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false
+        
+      - name: Dispatch update workflow to website
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'StackBaker',
+              repo: 'website',
+              workflow_id: 'download-released-artifacts.yml',
+              ref: 'master'
+            })
