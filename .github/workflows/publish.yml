@@ -67,6 +67,7 @@ jobs:
   
   dispatch-to-website:
     name: "Dispatch update workflow to website"
+    needs: build-tauri
     runs-on: ubuntu-latest
     steps:
       - name: Create DRA workflow dispatch on website
