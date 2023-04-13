@@ -12,7 +12,6 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { ThirdPartyDraggable } from "@fullcalendar/interaction";
 
 import type { Id } from "./globals";
-import { UserRubric } from "./Persistence/useUserDB";
 
 export const ID_IDX_DELIM = "~";
 
@@ -30,6 +29,9 @@ const useStyles = createStyles((theme) => ({
     },
     del: {
         color: theme.colors.red[7]
+    },
+    disabledInput: {
+        color: theme.colors.gray[5]
     }
 }));
 
@@ -58,6 +60,7 @@ const Item = function(props: ItemProps) {
     const [collapse, collapseHandlers] = useDisclosure(true);
 
     const handleToggleComplete = () => {
+        handlers.close();
         props.mutateItem(props.itemId, { complete: !props.complete });
     }
 
@@ -66,8 +69,8 @@ const Item = function(props: ItemProps) {
         props.mutateItem(props.itemId, { content: editableContent });
     }
 
-    // TODO: this is not working properly
     const editRef = useClickOutside(handleSubmitContent);
+    const itemTextAreaId = `${props.itemId}-textarea-for-editing`;
 
     useEffect(() => {
         // reference: https://github.com/fullcalendar/fullcalendar-react/issues/118#issuecomment-761278598
@@ -82,6 +85,20 @@ const Item = function(props: ItemProps) {
         // a cleanup function
         return () => draggable.destroy();
     }, [props.content, props.eventDuration]);
+
+
+    useEffect(() => {
+        if (editing) {
+            const elt: HTMLTextAreaElement = document.getElementById(itemTextAreaId) as HTMLTextAreaElement;
+            if (!elt)
+                return;
+
+            // when editing is set, focus on the TextArea
+            elt.focus();
+            // and set the cursor to the end of the input box
+            elt.setSelectionRange(elt.value.length, elt.value.length);
+        }
+    }, [editing]);
 
     const collapseDefined = (props.collapseItem !== undefined) && (props.collapseItem);
 
@@ -100,8 +117,9 @@ const Item = function(props: ItemProps) {
         >
             {
                 (provided, snapshot) => (
-                    <div ref={editRef} id={`${props.itemId}${ID_IDX_DELIM}${props.index}`}>
+                    <div >
                     <Card
+                        id={`${props.itemId}${ID_IDX_DELIM}${props.index}`}
                         className={classes.item}
                         mah={(collapseDefined && collapse) ? "54px" : "initial"}
                         ref={provided.innerRef}
@@ -122,14 +140,16 @@ const Item = function(props: ItemProps) {
                                         <KeyboardArrowDownIcon />
                                     </ActionIcon>
                                 </Group> :
+                                (editing) ?
                                 <Textarea
+                                    id={itemTextAreaId}
+                                    ref={editRef}
                                     placeholder="Item content..."
                                     aria-label={`item-${props.itemId}-input`}
                                     readOnly={!editing}
                                     disabled={props.complete}
                                     variant="unstyled"
                                     value={editableContent}
-                                    onClick={() => handlers.open()}
                                     onChange={(e) => changeEditableContent(e.currentTarget.value)}
                                     autosize
                                     onKeyDown={getHotkeyHandler([
@@ -137,6 +157,16 @@ const Item = function(props: ItemProps) {
                                     ])}
                                     size="sm"
                                 />
+                                :
+                                <Text
+                                    className={(props.complete) ? classes.disabledInput : undefined}
+                                    size="sm"
+                                    onClick={() => {
+                                        if (!props.complete) handlers.open()
+                                    }}
+                                    py="xs"
+                                    pl={2}
+                                >{editableContent}</Text>
                             }
                         </Card.Section>
                         <Card.Section>
