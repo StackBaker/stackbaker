@@ -64,8 +64,12 @@ jobs:
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: false
           prerelease: false
-        
-      - name: Dispatch update workflow to website
+  
+  dispatch-to-website:
+    name: "Dispatch update workflow to website"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create DRA workflow dispatch on website
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
