@@ -9,13 +9,13 @@ import { createStyles, Stack, Button, Title, Text, Modal, TextInput, Group, Acti
 import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
+import { useNavigate, useLocation } from "react-router-dom"
 
 import type { EventCollection, EventRubric } from "./Event";
-import { createEventReprId, getIdFromEventRepr } from "./Event";
+import { createEventReprId } from "./Event";
 import type { Id } from "../globals";
 import "./fullcalendar-vars.css";
-import { ID_IDX_DELIM, ItemCollection } from "../Item";
-import { useNavigate } from "react-router-dom";
+import { ID_IDX_DELIM, ItemCollection } from "../Item";;
 import { PLANNER_PATH } from "../paths";
 import type { UserRubric } from "../Persistence/useUserDB";
 
@@ -25,9 +25,9 @@ const useStyles = createStyles((theme) => ({
 		overflow: "hidden",
 	},
 	planButton: {
-		opacity: 0,
+		opacity: 0.5,
 		"&:hover": {
-			opacity: 1
+			opacity: 1,
 		}
 	},
     editSignal: {
@@ -106,6 +106,7 @@ interface DayCalendarProps {
 const DayCalendar = function(props: DayCalendarProps) {
 	const navigate = useNavigate();
 	const { classes } = useStyles();
+	const location = useLocation();
 
 	const dummyEvent = {
 		id: createEventReprId(uuid()),
@@ -269,13 +270,17 @@ const DayCalendar = function(props: DayCalendarProps) {
 				<Title order={2} pl="xs">
 					{props.date.format("MMMM D, YYYY")}
 				</Title>
-				<Button
-					className={classes.planButton}
-					variant="subtle"
-					onClick={() => navigate(PLANNER_PATH)}
-				>
-					Plan
-				</Button>
+				{
+					(location.pathname === PLANNER_PATH) ? <></> :
+					<Button
+						className={classes.planButton}
+						variant="subtle"
+						onClick={() => navigate(PLANNER_PATH)}
+					>
+						Plan
+					</Button>
+				}
+				
 			</Group>
 			<Stack className="day-cal">
 				{(false) ? <div></div> :
