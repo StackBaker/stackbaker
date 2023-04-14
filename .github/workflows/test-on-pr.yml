@@ -13,16 +13,23 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v3
 
-      - name: setup node and pnpm
+      - name: setup node
         uses: actions/setup-node@v3
         with:
           node-version: 18
-      - uses: pnpm/action-setup@v2.2.4
+      
+      - name: setup pnpm
+        uses: pnpm/action-setup@v2.2.4
         with:
           version: 7.30.3
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
+      
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-20.04'
