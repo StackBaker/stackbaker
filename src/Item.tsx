@@ -100,6 +100,8 @@ const Item = function(props: ItemProps) {
         }
     }, [editing]);
 
+    // TODO: tagging
+    // TODO: auto refresh at 6am to go to the planner
     const collapseDefined = (props.collapseItem !== undefined) && (props.collapseItem);
 
     const getStyle = (style: DraggableStyle, snapshot: DraggableStateSnapshot) => {
