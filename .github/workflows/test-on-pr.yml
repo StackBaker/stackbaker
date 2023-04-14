@@ -12,10 +12,11 @@ jobs:
     steps:
       - name: checkout repository
         uses: actions/checkout@v3
-      - name: setup node
+
+      - name: setup node and pnpm
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
       - uses: pnpm/action-setup@v2.2.4
         with:
           version: 7.30.3
