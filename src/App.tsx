@@ -30,6 +30,43 @@ const Root = function(props: RootProps) {
 		db.events.loadAll().then();
 	}, []);
 
+	// useEffect(() => {
+	// 	// depending on the existence of a user, route accordingly
+	// 	db.user.get("email").then(u => {
+	// 		if (u) {
+	// 			// FIRST RELEASE: no users
+	// 			return;
+	// 		}
+	// 		else {
+	// 			const todayId = dateToDayId(props.date);
+	// 			db.lists.has(todayId).then((res: boolean) => {
+	// 				if (res) {
+	// 					db.lists.get(todayId).then((val) => {
+	// 						if (getToday().isSame(props.date, "day") && !(val as ListRubric).planned)
+	// 							navigate(paths.PLANNER_PATH);
+	// 						else
+	// 							navigate(paths.DASHBOARD_PATH)
+	// 					});
+	// 				} else {
+	// 					db.lists.create(props.date);
+	// 					if (getToday().isSame(props.date, "day"))
+	// 						navigate(paths.PLANNER_PATH);
+	// 					else
+	// 						navigate(paths.DASHBOARD_PATH);
+	// 				}
+	// 			});
+	// 		}
+	// 	});
+	// }, []);
+
+	// TODO: if can't find the user
+	// move to the Login View
+	// the login view will have a few stages
+	// - stage 1: login with google 
+	// - stage 2: accept an authorization code or go back -> save this to the database
+	// - stage 3: once the auth code is saved to the db, reload to the root
+	// 				then use the auth code to handle calendar events
+
 	const [x, setX] = useState("");
 	useEffect(() => {
 		// depending on the existence of a user, route accordingly
