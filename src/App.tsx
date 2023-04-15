@@ -1,12 +1,13 @@
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import useDatabase from "./Persistence/useDatabase";
-import { useNavigate, createMemoryRouter, RouterProvider } from "react-router-dom";
-import { MantineProvider } from "@mantine/core";
+import { useNavigate, createMemoryRouter, RouterProvider, Link } from "react-router-dom";
+import { Button, MantineProvider } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
+import { invoke } from "@tauri-apps/api";
+
 import "./App.css";
 import "./styles.css";
-
 import * as paths from "./paths";
 import Dashboard from "./Dashboard/Dashboard";
 import Planner from "./Planner/Planner";
@@ -29,6 +30,7 @@ const Root = function(props: RootProps) {
 		db.events.loadAll().then();
 	}, []);
 
+	const [x, setX] = useState("");
 	useEffect(() => {
 		// depending on the existence of a user, route accordingly
 		db.user.get("email").then(u => {
@@ -61,6 +63,14 @@ const Root = function(props: RootProps) {
 		});
 	}, []);
 
+	useEffect(() => {
+		invoke("create_oauth_request_url").then((r) => {
+			let res = r as string;
+			setX(res);
+			console.log(res);
+		});
+	}, []);
+
 	// const log = () => {
     //     console.log("l", db.lists.data);
     //     console.log("i", db.items.data);
@@ -73,7 +83,11 @@ const Root = function(props: RootProps) {
     //     ['R', log]
     // ]);
 
-	return <div></div>
+	return (
+		<div>
+			<Link to={x}><Button>Login with google</Button></Link>
+		</div>
+	);
 }
 
 const App = function() {
