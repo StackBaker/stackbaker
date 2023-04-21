@@ -10,6 +10,7 @@ type ValidAttr = number | string | boolean | undefined;
 
 export interface UserRubric {
     email: string,
+    authcode: string,
     // in hours
     hoursInDay: number,
     // in minutes
@@ -22,6 +23,7 @@ export interface UserRubric {
 
 const defaultUser: UserRubric = {
     email: "",
+    authcode: "",
     hoursInDay: 30,
     defaultEventLength: 60,
     dayCalLabelInterval: 60,
