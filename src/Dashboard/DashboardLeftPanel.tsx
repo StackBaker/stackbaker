@@ -62,6 +62,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
         
         setAccountBeingEdited({
             email: props.user.email,
+            authData: JSON.stringify(props.user.authData),
             hoursInDay: JSON.stringify(props.user.hoursInDay),
             defaultEventLength: JSON.stringify(props.user.defaultEventLength),
             dayCalLabelInterval: JSON.stringify(props.user.dayCalLabelInterval),

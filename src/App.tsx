@@ -33,7 +33,7 @@ const Root = function(props: RootProps) {
 
 	useEffect(() => {
 		// depending on the existence of a user, route accordingly
-		db.user.get("authcode").then(u => {
+		db.user.get("authData").then(u => {
 			if (!u) {
 				navigate(paths.LOGIN_PATH);
 			}

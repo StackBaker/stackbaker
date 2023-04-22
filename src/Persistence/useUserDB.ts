@@ -6,12 +6,19 @@ import { myStructuredClone } from "../globals";
 
 const USER_FNAME = "users.dat";
 
-type ValidAttr = number | string | boolean | undefined;
+type AuthData = null | {
+    accessToken: string,
+    refreshToken: string,
+    expiryDate: string
+};
+
+type ValidAttr = number | string | boolean | AuthData | undefined;
+
 
 export interface UserRubric {
     email: string,
-    authcode: string,
-    // in hours
+    authData: AuthData,
+    // i hours
     hoursInDay: number,
     // in minutes
     defaultEventLength: number,
@@ -23,7 +30,7 @@ export interface UserRubric {
 
 const defaultUser: UserRubric = {
     email: "",
-    authcode: "",
+    authData: null,
     hoursInDay: 30,
     defaultEventLength: 60,
     dayCalLabelInterval: 60,
@@ -76,13 +83,20 @@ const useUserDB = function() {
     }
 
     const clear = () => {
-        const email: string = user["email"];
+        const email: string = user.email;
+        const authData: AuthData = user.authData;
         store.clear();
         // assumption: set saves the database
         set("email", email);
+        store.save();
     }
 
-    return { data: user, get, set, replaceUser, load, clear };
+    const logout = () => {
+        store.clear();
+        store.save();
+    }
+
+    return { data: user, get, set, replaceUser, load, clear, logout };
 };
 
 export default useUserDB;

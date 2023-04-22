@@ -11,8 +11,6 @@ const CLIENT_ID: &str = env!("GOOGLE_CLIENT_ID", "client ID not set");
 const CLIENT_SECRET: &str = env!("GOOGLE_CLIENT_SECRET", "client secret not set");
 const REDIRECT_URI: &str = "urn:ietf:wg:oauth:2.0:oob";
 
-// 4/1AVHEtk50hUgBLulEt35rjGrBwLj8Ny7lvCyY9UQEfN05rnWbYtAT-Jr00fs
-
 #[tauri::command]
 fn create_oauth_request_url() -> String {
     let mut params: HashMap<&str, &str> = HashMap::new();
@@ -28,7 +26,7 @@ fn create_oauth_request_url() -> String {
 }
 
 #[tauri::command]
-async fn exchange_code_for_tokens(authorization_code: String) -> serde_json::Value {
+fn exchange_code_for_tokens(authorization_code: String) -> serde_json::Value {
     let authorization_code: &str = authorization_code.as_str();
     let mut params: HashMap<&str, &str> = HashMap::new();
 
@@ -47,18 +45,35 @@ async fn exchange_code_for_tokens(authorization_code: String) -> serde_json::Val
     let response_body: String = response.text().unwrap();
     let response_body: &str = response_body.as_str();
     let response_json: serde_json::Value = serde_json::from_str(&response_body).unwrap();
-    let access_token = response_json.get("access_token").unwrap();
-    let refresh_token = response_json.get("refresh_token").unwrap();
+    let access_token = response_json.get("access_token");
+    let refresh_token = response_json.get("refresh_token");
+    let expires_in = response_json.get("expires_in");
+
+    let access_token: serde_json::Value = match access_token {
+        Some(x) => x.clone(),
+        None => serde_json::json!(null)
+    };
+
+    let refresh_token: serde_json::Value = match refresh_token {
+        Some(x) => x.clone(),
+        None => serde_json::json!(null)
+    };
+
+    let expires_in: serde_json::Value = match expires_in {
+        Some(x) => x.clone(),
+        None => serde_json::json!(null)
+    };
 
     let output = serde_json::json!({
         "access_token": access_token,
-        "refresh_token": refresh_token
+        "refresh_token": refresh_token,
+        "expires_in": expires_in
     });
 
     return output;
 }
 
-
+// create a function to retrieve the user email
 
 fn main() {
     tauri::Builder::default()
