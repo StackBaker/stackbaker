@@ -58,6 +58,7 @@ const Item = function(props: ItemProps) {
     const [editing, handlers] = useDisclosure(false);
     const [editableContent, changeEditableContent] = useState<string>(props.content);
     const [collapse, collapseHandlers] = useDisclosure(true);
+    const itemEltId = `${props.itemId}${ID_IDX_DELIM}${props.index}`;
 
     const handleToggleComplete = () => {
         handlers.close();
@@ -72,9 +73,10 @@ const Item = function(props: ItemProps) {
     const editRef = useClickOutside(handleSubmitContent);
     const itemTextAreaId = `${props.itemId}-textarea-for-editing`;
 
+    // TODO: bug: can no longer drag and drop into calendar
     useEffect(() => {
         // reference: https://github.com/fullcalendar/fullcalendar-react/issues/118#issuecomment-761278598
-        let draggable = new ThirdPartyDraggable(editRef.current!, {
+        let draggable = new ThirdPartyDraggable(document.getElementById(itemEltId)!, {
             eventData: {
                 title: props.content!,
                 duration: props.eventDuration * 60 * 1000,
@@ -119,9 +121,8 @@ const Item = function(props: ItemProps) {
         >
             {
                 (provided, snapshot) => (
-                    <div >
                     <Card
-                        id={`${props.itemId}${ID_IDX_DELIM}${props.index}`}
+                        id={itemEltId}
                         className={classes.item}
                         mah={(collapseDefined && collapse) ? "54px" : "initial"}
                         ref={provided.innerRef}
@@ -212,7 +213,6 @@ const Item = function(props: ItemProps) {
                             }
                         </Card.Section>
                     </Card>
-                    </div>
                 )
             }
         </Draggable>
