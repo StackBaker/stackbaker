@@ -160,6 +160,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 spacing="lg"
                 align="flex-start"
                 p="xl"
+                sx={{ overflowX: "scroll", flexWrap: "nowrap" }}
             >
                 {stages[props.planningStage]}
             </Group>

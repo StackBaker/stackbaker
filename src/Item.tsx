@@ -102,7 +102,7 @@ const Item = function(props: ItemProps) {
         }
     }, [editing]);
 
-    // TODO: tagging
+    // TODO: tagging tasks
     // TODO: auto refresh at 6am to go to the planner
     const collapseDefined = (props.collapseItem !== undefined) && (props.collapseItem);
 
@@ -124,7 +124,8 @@ const Item = function(props: ItemProps) {
                     <Card
                         id={itemEltId}
                         className={classes.item}
-                        mah={(collapseDefined && collapse) ? "54px" : "initial"}
+                        mah={(collapseDefined && collapse) ? "54px" : "100px"}
+                        mih={(collapseDefined && collapse) ? "54px" : "100px"}
                         ref={provided.innerRef}
                         withBorder
                         {...provided.dragHandleProps}
