@@ -7,6 +7,7 @@ on:
 jobs:
   dispatch-to-app-releases:
     name: "Dispatch release workflow to app-releases repo"
+    needs: build-tauri
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch build_and_release workflow to releases repo
