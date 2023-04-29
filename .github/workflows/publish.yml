@@ -5,118 +5,18 @@ on:
       - release
 
 jobs:
-  create-release:
-    permissions:
-      contents: write
-    runs-on: ubuntu-20.04
-    outputs:
-      release_id: ${{ steps.release_creation.outputs.result }}
-    
+  dispatch-to-app-releases:
+    name: "Dispatch release workflow to app-releases repo"
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      
-      - name: Get app version
-        run: echo "PACKAGE_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
-      
-      - name: Create release in app-releases repo
-        id: release_creation
+      - name: Dispatch build_and_release workflow to releases repo
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.PAT_TOKEN }}
           script: |
-            const { data } = await github.rest.repos.createRelease({
+            await github.rest.actions.createWorkflowDispatch({
               owner: 'StackBaker',
               repo: 'app-releases',
-              tag_name: `v${process.env.PACKAGE_VERSION}`,
-              name: `StackBaker v${process.env.PACKAGE_VERSION}`,
-              body: 'Take a look at the assets to download and install this app.',
-              draft: true,
-              prerelease: false
-            })
-            return data.id
-
-  build-tauri:
-    needs: create-release
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [macos-latest, ubuntu-20.04, windows-latest]
-    runs-on: ${{ matrix.platform }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      
-      - name: setup pnpm
-        uses: pnpm/action-setup@v2.2.4
-        with:
-          version: 7.30.3
-
-      - name: Rust setup
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './src-tauri -> target'
-      
-      - name: Install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-20.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
-        
-      - name: Install frontend dependencies
-        run: pnpm install
-
-      - name: Build the app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ENABLE_CODE_SIGNING: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-        with:
-          releaseId: ${{ needs.create-release.outputs.release_id }}
-          includeDebug: true # including only debug versions for now
-          includeRelease: false
-  
-  publish-release:
-    name: "Finalize release in app-releases repo"
-    permissions:
-      contents: write
-    runs-on: ubuntu-20.04
-    needs: [create-release, build-tauri]
-
-    steps:
-      - name: Publish release
-        id: publish_release
-        uses: actions/github-script@v6
-        env:
-          release_id: ${{ needs.create-release.outputs.release_id }}
-        with:
-          script: |
-            github.rest.repos.updateRelease({
-              owner: 'StackBaker',
-              repo: 'app-releases',
-              release_id: process.env.release_id,
-              draft: false,
-              prerelease: false
+              workflow_id: 'build_and_release.yml',
+              ref: 'master'
             })
