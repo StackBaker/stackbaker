@@ -259,9 +259,10 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     }
 
     // TODO: put this back for debugging
-    // useHotkeys([
-    //     ['P', log]
-    // ]);
+    useHotkeys([
+        ['P', log]
+    ]);
+
     return {
         user: db.user.data!,
         date: props.date,

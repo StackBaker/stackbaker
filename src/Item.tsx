@@ -104,6 +104,7 @@ const Item = function(props: ItemProps) {
 
     // TODO: tagging tasks
     // TODO: auto refresh at 6am to go to the planner
+    // TODO: bug: height is too much
     const collapseDefined = (props.collapseItem !== undefined) && (props.collapseItem);
 
     const getStyle = (style: DraggableStyle, snapshot: DraggableStateSnapshot) => {
@@ -124,13 +125,13 @@ const Item = function(props: ItemProps) {
                     <Card
                         id={itemEltId}
                         className={classes.item}
-                        mah={(collapseDefined && collapse) ? "54px" : "100px"}
                         mih={(collapseDefined && collapse) ? "54px" : "100px"}
                         ref={provided.innerRef}
                         withBorder
                         {...provided.dragHandleProps}
                         {...provided.draggableProps}
                         style={getStyle(provided.draggableProps.style!, snapshot)}
+                        sx={{ flexShrink: 0 }}
                     >
                         <Card.Section
                             p={(collapseDefined && collapse) ? 0 : "xs"}
