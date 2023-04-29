@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { v4 as uuid } from "uuid";
-import { useEffect, useState, useRef } from "react";
+import { createRef, useEffect, useState, useRef } from "react";
 import { createStyles, ActionIcon, TextInput, Text, Group, Modal, Stack } from "@mantine/core";
 import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
 import FullCalendar from "@fullcalendar/react";
@@ -111,6 +111,7 @@ const GridCalendar = function(props: GridCalendarProps) {
         listId: "",
         index: -1
     }
+    const calendarRef = createRef<FullCalendar>();
 
     const [events, setEvents] = useState<EventList>([]);
     const [editingItem, handlers] = useDisclosure(false);
@@ -134,6 +135,12 @@ const GridCalendar = function(props: GridCalendarProps) {
             }, [] as EventList)
         );
     }, [props.lists, props.items]);
+
+    useEffect(() => {
+        // TODO: scroll to current day
+        let calendarApi = calendarRef.current!.getApi();
+        calendarApi.gotoDate(dayjs().toDate());
+    }, [calendarRef])
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const id = getIdFromEventRepr(clickInfo.event.id);
@@ -185,7 +192,6 @@ const GridCalendar = function(props: GridCalendarProps) {
     }
 
     // TODO: be able to change the month while dragging?
-    // TODO: POTENTIAL BUG: list id getting changed to later list: haven't been seeing this happening
 
     const handleEventDrag = (oldDate: Date, newDate: Date, itemId: Id) => {
         const sourceListId = dateToDayId(oldDate);
@@ -239,6 +245,7 @@ const GridCalendar = function(props: GridCalendarProps) {
             />
             <Stack sx={{ overflow: "scroll" }}>
                 <FullCalendar
+                    ref={calendarRef}
                     plugins={[dayGridPlugin, interactionPlugin]}
                     viewHeight={actualHeight}
                     height={actualHeight}
@@ -264,6 +271,8 @@ const GridCalendar = function(props: GridCalendarProps) {
                     initialView="dayGridMonth"
                     displayEventTime={false}
                     dayMaxEventRows={true}
+                    now={dayjs().toDate()}
+                    scrollTime={dayjs().format("HH:00")}
                 />
             </Stack>
         </Stack>

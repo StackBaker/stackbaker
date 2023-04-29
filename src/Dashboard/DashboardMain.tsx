@@ -48,7 +48,6 @@ const DashboardMain = function(props: DashboardMainProps) {
         props.mutateLists(source, destination, draggableId);
     }
 
-    // TODO: implement undo with mod+Z
     return (
         <DragDropContext
             onDragEnd={onDragEnd}
@@ -58,6 +57,7 @@ const DashboardMain = function(props: DashboardMainProps) {
                 position="left"
                 spacing="lg"
                 align="flex-start"
+                sx={{ overflowX: "scroll", flexWrap: "nowrap" }}
             >
                 <DayCalendar
                     user={props.user}
