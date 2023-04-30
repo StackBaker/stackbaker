@@ -12,14 +12,4 @@ Once you've made sure that it's time for a new release, change the version numbe
 
 Next, go to the app-releases repo and edit the `build_and_release.yml` workflow so that it creates a release with descriptive release notes, reflecting the changes made in the new version.
 
-Finally, rebase the release branch on main from your local machine:
-
-```sh
-git checkout release
-git rebase main
-git push origin release
-git checkout main
-```
-
-This will dispatch a workflow to the app-releases repo to build and publish a new release of the Desktop App there. Since the website tries to download the latest release, we don't need to make any changes to the website.
-
+Finally, manually run the `build_and_release` workflow from the app-releases repo. That workflow will also update the links on the website.
