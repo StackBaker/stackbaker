@@ -1,6 +1,6 @@
 [package]
 name = "stackbaker"
-version = "0.1.0"
+version = "0.0.3"
 description = "Stay on top of your work, while making time for the things you care about."
 authors = ["Aditya Gomatam"]
 license = ""
