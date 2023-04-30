@@ -1,8 +1,9 @@
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import useDatabase from "./Persistence/useDatabase";
-import { useNavigate, createMemoryRouter, RouterProvider, Link } from "react-router-dom";
+import { useNavigate, createMemoryRouter, RouterProvider } from "react-router-dom";
 import { MantineProvider } from "@mantine/core";
+import { useHotkeys } from "@mantine/hooks";
 import "./App.css";
 import "./styles.css";
 
@@ -25,7 +26,7 @@ const Root = function(props: RootProps) {
 		db.items.loadAll().then();
 		db.lists.loadAll().then();
 		db.events.loadAll().then();
-	}, [])
+	}, []);
 
 	useEffect(() => {
 		// depending on the existence of a user, route accordingly
@@ -55,6 +56,18 @@ const Root = function(props: RootProps) {
 			}
 		});
 	}, []);
+
+	const log = () => {
+        console.log("l", db.lists.data);
+        console.log("i", db.items.data);
+        console.log("e", db.events.data);
+        console.log("u", db.user.data);
+    }
+
+    // debugging
+    useHotkeys([
+        ['R', log]
+    ]);
 
 	return <div></div>
 }

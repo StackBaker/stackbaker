@@ -104,7 +104,6 @@ const Item = function(props: ItemProps) {
 
     // TODO: tagging tasks
     // TODO: auto refresh at 6am to go to the planner
-    // TODO: bug: height is too much
     const collapseDefined = (props.collapseItem !== undefined) && (props.collapseItem);
 
     const getStyle = (style: DraggableStyle, snapshot: DraggableStateSnapshot) => {

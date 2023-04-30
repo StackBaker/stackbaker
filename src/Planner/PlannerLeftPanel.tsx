@@ -62,7 +62,19 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                         >
                             Back
                         </Button>
-                        : <div></div>
+                        :
+                        <Button
+                            onClick={() => navigate(DASHBOARD_PATH)}
+                            variant="subtle"
+                            sx={{
+                                opacity: 0.5,
+                                "&:hover": {
+                                    opacity: 1,
+                                }
+                            }}
+                        >
+                            Skip plan
+                        </Button>
                     }
                     {
                         (props.planningStage !== 3) ?
