@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AppShell } from "@mantine/core";
 
 import type { planningStage } from "./plannerutils";
@@ -8,6 +8,9 @@ import type { coordinateBackendAndStateProps } from "../coordinateBackendAndStat
 import PlannerLeftPanel from "./PlannerLeftPanel";
 import PlannerMain from "./PlannerMain";
 import "../styles.css";
+import { dateToDayId, getToday } from "../dateutils";
+import { ListCollection } from "../List";
+import { useDisclosure } from "@mantine/hooks";
 
 type PlannerProps = coordinateBackendAndStateProps;
 
@@ -18,6 +21,16 @@ const Planner = function(props: PlannerProps) {
     const [planningStage, setPlanningStage] = useState<planningStage>(0);
 
     const coordination = coordinateBackendAndState(props);
+    const [addIncAndLaterTasks, handlers] = useDisclosure(true);
+
+    // add unfinished tasks from next day to today's items
+    useMemo(() => {
+        if (coordination.loadStage !== 2 || !addIncAndLaterTasks)
+            return;
+        
+        coordination.addIncompleteAndLaterToToday();
+        handlers.close();
+    }, [coordination.loadStage, addIncAndLaterTasks]);
     
     return (
         <AppShell

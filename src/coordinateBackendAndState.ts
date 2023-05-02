@@ -34,6 +34,7 @@ export interface coordinateBackendAndStateOutput {
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
+    addIncompleteAndLaterToToday: () => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean,
 
@@ -230,6 +231,56 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         return true;
     };
 
+    const addIncompleteAndLaterToToday = (): boolean => {
+        const numPrevDaysToSearch = 3;
+        const today = getToday();
+        const todayId = dateToDayId(today);
+        var todayList = getListFromDB(todayId);
+
+        if (todayList === null || todayList.planned)
+            return false;
+        
+        
+        // find all the IDs of previous days to check for incomplete tasks
+        var prevDayIds = [];
+        for (var i = 1; i <= numPrevDaysToSearch; i++) {
+            prevDayIds.push(dateToDayId(today.add(-1 * i, "days")));
+        }
+        // also check for tasks in the later list
+        prevDayIds.push(DO_LATER_LIST_ID);
+
+        var incompleteTasks = [];
+        var newPrevDayIds = []
+        var newPrevDayLists = [];
+        for (const prevDayId of prevDayIds) {
+            var prevDayList = getListFromDB(prevDayId);
+            if (!prevDayList)
+                continue;
+            
+            for (var i = prevDayList.itemIds.length - 1; i >= 0; i--) {
+                const itemId = prevDayList.itemIds[i];
+                if (!db.items.data || db.items.data![itemId].complete)
+                    continue;
+                
+                // the task is incomplete, add it to the incomplete Tasks arr
+                incompleteTasks.push(itemId);
+                // remove it from this day's itemIds
+                prevDayList.itemIds.splice(i, 1);
+            }
+
+            newPrevDayIds.push(prevDayId);
+            newPrevDayLists.push(prevDayList);
+        }
+
+        todayList.itemIds = incompleteTasks.concat(todayList.itemIds);
+
+        db.lists.setMany(newPrevDayIds.concat([todayId]), newPrevDayLists.concat(todayList));
+        console.log(newPrevDayLists)
+        setLoadStage(1);
+
+        return true;
+    }
+
     const saveEvent = (newEventConfig: EventRubric): boolean => {
         db.events.set(newEventConfig.id, newEventConfig);
         return true;
@@ -277,6 +328,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         deleteItem,
         mutateList,
         mutateLists,
+        addIncompleteAndLaterToToday,
         events: db.events.data!,
         saveEvent,
         deleteEvent,

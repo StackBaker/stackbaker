@@ -140,7 +140,7 @@ const GridCalendar = function(props: GridCalendarProps) {
         // TODO: scroll to current day
         let calendarApi = calendarRef.current!.getApi();
         calendarApi.gotoDate(dayjs().toDate());
-    }, [calendarRef])
+    }, [])
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const id = getIdFromEventRepr(clickInfo.event.id);

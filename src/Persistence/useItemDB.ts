@@ -7,7 +7,6 @@ import type { Id } from "../globals";
 
 const ITEMS_FNAME = "items.dat";
 
-// TODO: periodically clean
 // TODO: items seem to be being saved a lot, including when I just click the screen
 const useItemDB = function() {
     const store = new Store(ITEMS_FNAME);
