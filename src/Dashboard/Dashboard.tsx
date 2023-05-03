@@ -2,7 +2,7 @@ import { AppShell, Text, Header } from "@mantine/core";
 
 import DashboardMain from "./DashboardMain";
 import DashboardLeftPanel from "./DashboardLeftPanel";
-import coordinateBackendAndState from "../coordinateBackendAndState";
+import coordinateBackendAndState, { LOADING_STAGES } from "../coordinateBackendAndState";
 import type { coordinateBackendAndStateProps } from "../coordinateBackendAndState";
 import "../styles.css"
 
@@ -26,7 +26,7 @@ const Dashboard = function(props: DashboardProps) {
             }}
             navbarOffsetBreakpoint="sm"
             navbar={
-                (coordination.loadStage !== 2) ? <div></div> :
+                (coordination.loadStage !== LOADING_STAGES.READY) ? <div></div> :
                 <DashboardLeftPanel
                     user={coordination.user}
                     date={props.date}
@@ -39,14 +39,14 @@ const Dashboard = function(props: DashboardProps) {
                 <Header height={{ base: headerHeight /* , md: 70 */ }} p="md">
                     <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
                         <Text className="dash-header">
-                            {(coordination.loadStage === 2) ? "StackBaker" : "Loading..."}
+                            {(coordination.loadStage === LOADING_STAGES.READY) ? "StackBaker" : "Loading..."}
                         </Text>
                     </div>
                 </Header>
             }
         >
             {
-                (coordination.loadStage !== 2) ? <div></div>
+                (coordination.loadStage !== LOADING_STAGES.READY) ? <div></div>
                 :
                 <DashboardMain
                     user={coordination.user}

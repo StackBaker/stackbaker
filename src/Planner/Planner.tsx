@@ -1,22 +1,20 @@
 import dayjs from "dayjs";
 import { useState, useMemo } from "react";
 import { AppShell } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 
-import type { planningStage } from "./plannerutils";
-import coordinateBackendAndState from "../coordinateBackendAndState";
+import { planningStage } from "./plannerutils";
+import coordinateBackendAndState, { LOADING_STAGES } from "../coordinateBackendAndState";
 import type { coordinateBackendAndStateProps } from "../coordinateBackendAndState";
 import PlannerLeftPanel from "./PlannerLeftPanel";
 import PlannerMain from "./PlannerMain";
 import "../styles.css";
 import { dateToDayId, getToday } from "../dateutils";
 import { ListCollection } from "../List";
-import { useDisclosure } from "@mantine/hooks";
 
 type PlannerProps = coordinateBackendAndStateProps;
 
 const Planner = function(props: PlannerProps) {
-    // TODO: FEATURE FOR NEXT RELEASE: search for unfinished tasks from the previous day
-    // TODO: and actually store them in the listdb for the new day: CREATE A NEW ATOMIC useListDB function
     const actionAreaHeight = "95vh";
     const [planningStage, setPlanningStage] = useState<planningStage>(0);
 
@@ -25,7 +23,7 @@ const Planner = function(props: PlannerProps) {
 
     // add unfinished tasks from next day to today's items
     useMemo(() => {
-        if (coordination.loadStage !== 2 || !addIncAndLaterTasks)
+        if (coordination.loadStage !== LOADING_STAGES.READY || !addIncAndLaterTasks)
             return;
         
         coordination.addIncompleteAndLaterToToday();
@@ -43,7 +41,7 @@ const Planner = function(props: PlannerProps) {
             }}
             navbarOffsetBreakpoint="sm"
             navbar={
-                (coordination.loadStage !== 2) ? <div></div> :
+                (coordination.loadStage !== LOADING_STAGES.READY) ? <div></div> :
                 <PlannerLeftPanel
                     date={props.date}
                     planningStage={planningStage}
@@ -53,7 +51,7 @@ const Planner = function(props: PlannerProps) {
             }
         >
             {
-                (coordination.loadStage !== 2) ? <div></div> :
+                (coordination.loadStage !== LOADING_STAGES.READY) ? <div></div> :
                 <PlannerMain
                     user={coordination.user}
                     date={coordination.date}

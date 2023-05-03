@@ -14,7 +14,7 @@ import { DO_LATER_LIST_ID, Id } from "../globals";
 import DayCalendar from "../Calendars/DayCalendar";
 import GridCalendar from "../Calendars/GridCalendar";
 import type { overrideDragEndAttrs } from "../Calendars/GridCalendar";
-import { loadingStage } from "../coordinateBackendAndState";
+import { LOADING_STAGES, loadingStage } from "../coordinateBackendAndState";
 import { UserRubric } from "../Persistence/useUserDB";
 
 interface PlannerMainProps {
@@ -100,7 +100,7 @@ const PlannerMain = function(props: PlannerMainProps) {
         </>
     );
 
-    const StageTwo = (props.loadStage === 2) ? (
+    const StageTwo = (props.loadStage === LOADING_STAGES.READY) ? (
         <>
             <GridCalendar
                 setDragOverride={setDragOverride}

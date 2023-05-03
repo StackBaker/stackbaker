@@ -13,6 +13,12 @@ import type { UserRubric } from "./Persistence/useUserDB";
 
 // -1: nothing loaded 0: db loaded; 1: db updated, need to reload; 2: fully loaded
 export type loadingStage = -1 | 0 | 1 | 2;
+export const LOADING_STAGES: { [key: string]: loadingStage } = {
+    NOTHING_LOADED: -1,
+    DB_LOADED: 0,
+    DB_UPDATED: 1,
+    READY: 1
+}
 
 export interface coordinateBackendAndStateProps {
     date: dayjs.Dayjs,
@@ -42,7 +48,7 @@ export interface coordinateBackendAndStateOutput {
 };
 
 const coordinateBackendAndState = function(props: coordinateBackendAndStateProps): coordinateBackendAndStateOutput {
-    const [loadStage, setLoadStage] = useState<loadingStage>(-1);
+    const [loadStage, setLoadStage] = useState<loadingStage>(LOADING_STAGES.NOTHING_LOADED);
     const [relevantListCollection, setRelevantListCollection] = useState<ListCollection>({});
     
     const db = useDatabase();
@@ -56,34 +62,34 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     };
 
     useMemo(() => {
-        if (loadStage !== -1)
+        if (loadStage !== LOADING_STAGES.NOTHING_LOADED)
             return;
         db.user.load().then();
         db.items.loadAll().then();
         db.lists.loadAll().then();
         db.events.loadAll().then();
-        setLoadStage(0);
+        setLoadStage(LOADING_STAGES.DB_LOADED);
     }, [loadStage]);
 
     // TODO: try making the DB functions not async
     useMemo(() => {
-        if (loadStage !== 0 && loadStage !== 1)
+        if (loadStage !== LOADING_STAGES.DB_LOADED && loadStage !== LOADING_STAGES.DB_UPDATED)
             return;
         const selectedDayId = dateToDayId(props.date);
         db.lists.has(selectedDayId).then((res) => {
             if (!res) {
                 db.lists.create(props.date);
-                setLoadStage(-1)
+                setLoadStage(LOADING_STAGES.NOTHING_LOADED);
                 return;
             }
             
-            setLoadStage(1);
+            setLoadStage(LOADING_STAGES.DB_UPDATED);
         });
     }, [loadStage, props.date]);
 
     useMemo(() => {
         const selectedDayId = dateToDayId(props.date);
-        if (loadStage !== 1 || !db.lists.data || !db.lists.data[selectedDayId])
+        if (loadStage !== LOADING_STAGES.DB_UPDATED || !db.lists.data || !db.lists.data[selectedDayId])
             return;
 
         var selectedDayList = null
@@ -98,7 +104,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
             [selectedDayId]: selectedDayList,
             [DO_LATER_LIST_ID]: laterList
         });
-        setLoadStage(2);
+        setLoadStage(LOADING_STAGES.READY);
     }, [loadStage, props.date, db.lists.data, db.items.data]);
 
     const editUser = (newUserConfig: Partial<UserRubric> | null): boolean => {
@@ -117,7 +123,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.unshift(newItemConfig.itemId);
         db.items.set(newItemConfig.itemId, newItemConfig);
         db.lists.set(listId, list);
-        setLoadStage(1);
+        setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -132,7 +138,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         };
 
         db.items.set(itemId, editedItem)
-        setLoadStage(1);
+        setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -145,7 +151,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.splice(index, 1);
         db.items.del(itemId);
         db.lists.set(listId, list);
-        setLoadStage(1);
+        setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -163,7 +169,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         db.lists.set(listId, editedList);
         // testing setting load stage because this function is used mainly to store that
         // a particular day has been planned, which occurs just before a navigate
-        setLoadStage(1);
+        setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     }
@@ -226,7 +232,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
             );
         }
 
-        setLoadStage(1);
+        setLoadStage(LOADING_STAGES.DB_UPDATED);
         
         return true;
     };
@@ -276,7 +282,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
 
         db.lists.setMany(newPrevDayIds.concat([todayId]), newPrevDayLists.concat(todayList));
         console.log(newPrevDayLists)
-        setLoadStage(1);
+        setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     }
@@ -297,7 +303,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         db.lists.clear();
         db.items.clear();
         db.events.clear();
-        setLoadStage(-1);
+        setLoadStage(LOADING_STAGES.NOTHING_LOADED);
     }
 
     const log = () => {
