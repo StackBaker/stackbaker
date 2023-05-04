@@ -10,6 +10,7 @@ import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
 import { useNavigate, useLocation } from "react-router-dom"
+import { os } from "@tauri-apps/api";
 
 import type { EventCollection, EventRubric } from "./Event";
 import { createEventReprId } from "./Event";
@@ -166,18 +167,22 @@ const DayCalendar = function(props: DayCalendarProps) {
 		const newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[changeInfo.event.id].start;
 		const newEnd = (changeInfo.event.start) ? changeInfo.event.end : props.events[changeInfo.event.id].end;
 
-		// hack for dealing with fullcalendar
-		// FC fires eventChange, eventAdd, eventRemove and eventDrop when dragging events
-		// this function should only handle dragging the ending of an event
-		if (!dayjs(newStart! as Date).isSame(dayjs(props.events[changeInfo.event.id].start! as Date)))
-			return;
-		
+		// TODO: test this thing on windows
+		os.type().then(res => {
+			console.log(res);
+			// hack for dealing with fullcalendar
+			// FC fires eventChange, eventAdd, eventRemove and eventDrop when dragging events
+			// this function should only handle dragging the ending of an event
+			if (res === "Windows_NT" && !dayjs(newStart! as Date).isSame(dayjs(props.events[changeInfo.event.id].start! as Date)))
+				return;
 
-		props.saveEvent({
-			...props.events[changeInfo.event.id],
-			start: newStart,
-			end: newEnd
-		});
+			props.saveEvent({
+				...props.events[changeInfo.event.id],
+				start: newStart,
+				end: newEnd
+			});
+		})
+		
 	};
 
 	const handleEventAdd = (addInfo: EventAddArg) => {
