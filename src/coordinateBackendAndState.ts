@@ -17,7 +17,7 @@ export const LOADING_STAGES: { [key: string]: loadingStage } = {
     NOTHING_LOADED: -1,
     DB_LOADED: 0,
     DB_UPDATED: 1,
-    READY: 1
+    READY: 2
 }
 
 export interface coordinateBackendAndStateProps {
@@ -54,6 +54,8 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     const db = useDatabase();
 
     const getListFromDB = (listId: Id): ListRubric | null => {
+        if (!db.lists.data)
+            return null;
         var newList: ListRubric = myStructuredClone(db.lists.data![listId]);
         if (!newList)
             return null;

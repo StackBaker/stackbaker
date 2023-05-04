@@ -37,7 +37,7 @@ const useEventDB = function() {
         newEvents[key] = val;
         setEvents(newEvents);
 
-        store.set(key, val)
+        store.set(key, val);
         timeoutRef.current = setTimeout(() => {
             store.save();
             console.log("events saved")

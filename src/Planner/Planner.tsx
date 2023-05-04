@@ -23,11 +23,15 @@ const Planner = function(props: PlannerProps) {
 
     // add unfinished tasks from next day to today's items
     useMemo(() => {
-        if (coordination.loadStage !== LOADING_STAGES.READY || !addIncAndLaterTasks)
+        if (!addIncAndLaterTasks)
+            return;
+
+        if (coordination.loadStage !== LOADING_STAGES.DB_UPDATED)
             return;
         
-        coordination.addIncompleteAndLaterToToday();
-        handlers.close();
+        let result: boolean = coordination.addIncompleteAndLaterToToday();
+        if (result)
+            handlers.close();
     }, [coordination.loadStage, addIncAndLaterTasks]);
     
     return (
