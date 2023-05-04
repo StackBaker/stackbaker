@@ -57,7 +57,7 @@ const DashboardMain = function(props: DashboardMainProps) {
                 position="left"
                 spacing="lg"
                 align="flex-start"
-                sx={{ overflowX: "scroll", flexWrap: "nowrap" }}
+                sx={{ flexWrap: "nowrap" }}
             >
                 <DayCalendar
                     user={props.user}
