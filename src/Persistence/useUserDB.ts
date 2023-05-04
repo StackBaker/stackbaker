@@ -1,7 +1,9 @@
 import { useRef, useState } from "react";
+// @ts-ignore
 import { Store } from "tauri-plugin-store-api";
 
 import { SAVE_DELAY } from "./dbutils";
+import { myStructuredClone } from "../globals";
 
 const USER_FNAME = "users.dat";
 
@@ -45,12 +47,12 @@ const useUserDB = function() {
             const k = key as keyof UserRubric
             set(k, newUserConfig[k]);
         }
-        setUser(structuredClone(newUserConfig));
+        setUser(myStructuredClone(newUserConfig));
     }
 
     const load = async () => {
         await store.load();
-        var newUser: UserRubric = structuredClone(defaultUser);
+        var newUser: UserRubric = myStructuredClone(defaultUser);
 
         for (const key in defaultUser) {
             const k = key as keyof UserRubric

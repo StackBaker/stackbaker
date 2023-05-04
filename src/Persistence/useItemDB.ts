@@ -1,13 +1,13 @@
 import { useRef, useState } from "react";
+// @ts-ignore
 import { Store } from "tauri-plugin-store-api";
 
 import { SAVE_DELAY } from "./dbutils";
 import type { ItemRubric, ItemCollection } from "../Item";
-import type { Id } from "../globals";
+import { Id, myStructuredClone } from "../globals";
 
 const ITEMS_FNAME = "items.dat";
 
-// TODO: items seem to be being saved a lot, including when I just click the screen
 const useItemDB = function() {
     const store = new Store(ITEMS_FNAME);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,7 +31,7 @@ const useItemDB = function() {
 
         let newItems: ItemCollection;
         if (items)
-            newItems = structuredClone(items);
+            newItems = myStructuredClone(items);
         else
             newItems = {};
         newItems[key] = val;
@@ -51,7 +51,7 @@ const useItemDB = function() {
 
         let newItems: ItemCollection;
         if (items)
-            newItems = structuredClone(items);
+            newItems = myStructuredClone(items);
         else
             newItems = {};
         delete newItems[key];

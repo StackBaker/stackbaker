@@ -13,7 +13,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 
 import type { EventCollection, EventRubric } from "./Event";
 import { createEventReprId } from "./Event";
-import type { Id } from "../globals";
+import { Id, myStructuredClone } from "../globals";
 import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM, ItemCollection } from "../Item";;
 import { PLANNER_PATH } from "../paths";
@@ -203,7 +203,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 		}
 
 		handlers.close();
-		props.saveEvent(structuredClone(eventBeingEdited));
+		props.saveEvent(myStructuredClone(eventBeingEdited));
 		changeEventBeingEdited(dummyEvent);
 	}
 

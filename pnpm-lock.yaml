@@ -52,6 +52,9 @@ dependencies:
   googleapis:
     specifier: ^114.0.0
     version: 114.0.0
+  lodash:
+    specifier: ^4.17.21
+    version: 4.17.21
   react:
     specifier: ^18.2.0
     version: 18.2.0
@@ -63,7 +66,7 @@ dependencies:
     version: 6.10.0(react-dom@18.2.0)(react@18.2.0)
   tauri-plugin-store-api:
     specifier: github:tauri-apps/tauri-plugin-store
-    version: github.com/tauri-apps/tauri-plugin-store/f0da2d1ac8370bd4cc7c1c0617175f0d5b5833a0
+    version: github.com/tauri-apps/tauri-plugin-store/0558a1f6c869ae0afdb0181dfa1ea31be8cf4893
   uuid:
     specifier: ^9.0.0
     version: 9.0.0
@@ -72,6 +75,9 @@ devDependencies:
   '@tauri-apps/cli':
     specifier: ^1.2.3
     version: 1.2.3
+  '@types/lodash':
+    specifier: ^4.14.194
+    version: 4.14.194
   '@types/node':
     specifier: ^18.15.11
     version: 18.15.11
@@ -1252,6 +1258,10 @@ packages:
       hoist-non-react-statics: 3.3.2
     dev: false
 
+  /@types/lodash@4.14.194:
+    resolution: {integrity: sha512-r22s9tAS7imvBt2lyHC9B8AGwWnXaYb1tY09oyLkXDs4vArpYJzw09nj8MLx5VfciBPGIb+ZwG0ssYnEPJxn/g==}
+    dev: true
+
   /@types/node@18.15.11:
     resolution: {integrity: sha512-E5Kwq2n4SbMzQOn6wnmBjuK9ouqlURrcZDVfbo9ftDDTFt3nk7ZKK4GMOzoYgnpQJKcxwQw+lGaBvvlMo0qN/Q==}
     dev: true
@@ -1772,6 +1782,10 @@ packages:
 
   /lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
+    dev: false
+
+  /lodash@4.17.21:
+    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
     dev: false
 
   /loose-envify@1.4.0:
@@ -2336,8 +2350,8 @@ packages:
     engines: {node: '>= 6'}
     dev: false
 
-  github.com/tauri-apps/tauri-plugin-store/f0da2d1ac8370bd4cc7c1c0617175f0d5b5833a0:
-    resolution: {tarball: https://codeload.github.com/tauri-apps/tauri-plugin-store/tar.gz/f0da2d1ac8370bd4cc7c1c0617175f0d5b5833a0}
+  github.com/tauri-apps/tauri-plugin-store/0558a1f6c869ae0afdb0181dfa1ea31be8cf4893:
+    resolution: {tarball: https://codeload.github.com/tauri-apps/tauri-plugin-store/tar.gz/0558a1f6c869ae0afdb0181dfa1ea31be8cf4893}
     name: tauri-plugin-store-api
     version: 0.0.0
     dependencies:

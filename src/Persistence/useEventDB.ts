@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
+// @ts-ignore
 import { Store } from "tauri-plugin-store-api";
 
 import { SAVE_DELAY } from "./dbutils";
 import type { EventRubric, EventCollection } from "../Calendars/Event";
-import { Id } from "../globals";
+import { Id, myStructuredClone } from "../globals";
 
 const EVENTS_FNAME = "events.dat";
 
@@ -30,7 +31,7 @@ const useEventDB = function() {
 
         let newEvents: EventCollection;
         if (events)
-            newEvents = structuredClone(events);
+            newEvents = myStructuredClone(events);
         else
             newEvents = {};
         newEvents[key] = val;
@@ -58,7 +59,7 @@ const useEventDB = function() {
 
         let newEvents: EventCollection;
         if (events)
-            newEvents = structuredClone(events);
+            newEvents = myStructuredClone(events);
         else
             newEvents = {};
         delete newEvents[key];

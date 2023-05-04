@@ -3,7 +3,7 @@ import { useHotkeys } from "@mantine/hooks";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import dayjs from "dayjs";
 
-import { Id, DO_LATER_LIST_ID, DAY_LIST_ID, DAY_LIST_TITLE } from "./globals";
+import { Id, DO_LATER_LIST_ID, DAY_LIST_ID, DAY_LIST_TITLE, myStructuredClone } from "./globals";
 import type { ItemRubric, ItemCollection } from "./Item";
 import type { ListRubric, ListCollection } from "./List";
 import type { EventRubric, EventCollection } from "./Calendars/Event";
@@ -54,7 +54,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     const db = useDatabase();
 
     const getListFromDB = (listId: Id): ListRubric | null => {
-        var newList: ListRubric = structuredClone(db.lists.data![listId]);
+        var newList: ListRubric = myStructuredClone(db.lists.data![listId]);
         if (!newList)
             return null;
         
