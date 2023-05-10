@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { Group } from "@mantine/core";
 import dayjs from "dayjs";
+import durationPlugin from "dayjs/plugin/duration";
 import type { DropResult, DraggableLocation } from "@hello-pangea/dnd";
+import { useNavigate } from "react-router-dom";
 
 import List from "../List";
 import DayCalendar from "../Calendars/DayCalendar";
@@ -12,6 +14,10 @@ import type { Id } from "../globals";
 import type { UserRubric } from "../Persistence/useUserDB";
 import { EventRubric, EventCollection } from "../Calendars/Event";
 import "../styles.css";
+import { getToday, DEFAULT_OFFSET } from "../dateutils";
+import { ROOT_PATH } from "../paths";
+
+dayjs.extend(durationPlugin);
 
 export interface DashboardMainProps {
     readonly user: UserRubric,
@@ -30,6 +36,21 @@ export interface DashboardMainProps {
 const DashboardMain = function(props: DashboardMainProps) {
     const listWidth = "250px";
     const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
+    const navigate = useNavigate();
+    
+    // attempt reload the page at 6am
+    useEffect(() => {
+        const today = getToday();
+        const tomorrow = today.startOf("day").add(1, "day").add(10, "seconds").subtract(DEFAULT_OFFSET);
+
+        if (setTimeout === undefined)
+            return;
+
+        const _ = setTimeout(() => {
+            navigate(ROOT_PATH);
+        }, tomorrow.diff(dayjs(), "ms"));
+    }, []);
+
 
     useEffect(() => {
         if (!props.user)
