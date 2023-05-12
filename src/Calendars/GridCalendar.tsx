@@ -17,7 +17,7 @@ import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM } from "../Item";
 import type { ItemCollection, ItemRubric } from "../Item";
 import type { ListCollection } from "../List";
-import type { loadingStage } from "../coordinateBackendAndState";
+import type { loadingStage } from "../globals";
 import { dateToDayId, dayIdToDay } from "../dateutils";
 import { DO_LATER_LIST_ID, Id } from "../globals";
 

@@ -2,30 +2,24 @@ import React, { useMemo, useState } from "react";
 import { useHotkeys } from "@mantine/hooks";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import dayjs from "dayjs";
+import { isEmpty } from "lodash";
 
-import { Id, DO_LATER_LIST_ID, DAY_LIST_ID, DAY_LIST_TITLE, myStructuredClone } from "./globals";
+import { Id, DO_LATER_LIST_ID, DAY_LIST_TITLE, myStructuredClone } from "./globals";
 import type { ItemRubric, ItemCollection } from "./Item";
 import type { ListRubric, ListCollection } from "./List";
 import type { EventRubric, EventCollection } from "./Calendars/Event";
 import useDatabase from "./Persistence/useDatabase";
 import { dateToDayId, getToday } from "./dateutils";
 import type { UserRubric } from "./Persistence/useUserDB";
+import type { loadingStage } from "./globals";
+import { LOADING_STAGES } from "./globals";
 
-// -1: nothing loaded 0: db loaded; 1: db updated, need to reload; 2: fully loaded
-export type loadingStage = -1 | 0 | 1 | 2;
-export const LOADING_STAGES: { [key: string]: loadingStage } = {
-    NOTHING_LOADED: -1,
-    DB_LOADED: 0,
-    DB_UPDATED: 1,
-    READY: 2
-}
-
-export interface coordinateBackendAndStateProps {
+interface coordinateBackendAndStateProps {
     date: dayjs.Dayjs,
     setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>
 };
 
-export interface coordinateBackendAndStateOutput {
+interface coordinateBackendAndStateOutput {
     user: UserRubric,
     date: dayjs.Dayjs,
     setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
@@ -49,9 +43,9 @@ export interface coordinateBackendAndStateOutput {
 
 const coordinateBackendAndState = function(props: coordinateBackendAndStateProps): coordinateBackendAndStateOutput {
     const [loadStage, setLoadStage] = useState<loadingStage>(LOADING_STAGES.NOTHING_LOADED);
-    const [relevantListCollection, setRelevantListCollection] = useState<ListCollection>({});
     
     const db = useDatabase();
+    const selectedDayId = dateToDayId(props.date);
 
     const getListFromDB = (listId: Id): ListRubric | null => {
         if (!db.lists.data)
@@ -67,18 +61,24 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         if (loadStage !== LOADING_STAGES.NOTHING_LOADED)
             return;
         db.user.load().then();
+        // TODO: ISSUE: loads are necessary every time we have a useDatabase
+        // however after we call useDatabase once, the react state is preserved
+        // maybe that's okay? But we shouldn't have to load more than once right?
         db.items.loadAll().then();
         db.lists.loadAll().then();
         db.events.loadAll().then();
+
         setLoadStage(LOADING_STAGES.DB_LOADED);
     }, [loadStage]);
 
+    console.log(loadStage);
     // TODO: try making the DB functions not async
     useMemo(() => {
-        if (loadStage !== LOADING_STAGES.DB_LOADED && loadStage !== LOADING_STAGES.DB_UPDATED)
+        if (loadStage !== LOADING_STAGES.DB_LOADED)
             return;
         const selectedDayId = dateToDayId(props.date);
         db.lists.has(selectedDayId).then((res) => {
+            console.log("has", res);
             if (!res) {
                 db.lists.create(props.date);
                 setLoadStage(LOADING_STAGES.NOTHING_LOADED);
@@ -91,23 +91,49 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
 
     useMemo(() => {
         const selectedDayId = dateToDayId(props.date);
-        if (loadStage !== LOADING_STAGES.DB_UPDATED || !db.lists.data || !db.lists.data[selectedDayId])
+        // TODO: the lists may be undefined
+        if (loadStage !== LOADING_STAGES.DB_UPDATED)
             return;
+        
+        // debugger;
+        var selectedDayList = getListFromDB(selectedDayId);
+        var laterList = getListFromDB(DO_LATER_LIST_ID);
+        if (selectedDayList === null || laterList === null) {
+            setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+            return;
+        }
 
-        var selectedDayList = null
-        while (selectedDayList === null)
-            selectedDayList = getListFromDB(selectedDayId);
+        var itemDeletedFlag = false;
+        for (var i = selectedDayList.itemIds.length - 1; i >= 0; i--) {
+            const itemId = selectedDayList.itemIds[i];
+            if (db.items.data!.hasOwnProperty(itemId))
+                continue;
+            
+            selectedDayList.itemIds.splice(i, 1);
+            db.items.del(itemId);
+            itemDeletedFlag = true;
+        }
 
-        var laterList = null;
-        while (laterList === null)
-            laterList = getListFromDB(DO_LATER_LIST_ID);
+        for (var i = laterList.itemIds.length - 1; i >= 0; i--) {
+            const itemId = laterList.itemIds[i];
+            if (db.items.data!.hasOwnProperty(itemId))
+                continue;
+            
+            laterList.itemIds.splice(i, 1);
+            db.items.del(itemId);
+            itemDeletedFlag = true;
+        }
 
-        setRelevantListCollection({
-            [selectedDayId]: selectedDayList,
-            [DO_LATER_LIST_ID]: laterList
-        });
+        console.log("item deleted?", itemDeletedFlag);
+        if (itemDeletedFlag) {
+            db.lists.set(selectedDayId, selectedDayList);
+            db.lists.set(DO_LATER_LIST_ID, laterList);
+            setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+            return;
+        }
+
         setLoadStage(LOADING_STAGES.READY);
-    }, [loadStage, props.date, db.lists.data, db.items.data]);
+    }, [loadStage, props.date]);
 
     const editUser = (newUserConfig: Partial<UserRubric> | null): boolean => {
         let newUserData: UserRubric = { ...db.user.data!, ...newUserConfig };
@@ -125,7 +151,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.unshift(newItemConfig.itemId);
         db.items.set(newItemConfig.itemId, newItemConfig);
         db.lists.set(listId, list);
-        setLoadStage(LOADING_STAGES.DB_UPDATED);
+        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -140,7 +166,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         };
 
         db.items.set(itemId, editedItem)
-        setLoadStage(LOADING_STAGES.DB_UPDATED);
+        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -153,7 +179,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.splice(index, 1);
         db.items.del(itemId);
         db.lists.set(listId, list);
-        setLoadStage(LOADING_STAGES.DB_UPDATED);
+        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -171,7 +197,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         db.lists.set(listId, editedList);
         // testing setting load stage because this function is used mainly to store that
         // a particular day has been planned, which occurs just before a navigate
-        setLoadStage(LOADING_STAGES.DB_UPDATED);
+        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     }
@@ -234,7 +260,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
             );
         }
 
-        setLoadStage(LOADING_STAGES.DB_UPDATED);
+        // setLoadStage(LOADING_STAGES.DB_UPDATED);
         
         return true;
     };
@@ -284,7 +310,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
 
         db.lists.setMany(newPrevDayIds.concat([todayId]), newPrevDayLists.concat(todayList));
         console.log(newPrevDayLists)
-        setLoadStage(LOADING_STAGES.DB_UPDATED);
+        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     }
@@ -300,18 +326,17 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     }
 
     const clearEverything = (): void => {
-        props.setDate(getToday());
         db.user.clear();
         db.lists.clear();
         db.items.clear();
         db.events.clear();
+        props.setDate(getToday());
         setLoadStage(LOADING_STAGES.NOTHING_LOADED);
     }
 
     const log = () => {
         console.log("l", db.lists.data);
         console.log("i", db.items.data);
-        console.log("d", relevantListCollection);
         console.log("e", db.events.data);
         console.log("u", db.user.data);
         console.log("s", loadStage);
@@ -329,7 +354,10 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         loadStage,
         items: db.items.data!,
         lists: db.lists.data!,
-        relevantListCollection,
+        relevantListCollection: {
+            [selectedDayId]: getListFromDB(selectedDayId)!,
+            [DO_LATER_LIST_ID]: getListFromDB(DO_LATER_LIST_ID)!
+        },
         editUser: editUser,
         createItem,
         mutateItem,

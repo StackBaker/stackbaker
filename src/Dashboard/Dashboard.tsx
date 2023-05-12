@@ -1,12 +1,16 @@
 import { AppShell, Text, Header } from "@mantine/core";
+import dayjs from "dayjs";
 
 import DashboardMain from "./DashboardMain";
 import DashboardLeftPanel from "./DashboardLeftPanel";
-import coordinateBackendAndState, { LOADING_STAGES } from "../coordinateBackendAndState";
-import type { coordinateBackendAndStateProps } from "../coordinateBackendAndState";
+import coordinateBackendAndState from "../coordinateBackendAndState";
+import { LOADING_STAGES } from "../globals";
 import "../styles.css"
 
-type DashboardProps = coordinateBackendAndStateProps;
+interface DashboardProps {
+    date: dayjs.Dayjs,
+    setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>
+};
 
 const Dashboard = function(props: DashboardProps) {
     const actionAreaHeight = "95vh";
@@ -60,6 +64,7 @@ const Dashboard = function(props: DashboardProps) {
                     mutateLists={coordination.mutateLists}
                     saveEvent={coordination.saveEvent}
                     deleteEvent={coordination.deleteEvent}
+                    mutateList={coordination.mutateList}
                 />
             }
             

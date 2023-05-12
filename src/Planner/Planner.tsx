@@ -4,15 +4,18 @@ import { AppShell } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 
 import { planningStage } from "./plannerutils";
-import coordinateBackendAndState, { LOADING_STAGES } from "../coordinateBackendAndState";
-import type { coordinateBackendAndStateProps } from "../coordinateBackendAndState";
+import coordinateBackendAndState from "../coordinateBackendAndState";
+import { LOADING_STAGES } from "../globals";
 import PlannerLeftPanel from "./PlannerLeftPanel";
 import PlannerMain from "./PlannerMain";
 import "../styles.css";
 import { dateToDayId, getToday } from "../dateutils";
 import { ListCollection } from "../List";
 
-type PlannerProps = coordinateBackendAndStateProps;
+interface PlannerProps {
+    date: dayjs.Dayjs,
+    setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>
+};;
 
 const Planner = function(props: PlannerProps) {
     const actionAreaHeight = "95vh";

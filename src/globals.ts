@@ -8,3 +8,11 @@ export const DO_LATER_LIST_TITLE: string = "Later"
 
 export const myStructuredClone =
     (structuredClone === undefined) ? cloneDeep : structuredClone;
+
+export type loadingStage = -1 | 0 | 1 | 2;
+export const LOADING_STAGES: { [key: string]: loadingStage } = {
+    NOTHING_LOADED: -1,
+    DB_LOADED: 0,
+    DB_UPDATED: 1,
+    READY: 2
+}

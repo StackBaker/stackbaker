@@ -19,6 +19,7 @@ import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM, ItemCollection } from "../Item";;
 import { PLANNER_PATH } from "../paths";
 import type { UserRubric } from "../Persistence/useUserDB";
+import { dateToDayId, getToday } from "../dateutils";
 
 const useStyles = createStyles((theme) => ({
 	calendarWrapper: {
@@ -101,7 +102,10 @@ interface DayCalendarProps {
 	readonly items: ItemCollection,
 	events: EventCollection,
 	saveEvent: (newEventConfig: EventRubric) => boolean,
-	deleteEvent: (eventId: Id) => boolean
+	deleteEvent: (eventId: Id) => boolean,
+
+	// TODO: get rid of mutateList everywhere
+	mutateList?: any
 };
 
 const DayCalendar = function(props: DayCalendarProps) {
@@ -290,7 +294,11 @@ const DayCalendar = function(props: DayCalendarProps) {
 					<Button
 						className={classes.planButton}
 						variant="subtle"
-						onClick={() => navigate(PLANNER_PATH)}
+						onClick={() => { 
+							const id = dateToDayId(getToday());
+							props.mutateList(id, { planned: false }).then();
+							navigate(PLANNER_PATH);
+						}}
 					>
 						Plan
 					</Button>

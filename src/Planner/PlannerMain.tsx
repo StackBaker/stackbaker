@@ -14,7 +14,7 @@ import { DO_LATER_LIST_ID, Id } from "../globals";
 import DayCalendar from "../Calendars/DayCalendar";
 import GridCalendar from "../Calendars/GridCalendar";
 import type { overrideDragEndAttrs } from "../Calendars/GridCalendar";
-import { LOADING_STAGES, loadingStage } from "../coordinateBackendAndState";
+import { LOADING_STAGES, loadingStage } from "../globals";
 import { UserRubric } from "../Persistence/useUserDB";
 
 interface PlannerMainProps {
