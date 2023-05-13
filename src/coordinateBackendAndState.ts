@@ -35,6 +35,7 @@ interface coordinateBackendAndStateOutput {
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     addIncompleteAndLaterToToday: () => boolean,
+    delManyItemsOrMutManyLists: (itemIds: Id[], newLists: ListRubric[]) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean,
 
@@ -179,7 +180,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.splice(index, 1);
         db.items.del(itemId);
         db.lists.set(listId, list);
-        // setLoadStage(LOADING_STAGES.DB_UPDATED);
+        setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -197,7 +198,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         db.lists.set(listId, editedList);
         // testing setting load stage because this function is used mainly to store that
         // a particular day has been planned, which occurs just before a navigate
-        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     }
@@ -259,8 +259,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
                 [sourceList, destList]
             );
         }
-
-        // setLoadStage(LOADING_STAGES.DB_UPDATED);
         
         return true;
     };
@@ -309,8 +307,19 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         todayList.itemIds = incompleteTasks.concat(todayList.itemIds);
 
         db.lists.setMany(newPrevDayIds.concat([todayId]), newPrevDayLists.concat(todayList));
-        console.log(newPrevDayLists)
-        // setLoadStage(LOADING_STAGES.DB_UPDATED);
+        console.log(newPrevDayLists);
+
+        return true;
+    }
+
+    const delManyItemsOrMutManyLists = (itemIds: Id[], newLists: ListRubric[]): boolean => {
+        db.items.delMany(itemIds);
+        console.log("deleted items", itemIds);
+        
+        const listIds = newLists.map(l => l.listId);
+        db.lists.setMany(listIds, newLists);
+        console.log("changed lists", listIds);
+        setLoadStage(LOADING_STAGES.NOTHING_LOADED);
 
         return true;
     }
@@ -365,6 +374,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         mutateList,
         mutateLists,
         addIncompleteAndLaterToToday,
+        delManyItemsOrMutManyLists,
         events: db.events.data!,
         saveEvent,
         deleteEvent,

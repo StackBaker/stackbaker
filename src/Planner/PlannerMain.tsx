@@ -8,7 +8,7 @@ import { dateToDayId } from "../dateutils";
 import { planningStage } from "./plannerutils";
 import { ItemRubric, ItemCollection } from "../Item";
 import List from "../List";
-import type { ListCollection } from "../List";
+import type { ListCollection, ListRubric } from "../List";
 import type { EventRubric, EventCollection } from "../Calendars/Event";
 import { DO_LATER_LIST_ID, Id } from "../globals";
 import DayCalendar from "../Calendars/DayCalendar";
@@ -30,6 +30,7 @@ interface PlannerMainProps {
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
+    delManyItemsOrMutManyLists: (itemIds: Id[], newLists: ListRubric[]) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean
 };
@@ -111,6 +112,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 mutateItem={props.mutateItem}
                 deleteItem={props.deleteItem}
                 mutateLists={props.mutateLists}
+                delManyItemsOrMutManyLists={props.delManyItemsOrMutManyLists}
             />
             <List
                 items={props.items}

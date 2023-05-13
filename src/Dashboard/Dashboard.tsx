@@ -64,7 +64,6 @@ const Dashboard = function(props: DashboardProps) {
                     mutateLists={coordination.mutateLists}
                     saveEvent={coordination.saveEvent}
                     deleteEvent={coordination.deleteEvent}
-                    mutateList={coordination.mutateList}
                 />
             }
             

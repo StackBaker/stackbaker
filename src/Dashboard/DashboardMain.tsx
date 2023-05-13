@@ -30,9 +30,7 @@ export interface DashboardMainProps {
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
-    deleteEvent: (eventId: Id) => boolean,
-
-    mutateList: any
+    deleteEvent: (eventId: Id) => boolean
 };
 
 const DashboardMain = function(props: DashboardMainProps) {
@@ -91,7 +89,6 @@ const DashboardMain = function(props: DashboardMainProps) {
                     events={props.events}
                     saveEvent={props.saveEvent}
                     deleteEvent={props.deleteEvent}
-                    mutateList={props.mutateList}
                 />
                 {Object.keys(props.lists).map(tlid => {
                     return (

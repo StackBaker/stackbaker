@@ -72,6 +72,7 @@ const Planner = function(props: PlannerProps) {
                     mutateItem={coordination.mutateItem}
                     deleteItem={coordination.deleteItem}
                     mutateLists={coordination.mutateLists}
+                    delManyItemsOrMutManyLists={coordination.delManyItemsOrMutManyLists}
                     saveEvent={coordination.saveEvent}
                     deleteEvent={coordination.deleteEvent}
                 />

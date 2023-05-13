@@ -51,6 +51,22 @@ const useItemDB = function() {
         store.save();
     }
 
+    const delMany = (keys: Id[]) => {
+        let newItems: ItemCollection;
+        if (items)
+            newItems = myStructuredClone(items);
+        else
+            newItems = {};
+        
+        for (const key of keys) {
+            delete newItems[key];
+            store.delete(key);
+        }
+
+        setItems(newItems);
+        store.save();
+    }
+
     const loadAll = async () => {
         const entries = await store.entries();
         
@@ -68,7 +84,7 @@ const useItemDB = function() {
         store.save();
     }
 
-    return { data: items, get, set, del, loadAll, clear };
+    return { data: items, get, set, del, delMany, loadAll, clear };
 }
 
 export default useItemDB;
