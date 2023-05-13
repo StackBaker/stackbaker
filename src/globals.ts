@@ -7,7 +7,7 @@ export const DAY_LIST_TITLE: string = "Items";
 export const DO_LATER_LIST_TITLE: string = "Later"
 
 export const myStructuredClone =
-    (structuredClone === undefined) ? cloneDeep : structuredClone;
+    (typeof structuredClone === "undefined") ? cloneDeep : structuredClone;
 
 export type loadingStage = -1 | 0 | 1 | 2;
 export const LOADING_STAGES: { [key: string]: loadingStage } = {
