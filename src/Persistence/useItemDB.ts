@@ -1,17 +1,14 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
+// @ts-ignore
 import { Store } from "tauri-plugin-store-api";
 
-import { SAVE_DELAY } from "./dbutils";
 import type { ItemRubric, ItemCollection } from "../Item";
-import type { Id } from "../globals";
+import { Id, myStructuredClone } from "../globals";
 
 const ITEMS_FNAME = "items.dat";
 
-// TODO: periodically clean
-// TODO: items seem to be being saved a lot, including when I just click the screen
 const useItemDB = function() {
     const store = new Store(ITEMS_FNAME);
-    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [items, setItems] = useState<ItemCollection>();
 
     const get = async (key: Id) => {
@@ -27,32 +24,23 @@ const useItemDB = function() {
     }
 
     const set = (key: Id, val: ItemRubric) => {
-        if (timeoutRef.current)
-            clearTimeout(timeoutRef.current!);
-
-        let newItems: ItemCollection;
-        if (items)
-            newItems = structuredClone(items);
-        else
-            newItems = {};
-        newItems[key] = val;
-        setItems(newItems);
+        if (items) {
+            setItems({ ...items, [key]: val });
+        } else {
+            let newItems: ItemCollection = { [key]: val };
+            setItems(newItems);
+        }
         
         // then write through to disk
         store.set(key, val);
-        timeoutRef.current = setTimeout(() => {
-            store.save();
-            console.log("items saved");
-        }, SAVE_DELAY);
+        store.save();
+        console.log("items saved");
     }
 
     const del = (key: Id) => {
-        if (timeoutRef.current)
-            clearTimeout(timeoutRef.current!);
-
         let newItems: ItemCollection;
         if (items)
-            newItems = structuredClone(items);
+            newItems = myStructuredClone(items);
         else
             newItems = {};
         delete newItems[key];
@@ -60,11 +48,27 @@ const useItemDB = function() {
         
         // then write through to disk
         store.delete(key);
-        timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
+        store.save();
+    }
+
+    const delMany = (keys: Id[]) => {
+        let newItems: ItemCollection;
+        if (items)
+            newItems = myStructuredClone(items);
+        else
+            newItems = {};
+        
+        for (const key of keys) {
+            delete newItems[key];
+            store.delete(key);
+        }
+
+        setItems(newItems);
+        store.save();
     }
 
     const loadAll = async () => {
-        const entries = await store.entries()
+        const entries = await store.entries();
         
         var newItems: ItemCollection = {};
         for (const entry of entries) {
@@ -80,7 +84,7 @@ const useItemDB = function() {
         store.save();
     }
 
-    return { data: items, get, set, del, loadAll, clear };
+    return { data: items, get, set, del, delMany, loadAll, clear };
 }
 
 export default useItemDB;

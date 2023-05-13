@@ -8,13 +8,13 @@ import { dateToDayId } from "../dateutils";
 import { planningStage } from "./plannerutils";
 import { ItemRubric, ItemCollection } from "../Item";
 import List from "../List";
-import type { ListCollection } from "../List";
+import type { ListCollection, ListRubric } from "../List";
 import type { EventRubric, EventCollection } from "../Calendars/Event";
 import { DO_LATER_LIST_ID, Id } from "../globals";
 import DayCalendar from "../Calendars/DayCalendar";
 import GridCalendar from "../Calendars/GridCalendar";
 import type { overrideDragEndAttrs } from "../Calendars/GridCalendar";
-import { loadingStage } from "../coordinateBackendAndState";
+import { LOADING_STAGES, loadingStage } from "../globals";
 import { UserRubric } from "../Persistence/useUserDB";
 
 interface PlannerMainProps {
@@ -30,6 +30,7 @@ interface PlannerMainProps {
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
+    delManyItemsOrMutManyLists: (itemIds: Id[], newLists: ListRubric[]) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean
 };
@@ -100,7 +101,7 @@ const PlannerMain = function(props: PlannerMainProps) {
         </>
     );
 
-    const StageTwo = (props.loadStage === 2) ? (
+    const StageTwo = (props.loadStage === LOADING_STAGES.READY) ? (
         <>
             <GridCalendar
                 setDragOverride={setDragOverride}
@@ -111,6 +112,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 mutateItem={props.mutateItem}
                 deleteItem={props.deleteItem}
                 mutateLists={props.mutateLists}
+                delManyItemsOrMutManyLists={props.delManyItemsOrMutManyLists}
             />
             <List
                 items={props.items}
@@ -160,7 +162,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 spacing="lg"
                 align="flex-start"
                 p="xl"
-                sx={{ overflowX: "scroll", flexWrap: "nowrap" }}
+                sx={{ flexWrap: "nowrap" }}
             >
                 {stages[props.planningStage]}
             </Group>

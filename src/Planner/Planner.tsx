@@ -1,23 +1,41 @@
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { AppShell } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 
-import type { planningStage } from "./plannerutils";
+import { planningStage } from "./plannerutils";
 import coordinateBackendAndState from "../coordinateBackendAndState";
-import type { coordinateBackendAndStateProps } from "../coordinateBackendAndState";
+import { LOADING_STAGES } from "../globals";
 import PlannerLeftPanel from "./PlannerLeftPanel";
 import PlannerMain from "./PlannerMain";
 import "../styles.css";
+import { dateToDayId, getToday } from "../dateutils";
+import { ListCollection } from "../List";
 
-type PlannerProps = coordinateBackendAndStateProps;
+interface PlannerProps {
+    date: dayjs.Dayjs,
+    setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>
+};;
 
 const Planner = function(props: PlannerProps) {
-    // TODO: FEATURE FOR NEXT RELEASE: search for unfinished tasks from the previous day
-    // TODO: and actually store them in the listdb for the new day: CREATE A NEW ATOMIC useListDB function
     const actionAreaHeight = "95vh";
     const [planningStage, setPlanningStage] = useState<planningStage>(0);
 
     const coordination = coordinateBackendAndState(props);
+    const [addIncAndLaterTasks, handlers] = useDisclosure(true);
+
+    // add unfinished tasks from next day to today's items
+    useMemo(() => {
+        if (!addIncAndLaterTasks)
+            return;
+
+        if (coordination.loadStage !== LOADING_STAGES.DB_UPDATED)
+            return;
+        
+        let result: boolean = coordination.addIncompleteAndLaterToToday();
+        if (result)
+            handlers.close();
+    }, [coordination.loadStage, addIncAndLaterTasks]);
     
     return (
         <AppShell
@@ -30,7 +48,7 @@ const Planner = function(props: PlannerProps) {
             }}
             navbarOffsetBreakpoint="sm"
             navbar={
-                (coordination.loadStage !== 2) ? <div></div> :
+                (coordination.loadStage !== LOADING_STAGES.READY) ? <div></div> :
                 <PlannerLeftPanel
                     date={props.date}
                     planningStage={planningStage}
@@ -40,7 +58,7 @@ const Planner = function(props: PlannerProps) {
             }
         >
             {
-                (coordination.loadStage !== 2) ? <div></div> :
+                (coordination.loadStage !== LOADING_STAGES.READY) ? <div></div> :
                 <PlannerMain
                     user={coordination.user}
                     date={coordination.date}
@@ -54,6 +72,7 @@ const Planner = function(props: PlannerProps) {
                     mutateItem={coordination.mutateItem}
                     deleteItem={coordination.deleteItem}
                     mutateLists={coordination.mutateLists}
+                    delManyItemsOrMutManyLists={coordination.delManyItemsOrMutManyLists}
                     saveEvent={coordination.saveEvent}
                     deleteEvent={coordination.deleteEvent}
                 />

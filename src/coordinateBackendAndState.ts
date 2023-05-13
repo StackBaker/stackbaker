@@ -2,24 +2,24 @@ import React, { useMemo, useState } from "react";
 import { useHotkeys } from "@mantine/hooks";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import dayjs from "dayjs";
+import { isEmpty } from "lodash";
 
-import { Id, DO_LATER_LIST_ID, DAY_LIST_ID, DAY_LIST_TITLE } from "./globals";
+import { Id, DO_LATER_LIST_ID, DAY_LIST_TITLE, myStructuredClone } from "./globals";
 import type { ItemRubric, ItemCollection } from "./Item";
 import type { ListRubric, ListCollection } from "./List";
 import type { EventRubric, EventCollection } from "./Calendars/Event";
 import useDatabase from "./Persistence/useDatabase";
 import { dateToDayId, getToday } from "./dateutils";
 import type { UserRubric } from "./Persistence/useUserDB";
+import type { loadingStage } from "./globals";
+import { LOADING_STAGES } from "./globals";
 
-// -1: nothing loaded 0: db loaded; 1: db updated, need to reload; 2: fully loaded
-export type loadingStage = -1 | 0 | 1 | 2;
-
-export interface coordinateBackendAndStateProps {
+interface coordinateBackendAndStateProps {
     date: dayjs.Dayjs,
     setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>
 };
 
-export interface coordinateBackendAndStateOutput {
+interface coordinateBackendAndStateOutput {
     user: UserRubric,
     date: dayjs.Dayjs,
     setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
@@ -34,6 +34,8 @@ export interface coordinateBackendAndStateOutput {
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
+    addIncompleteAndLaterToToday: () => boolean,
+    delManyItemsOrMutManyLists: (itemIds: Id[], newLists: ListRubric[]) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean,
 
@@ -41,13 +43,15 @@ export interface coordinateBackendAndStateOutput {
 };
 
 const coordinateBackendAndState = function(props: coordinateBackendAndStateProps): coordinateBackendAndStateOutput {
-    const [loadStage, setLoadStage] = useState<loadingStage>(-1);
-    const [relevantListCollection, setRelevantListCollection] = useState<ListCollection>({});
+    const [loadStage, setLoadStage] = useState<loadingStage>(LOADING_STAGES.NOTHING_LOADED);
     
     const db = useDatabase();
+    const selectedDayId = dateToDayId(props.date);
 
     const getListFromDB = (listId: Id): ListRubric | null => {
-        var newList: ListRubric = structuredClone(db.lists.data![listId]);
+        if (!db.lists.data)
+            return null;
+        var newList: ListRubric = myStructuredClone(db.lists.data![listId]);
         if (!newList)
             return null;
         
@@ -55,50 +59,82 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     };
 
     useMemo(() => {
-        if (loadStage !== -1)
+        if (loadStage !== LOADING_STAGES.NOTHING_LOADED)
             return;
         db.user.load().then();
+        // TODO: ISSUE: loads are necessary every time we have a useDatabase
+        // however after we call useDatabase once, the react state is preserved
+        // maybe that's okay? But we shouldn't have to load more than once right?
         db.items.loadAll().then();
         db.lists.loadAll().then();
         db.events.loadAll().then();
-        setLoadStage(0);
+
+        setLoadStage(LOADING_STAGES.DB_LOADED);
     }, [loadStage]);
 
+    console.log(loadStage);
     // TODO: try making the DB functions not async
     useMemo(() => {
-        if (loadStage !== 0 && loadStage !== 1)
+        if (loadStage !== LOADING_STAGES.DB_LOADED)
             return;
         const selectedDayId = dateToDayId(props.date);
         db.lists.has(selectedDayId).then((res) => {
+            console.log("has", res);
             if (!res) {
                 db.lists.create(props.date);
-                setLoadStage(-1)
+                setLoadStage(LOADING_STAGES.NOTHING_LOADED);
                 return;
             }
             
-            setLoadStage(1);
+            setLoadStage(LOADING_STAGES.DB_UPDATED);
         });
     }, [loadStage, props.date]);
 
     useMemo(() => {
         const selectedDayId = dateToDayId(props.date);
-        if (loadStage !== 1 || !db.lists.data || !db.lists.data[selectedDayId])
+        // TODO: the lists may be undefined
+        if (loadStage !== LOADING_STAGES.DB_UPDATED)
             return;
+        
+        // debugger;
+        var selectedDayList = getListFromDB(selectedDayId);
+        var laterList = getListFromDB(DO_LATER_LIST_ID);
+        if (selectedDayList === null || laterList === null) {
+            setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+            return;
+        }
 
-        var selectedDayList = null
-        while (selectedDayList === null)
-            selectedDayList = getListFromDB(selectedDayId);
+        var itemDeletedFlag = false;
+        for (var i = selectedDayList.itemIds.length - 1; i >= 0; i--) {
+            const itemId = selectedDayList.itemIds[i];
+            if (db.items.data!.hasOwnProperty(itemId))
+                continue;
+            
+            selectedDayList.itemIds.splice(i, 1);
+            db.items.del(itemId);
+            itemDeletedFlag = true;
+        }
 
-        var laterList = null;
-        while (laterList === null)
-            laterList = getListFromDB(DO_LATER_LIST_ID);
+        for (var i = laterList.itemIds.length - 1; i >= 0; i--) {
+            const itemId = laterList.itemIds[i];
+            if (db.items.data!.hasOwnProperty(itemId))
+                continue;
+            
+            laterList.itemIds.splice(i, 1);
+            db.items.del(itemId);
+            itemDeletedFlag = true;
+        }
 
-        setRelevantListCollection({
-            [selectedDayId]: selectedDayList,
-            [DO_LATER_LIST_ID]: laterList
-        });
-        setLoadStage(2);
-    }, [loadStage, props.date, db.lists.data, db.items.data]);
+        console.log("item deleted?", itemDeletedFlag);
+        if (itemDeletedFlag) {
+            db.lists.set(selectedDayId, selectedDayList);
+            db.lists.set(DO_LATER_LIST_ID, laterList);
+            setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+            return;
+        }
+
+        setLoadStage(LOADING_STAGES.READY);
+    }, [loadStage, props.date]);
 
     const editUser = (newUserConfig: Partial<UserRubric> | null): boolean => {
         let newUserData: UserRubric = { ...db.user.data!, ...newUserConfig };
@@ -116,7 +152,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.unshift(newItemConfig.itemId);
         db.items.set(newItemConfig.itemId, newItemConfig);
         db.lists.set(listId, list);
-        setLoadStage(1);
+        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -131,7 +167,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         };
 
         db.items.set(itemId, editedItem)
-        setLoadStage(1);
+        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -144,7 +180,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.splice(index, 1);
         db.items.del(itemId);
         db.lists.set(listId, list);
-        setLoadStage(1);
+        setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -162,7 +198,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         db.lists.set(listId, editedList);
         // testing setting load stage because this function is used mainly to store that
         // a particular day has been planned, which occurs just before a navigate
-        setLoadStage(1);
 
         return true;
     }
@@ -224,11 +259,70 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
                 [sourceList, destList]
             );
         }
-
-        setLoadStage(1);
         
         return true;
     };
+
+    const addIncompleteAndLaterToToday = (): boolean => {
+        const numPrevDaysToSearch = 3;
+        const today = getToday();
+        const todayId = dateToDayId(today);
+        var todayList = getListFromDB(todayId);
+
+        if (todayList === null || todayList.planned)
+            return false;
+        
+        
+        // find all the IDs of previous days to check for incomplete tasks
+        var prevDayIds = [];
+        for (var i = 1; i <= numPrevDaysToSearch; i++) {
+            prevDayIds.push(dateToDayId(today.add(-1 * i, "days")));
+        }
+        // also check for tasks in the later list
+        prevDayIds.push(DO_LATER_LIST_ID);
+
+        var incompleteTasks = [];
+        var newPrevDayIds = []
+        var newPrevDayLists = [];
+        for (const prevDayId of prevDayIds) {
+            var prevDayList = getListFromDB(prevDayId);
+            if (!prevDayList)
+                continue;
+            
+            for (var i = prevDayList.itemIds.length - 1; i >= 0; i--) {
+                const itemId = prevDayList.itemIds[i];
+                if (!db.items.data || db.items.data![itemId].complete)
+                    continue;
+                
+                // the task is incomplete, add it to the incomplete Tasks arr
+                incompleteTasks.push(itemId);
+                // remove it from this day's itemIds
+                prevDayList.itemIds.splice(i, 1);
+            }
+
+            newPrevDayIds.push(prevDayId);
+            newPrevDayLists.push(prevDayList);
+        }
+
+        todayList.itemIds = incompleteTasks.concat(todayList.itemIds);
+
+        db.lists.setMany(newPrevDayIds.concat([todayId]), newPrevDayLists.concat(todayList));
+        console.log(newPrevDayLists);
+
+        return true;
+    }
+
+    const delManyItemsOrMutManyLists = (itemIds: Id[], newLists: ListRubric[]): boolean => {
+        db.items.delMany(itemIds);
+        console.log("deleted items", itemIds);
+        
+        const listIds = newLists.map(l => l.listId);
+        db.lists.setMany(listIds, newLists);
+        console.log("changed lists", listIds);
+        setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+
+        return true;
+    }
 
     const saveEvent = (newEventConfig: EventRubric): boolean => {
         db.events.set(newEventConfig.id, newEventConfig);
@@ -241,18 +335,17 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     }
 
     const clearEverything = (): void => {
-        props.setDate(getToday());
         db.user.clear();
         db.lists.clear();
         db.items.clear();
         db.events.clear();
-        setLoadStage(-1);
+        props.setDate(getToday());
+        setLoadStage(LOADING_STAGES.NOTHING_LOADED);
     }
 
     const log = () => {
         console.log("l", db.lists.data);
         console.log("i", db.items.data);
-        console.log("d", relevantListCollection);
         console.log("e", db.events.data);
         console.log("u", db.user.data);
         console.log("s", loadStage);
@@ -270,13 +363,18 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         loadStage,
         items: db.items.data!,
         lists: db.lists.data!,
-        relevantListCollection,
+        relevantListCollection: {
+            [selectedDayId]: getListFromDB(selectedDayId)!,
+            [DO_LATER_LIST_ID]: getListFromDB(DO_LATER_LIST_ID)!
+        },
         editUser: editUser,
         createItem,
         mutateItem,
         deleteItem,
         mutateList,
         mutateLists,
+        addIncompleteAndLaterToToday,
+        delManyItemsOrMutManyLists,
         events: db.events.data!,
         saveEvent,
         deleteEvent,

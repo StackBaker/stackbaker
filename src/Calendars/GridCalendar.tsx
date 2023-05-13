@@ -16,8 +16,8 @@ import type { EventList } from "./Event";
 import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM } from "../Item";
 import type { ItemCollection, ItemRubric } from "../Item";
-import type { ListCollection } from "../List";
-import type { loadingStage } from "../coordinateBackendAndState";
+import type { ListCollection, ListRubric } from "../List";
+import type { loadingStage } from "../globals";
 import { dateToDayId, dayIdToDay } from "../dateutils";
 import { DO_LATER_LIST_ID, Id } from "../globals";
 
@@ -98,6 +98,7 @@ interface GridCalendarProps {
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
+    delManyItemsOrMutManyLists: (itemIds: Id[], newLists: ListRubric[]) => boolean,
 };
 
 const GridCalendar = function(props: GridCalendarProps) {
@@ -124,6 +125,30 @@ const GridCalendar = function(props: GridCalendarProps) {
 
     useEffect(() => {
         // run once on render to initialize the events
+        var deletedItemIds: Id[] = [];
+        var mutatedLists: ListRubric[] = [];
+        for (const listId in props.lists) {
+            var list = props.lists[listId];
+            var deletedItem = false;
+            for (var i = list.itemIds.length - 1; i >= 0; i--) {
+                const itemId = list.itemIds[i];
+                if (props.items.hasOwnProperty(itemId))
+                    continue;
+                
+                list.itemIds.splice(i, 1);
+                deletedItemIds.push(itemId);
+                deletedItem = true;
+                console.log("bruh", itemId);
+            }
+            if (deletedItem)
+                mutatedLists.push(list);
+        }
+
+        if (mutatedLists.length !== 0 || deletedItemIds.length !== 0) {
+            props.delManyItemsOrMutManyLists(deletedItemIds, mutatedLists);
+            return;
+        }
+
         setEvents(
             Object.keys(props.lists).reduce((prev, cur) => {
                 return prev.concat(props.lists[cur].itemIds.map((k) => ({
@@ -140,7 +165,7 @@ const GridCalendar = function(props: GridCalendarProps) {
         // TODO: scroll to current day
         let calendarApi = calendarRef.current!.getApi();
         calendarApi.gotoDate(dayjs().toDate());
-    }, [calendarRef])
+    }, [])
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const id = getIdFromEventRepr(clickInfo.event.id);

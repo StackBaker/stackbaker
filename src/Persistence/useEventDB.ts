@@ -1,15 +1,14 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
+// @ts-ignore
 import { Store } from "tauri-plugin-store-api";
 
-import { SAVE_DELAY } from "./dbutils";
 import type { EventRubric, EventCollection } from "../Calendars/Event";
-import { Id } from "../globals";
+import { Id, myStructuredClone } from "../globals";
 
 const EVENTS_FNAME = "events.dat";
 
 const useEventDB = function() {
     const store = new Store(EVENTS_FNAME);
-    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [events, setEvents] = useState<EventCollection>({});
 
     const get = async (key: Id) => {
@@ -25,22 +24,16 @@ const useEventDB = function() {
     }
 
     const set = (key: Id, val: EventRubric) => {
-        if (timeoutRef.current)
-            clearTimeout(timeoutRef.current!);
+        if (events) {
+            setEvents({ ...events, [key]: val });
+        } else {
+            let newEvents: EventCollection = { [key]: val };
+            setEvents(newEvents);
+        }
 
-        let newEvents: EventCollection;
-        if (events)
-            newEvents = structuredClone(events);
-        else
-            newEvents = {};
-        newEvents[key] = val;
-        setEvents(newEvents);
-
-        store.set(key, val)
-        timeoutRef.current = setTimeout(() => {
-            store.save();
-            console.log("events saved")
-        }, SAVE_DELAY);
+        store.set(key, val);
+        store.save();
+        console.log("events saved");
     }
 
     const has = async (eventId: Id): Promise<boolean> => {
@@ -53,20 +46,18 @@ const useEventDB = function() {
     }
 
     const del = (key: Id) => {
-        if (timeoutRef.current)
-            clearTimeout(timeoutRef.current!);
-
         let newEvents: EventCollection;
         if (events)
-            newEvents = structuredClone(events);
+            newEvents = myStructuredClone(events);
         else
             newEvents = {};
         delete newEvents[key];
         setEvents(newEvents);
         
         // then write through to disk
+        // TODO: are all these .then()s okay? Do they impact performance?
         store.delete(key);
-        timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
+        store.save();
     }
 
     const loadAll = async () => {

@@ -1,20 +1,18 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
+// @ts-ignore
 import { Store } from "tauri-plugin-store-api";
 
-import { SAVE_DELAY } from "./dbutils";
 import type { ListRubric, ListCollection } from "../List";
-import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, Id } from "../globals";
+import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, Id, myStructuredClone } from "../globals";
 import dayjs from "dayjs";
 import { dateToDayId } from "../dateutils";
 
 const LISTS_FNAME = "lists.dat";
 
 // TODO: properly test this
-// TODO: periodically clean the database
 const useListDB = function() {
     const store = new Store(LISTS_FNAME);
-    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [lists, setLists] = useState<ListCollection>();
+    const [lists, setLists] = useState<ListCollection>({});
 
     const get = async (key: Id) => {
         // the use of setState is not as a cache: it's an efficient duplicate
@@ -29,36 +27,28 @@ const useListDB = function() {
     }
 
     // NOTE: the calls to setList should be synchronous, but the calls to store.set perhaps should be async
-    // TODO: if changing around async stuff works here, propagate it to other dbs
     const set = (key: Id, val: ListRubric) => {
-        if (timeoutRef.current)
-            clearTimeout(timeoutRef.current!);
-
         let newLists: ListCollection;
-        if (lists)
-            newLists = structuredClone(lists);
-        else
-            newLists = {};
-        newLists[key] = val;
-        setLists(newLists);
+        if (lists) {
+            setLists({ ...lists, [key]: val });
+        } else {
+            newLists = { [key]: val };
+            setLists(newLists);
+        }
 
-        store.set(key, val)
-        timeoutRef.current = setTimeout(() => {
-            store.save();
-            console.log("lists saved")
-        }, SAVE_DELAY);
+        store.set(key, val);
+        // suspicion: loads can be run before saves complete
+        store.save();
+        console.log("lists saved");
     }
 
     const setMany = (keys: Id[], vals: ListRubric[]): boolean => {
         if (keys.length !== vals.length)
             return false;
 
-        if (timeoutRef.current)
-            clearTimeout(timeoutRef.current!);
-
         let newLists: ListCollection;
         if (lists)
-            newLists = structuredClone(lists);
+            newLists = myStructuredClone(lists);
         else
             newLists = {};
         
@@ -69,10 +59,8 @@ const useListDB = function() {
         });
         setLists(newLists);
         
-        timeoutRef.current = setTimeout(() => {
-            store.save();
-            console.log("lists saved")
-        }, SAVE_DELAY);
+        store.save();
+        console.log("many lists saved");
 
         return true;
     }
@@ -106,12 +94,9 @@ const useListDB = function() {
     }
 
     const del = (key: Id) => {
-        if (timeoutRef.current)
-            clearTimeout(timeoutRef.current!);
-
         let newLists: ListCollection;
         if (lists)
-            newLists = structuredClone(lists);
+            newLists = myStructuredClone(lists);
         else
             newLists = {};
         delete newLists[key];
@@ -119,7 +104,7 @@ const useListDB = function() {
         
         // then write through to disk
         store.delete(key);
-        timeoutRef.current = setTimeout(() => store.save(), SAVE_DELAY);
+        store.save();
     }
 
     const loadAll = async () => {
