@@ -1,5 +1,6 @@
-import { AppShell, Text, Header } from "@mantine/core";
+import { AppShell, Text, Header, Group } from "@mantine/core";
 import dayjs from "dayjs";
+import { open } from "@tauri-apps/api/shell";
 
 import DashboardMain from "./DashboardMain";
 import DashboardLeftPanel from "./DashboardLeftPanel";
@@ -15,6 +16,7 @@ interface DashboardProps {
 const Dashboard = function(props: DashboardProps) {
     const actionAreaHeight = "95vh";
     const headerHeight = 50;
+    const feedbackLink = "https://airtable.com/shr2PFR5Urx9E1w8A";
     
     const coordination = coordinateBackendAndState(props);
 
@@ -41,11 +43,21 @@ const Dashboard = function(props: DashboardProps) {
             }
             header={
                 <Header height={{ base: headerHeight /* , md: 70 */ }} p="md">
-                    <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+                    <Group h="100%" position="apart">
                         <Text className="dash-header">
                             {(coordination.loadStage === LOADING_STAGES.READY) ? "StackBaker" : "Loading..."}
                         </Text>
-                    </div>
+                        <Text
+                            onClick={() => open(feedbackLink).then() }
+                            className="dash-header"
+                            size={10}
+                            underline
+                            c="#2008f4"
+                            sx={{ cursor: "pointer" }}
+                        >
+                            Find any bugs or have any feedback?
+                        </Text>
+                    </Group>
                 </Header>
             }
         >
