@@ -34,6 +34,7 @@ const useUserDB = function() {
         setUser({ ...user, [key]: val });
         store.set(key, val);
         store.save();
+        console.log("user saved");
     }
 
     const replaceUser = (newUserConfig: UserRubric | null) => {

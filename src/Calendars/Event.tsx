@@ -9,7 +9,9 @@ export interface EventRubric {
     id: Id,
     title: string,
     start: DateInput | null,
-    end: DateInput | null
+    end: DateInput | null,
+    daysOfWeek?: number[] | null | undefined,
+    endRecur?: DateInput | null | undefined
 };
 
 export type EventCollection = { [key: Id]: EventRubric };

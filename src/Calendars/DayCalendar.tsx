@@ -5,7 +5,7 @@ import type { DateSelectArg, EventAddArg, EventRemoveArg, EventChangeArg, EventC
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
-import { createStyles, Stack, Button, Title, Text, Modal, TextInput, Group, ActionIcon } from "@mantine/core";
+import { createStyles, Stack, Button, Title, Text, Modal, TextInput, Group, ActionIcon, Select, Grid, SelectItem, UnstyledButton, Avatar } from "@mantine/core";
 import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
@@ -50,6 +50,8 @@ interface EditEventModalProps {
 const EditEventModal = function(props: EditEventModalProps) {
 	const { classes } = useStyles();
 	const inputRef = useRef<HTMLInputElement>(null);
+	const timeDisplayFmt = "h:mm a";
+	const dayBtnSize = 30;
 
 	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
 		props.changeEventBeingEdited({
@@ -57,6 +59,71 @@ const EditEventModal = function(props: EditEventModalProps) {
 			title: e.currentTarget.value
 		});
 	}
+
+	const handleChangeStartTime = (newStart: string | null) => {
+		if (!newStart)
+			return;
+		
+		console.log(newStart);
+		// props.changeEventBeingEdited({
+		// 	...props.eventBeingEdited,
+		// 	start: 
+		// })
+	}
+
+	const handleChangeEndTime = (newEnd: string | null ) => {
+		if (!newEnd)
+			return;
+		
+		console.log("e", newEnd);
+	}
+
+	const toggleIncludeDayOfWeek = (num: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
+		if (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0) {
+			props.changeEventBeingEdited({
+				...props.eventBeingEdited,
+				daysOfWeek: [num]
+			});
+			return;
+		}
+
+		let newDaysOfWeek = myStructuredClone(props.eventBeingEdited.daysOfWeek!);
+		const idx = newDaysOfWeek.indexOf(num);
+		if (idx === -1) {
+			newDaysOfWeek.push(num);
+		} else {
+			newDaysOfWeek.splice(idx, 1);
+		}
+		
+		props.changeEventBeingEdited({
+			...props.eventBeingEdited,
+			daysOfWeek: newDaysOfWeek
+		})
+	}
+
+	const toggleDailyRepeat = () => {
+		if (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0) {
+			props.changeEventBeingEdited({
+				...props.eventBeingEdited,
+				daysOfWeek: [0, 1, 2, 3, 4, 5, 6]
+			});
+			return;
+		}
+
+		let newDaysOfWeek = myStructuredClone(props.eventBeingEdited.daysOfWeek!);
+		if (newDaysOfWeek.sort().every((val, idx) => val === [0, 1, 2, 3, 4, 5, 6, 7][idx])) {
+			props.changeEventBeingEdited({
+				...props.eventBeingEdited,
+				daysOfWeek: null
+			});
+		}
+	}
+
+	const possibleTimes = Array(24 * 4).fill(0).map((_, idx) => {
+		const curTimeInMins = 15 * idx;
+		const date = dayjs().startOf("day").add(curTimeInMins, "minutes");
+		return { value: date.format(), label: date.format(timeDisplayFmt) } as SelectItem;
+	});
 
 	return (
 		<Modal
@@ -72,15 +139,143 @@ const EditEventModal = function(props: EditEventModalProps) {
 						props.saveEditingEvent();
 				}]])}
 		>
-			<Group w="100%" m="xs">
-				<TextInput
-					ref={inputRef}
-					label="Title"
-					miw="90%"
-					value={props.eventBeingEdited?.title}
-					onChange={handleChangeTitle}
-				/>
-			</Group>
+			<Grid grow mb="xs">
+				<Grid.Col span={12}>
+					<TextInput
+						ref={inputRef}
+						label="Title"
+						value={props.eventBeingEdited?.title}
+						onChange={handleChangeTitle}
+					/>
+				</Grid.Col>
+				<Grid.Col span={6}>
+					<Select
+						label="Start time"
+						placeholder="Pick a start time"
+						value={dayjs(props.eventBeingEdited.start! as Date).format()}
+						onChange={handleChangeStartTime}
+						data={possibleTimes}
+						dropdownPosition="bottom"
+						maxDropdownHeight={280}
+					/>
+				</Grid.Col>
+				<Grid.Col span={6}>
+					<Select
+						label="End time"
+						placeholder="Pick an end time"
+						value={dayjs(props.eventBeingEdited.end! as Date).format()}
+						onChange={handleChangeEndTime}
+						data={possibleTimes}
+						dropdownPosition="bottom"
+						maxDropdownHeight={280}
+					/>
+				</Grid.Col>
+				<Grid.Col span={2}>
+					<Stack spacing={0}>
+						<Text fz="sm" fw={450}>Repeats</Text>
+						<Text
+							c={
+								(!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0) ?
+								"dimmed" : "white"
+							}
+							fz="xs"
+						>
+							Never
+						</Text>
+					</Stack>
+				</Grid.Col>
+				<Grid.Col span={10}>
+					<Group position="apart" align="center" spacing={2}>
+						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(0)}>
+							<Avatar
+								size={dayBtnSize}
+								color="blue"
+								variant={
+									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(0)) ?
+									"light" : "filled"
+								}
+							>
+								S
+							</Avatar>
+						</Button>
+						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(1)}>
+							<Avatar
+								size={dayBtnSize}
+								color="blue"
+								variant={
+									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(1)) ?
+									"light" : "filled"
+								}
+							>
+								M
+							</Avatar>
+						</Button>
+						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(2)}>
+							<Avatar
+								size={dayBtnSize}
+								color="blue"
+								variant={
+									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(2)) ?
+									"light" : "filled"
+								}
+							>
+								T
+							</Avatar>
+						</Button>
+						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(3)}>
+							<Avatar
+								size={dayBtnSize}
+								color="blue"
+								variant={
+									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(3)) ?
+									"light" : "filled"
+								}
+							>
+								W
+							</Avatar>
+						</Button>
+						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(4)}>
+							<Avatar
+								size={dayBtnSize}
+								color="blue"
+								variant={
+									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(4)) ?
+									"light" : "filled"
+								}
+							>
+								T
+							</Avatar>
+						</Button>
+						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(5)}>
+							<Avatar
+								size={dayBtnSize}
+								color="blue"
+								variant={
+									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(5)) ?
+									"light" : "filled"
+								}
+							>
+								F
+							</Avatar>
+						</Button>
+						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(6)}>
+							<Avatar
+								size={dayBtnSize}
+								color="blue"
+								variant={
+									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(6)) ?
+									"light" : "filled"
+								}
+							>
+								S
+							</Avatar>
+						</Button>
+						<Button variant="subtle" m={0} px="xs" size="xs" onClick={toggleDailyRepeat}>
+							Daily
+						</Button>
+					</Group>
+				</Grid.Col>
+			</Grid>
 			<Group position="right">
 				<ActionIcon
 					className={classes.del}
@@ -109,14 +304,19 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const { classes } = useStyles();
 	const location = useLocation();
 
-	const dummyEvent = {
+	const dummyEvent: EventRubric = {
 		id: createEventReprId(uuid()),
 		title: "",
-		start: dayjs().subtract(1, "hour").startOf("hour").toDate(),
-		end: dayjs().startOf("hour").toDate(),
+		start: dayjs().startOf("hour").add(1, "hour").toDate(),
+		end: dayjs().startOf("hour").add(2, "hours").toDate(),
+		daysOfWeek: null
 	};
 	const [editingEvent, handlers] = useDisclosure(false);
-	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
+	const [eventBeingEdited, cangeEventBeingEdited] = useState<EventRubric>(dummyEvent);
+	const changeEventBeingEdited = (x: EventRubric) => {
+		console.log(x);
+		cangeEventBeingEdited(x);
+	}
 	const [newEventId, setNewEventId] = useState<Id>("");
 	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay * 60 * 60 * 1000);
 	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
@@ -140,6 +340,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	}, [newEventId]);
 
 	useEffect(() => {
+		// this is to handle changes to the user in settings while the app is running
 		if (!props.user)
 			return;
 		
@@ -173,7 +374,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 			// hack for dealing with fullcalendar
 			// FC fires eventChange, eventAdd, eventRemove and eventDrop when dragging events
 			// this function should only handle dragging the ending of an event
-			if (res === "Windows_NT" && !dayjs(newStart! as Date).isSame(dayjs(props.events[changeInfo.event.id].start! as Date)))
+			if (res !== "Darwin" && !dayjs(newStart! as Date).isSame(dayjs(props.events[changeInfo.event.id].start! as Date)))
 				return;
 
 			props.saveEvent({
@@ -194,20 +395,22 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 	const handleEventClick = (clickInfo: EventClickArg) => {
 		// open the edit modal
-		handlers.open();
 		const id = clickInfo.event.id;
 		changeEventBeingEdited(props.events[id]);
+		handlers.open();
 	}
 
 	const saveEditingEvent = () => {
+		// debug
+		return;
 		// don't save events with empty titles
 		if (eventBeingEdited.title === "") {
 			deleteEditingEvent();
 			return;
 		}
 
-		handlers.close();
 		props.saveEvent(myStructuredClone(eventBeingEdited));
+		handlers.close();
 		changeEventBeingEdited(dummyEvent);
 	}
 
@@ -301,7 +504,33 @@ const DayCalendar = function(props: DayCalendarProps) {
 					nowIndicator={true}
 
 					editable={true}
-					events={Object.keys(props.events).map(eid => props.events[eid] as EventInput)}
+					events={Object.keys(props.events).map(eid => {
+						const evt = props.events[eid];
+						let output: EventInput
+						if (evt.daysOfWeek !== null && evt.daysOfWeek !== undefined) {
+							output = {
+								id: evt.id,
+								title: evt.title,
+								start: evt.start!,
+								end: evt.end!
+							}
+						} else {
+							// enforcing that the start and end stored in EventRubric
+							// can be converted to Date
+							// i.e. that all EventRubric's should have their starts and ends
+							// stored as Dates
+							output = {
+								id: evt.id,
+								title: evt.title,
+								startTime: dayjs(evt.start! as Date).format("HH:mm"),
+								endTime: dayjs(evt.end! as Date).format("HH:mm"),
+								daysOfWeek: evt.daysOfWeek,
+								endRecur: evt.endRecur
+							}
+						}
+
+						return output;
+					})}
 					eventChange={handleEventDrag}
 					eventClick={handleEventClick}
 					eventAdd={handleEventAdd}
