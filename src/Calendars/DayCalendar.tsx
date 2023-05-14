@@ -56,6 +56,9 @@ const EditEventModal = function(props: EditEventModalProps) {
 	const dayBtnSize = 30;
 	const noRepeats = (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0);
 
+	// TODO: test for bugs
+	// TODO: in particular, what happens if an event is 5 minutes long?
+
 	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
 		props.changeEventBeingEdited({
 			...props.eventBeingEdited,
@@ -359,6 +362,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [newEventId, setNewEventId] = useState<Id>("");
 	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay * 60 * 60 * 1000);
 	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
+	const [slotLabelInterval, setSlotLabelInterval] = useState<number>(props.user.dayCalLabelInterval);
 
 	// again a stupid hack to deal with fullcalendar
 	const [draggedCalEventInfo, setDraggedCalEventInfo] =
@@ -385,6 +389,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 		
 		setDayDuration(props.user.hoursInDay * 60 * 60 * 1000);
 		setEventDuration(props.user.defaultEventLength);
+		setSlotLabelInterval(props.user.dayCalLabelInterval);
 	}, [props.user]);
 
 	useEffect(() => {
@@ -591,15 +596,15 @@ const DayCalendar = function(props: DayCalendarProps) {
 						omitCommas: true
 					}}
 
-					scrollTime={dayjs().subtract(1, "hour").format("HH:00")}
+					scrollTime={dayjs().add(props.date.get("hour"), "hours").subtract(1, "hour").format("HH:00")}
 					scrollTimeReset={false}
 
 					initialView="timeGridDay"
 					initialDate={props.date.toDate()}
 
-					snapDuration={5 * 60 * 1000}
-					slotDuration={15 * 60 * 1000}
-					slotLabelInterval={60 * 60 * 1000}
+					snapDuration={15 * 60 * 1000}
+					slotDuration={Math.max(slotLabelInterval / 4, 15) * 60 * 1000}
+					slotLabelInterval={slotLabelInterval * 60 * 1000}
 					slotMaxTime={dayDuration}
 				/>}
 			</Stack>
