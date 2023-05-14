@@ -46,6 +46,7 @@ interface EditEventModalProps {
 	editingEvent: boolean,
 	saveEditingEvent: () => void,
 	deleteEditingEvent: () => void,
+	closeNoSave: () => void,
 	eventBeingEdited: EventRubric,
 	changeEventBeingEdited: React.Dispatch<React.SetStateAction<EventRubric>>,
 	dayDuration: number
@@ -54,11 +55,15 @@ interface EditEventModalProps {
 const EditEventModal = function(props: EditEventModalProps) {
 	const { classes } = useStyles();
 	const inputRef = useRef<HTMLInputElement>(null);
-	const timeDisplayFmt = (props.dayDuration > 24) ? "ddd h:mm a" : "h:mm a";
+	const timeDisplayFmt = "h:mm a";
+	// const dateDisplayFmt = "YYYYMMDDTHH:mmZ"
 	const dayBtnSize = 30;
 	const noRepeats = (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0);
 
 	// TODO: test for bugs
+	// TODO: bug: when adding an event through selection in the calendar, the modal
+	// does not automatically pick up its starting and ending times
+	console.log(props.eventBeingEdited);
 	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
 		props.changeEventBeingEdited({
 			...props.eventBeingEdited,
@@ -70,6 +75,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 		if (!newStart)
 			return;
 		
+		// TODO: bug where changing the start time deletes all recurrences before the day when it was changed
 		const startDate = dayjs(newStart);
 		var endDate = dayjs(props.eventBeingEdited.end! as Date);
 		if (endDate.isSame(startDate) || endDate.isBefore(startDate)) {
@@ -101,6 +107,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 	}
 
 	const toggleIncludeDayOfWeek = (num: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
+		// 0: Sun, 1: Mon, ..., 6: Sat - FC convention
 		if (noRepeats) {
 			props.changeEventBeingEdited({
 				...props.eventBeingEdited,
@@ -149,26 +156,40 @@ const EditEventModal = function(props: EditEventModalProps) {
 	const handlePickEndDate = (value: DateValue) => {
 		// DateValue is Date | null
 		if (value !== null) {
-			value = dayjs(value).add(1, "day").startOf("day").toDate()
+			const valAsDayjs: dayjs.Dayjs = dayjs(value).add(1, "day").startOf("day");
+			const startDayjs = dayjs(props.eventBeingEdited.start! as Date);
+			// don't end before you start
+			if (valAsDayjs.isBefore(startDayjs) || valAsDayjs.isSame(startDayjs))
+				return;
 		}
+
 		props.changeEventBeingEdited({
 			...props.eventBeingEdited,
 			endRecur: value
 		})
 	}
 
-	// TODO: bug this is bad because it duplicates events
 	const possibleTimes = Array(props.dayDuration * 4).fill(0).map((_, idx) => {
 		const curTimeInMins = 15 * idx;
-		const date = getToday().startOf("day").add(curTimeInMins, "minutes");
-		return { value: date.format(), label: date.format(timeDisplayFmt) } as SelectItem;
+		const startDate = dayjs(props.eventBeingEdited.start! as Date);
+		const startDay = offsetDay(startDate);
+		const date = startDay.startOf("day").add(curTimeInMins, "minutes");
+		const dayDiff = curTimeInMins / (24 * 60);
+		let labelPrefix;
+		if (noRepeats) {
+			labelPrefix = date.format("ddd ");
+		} else {
+			labelPrefix = ((dayDiff >= 1) ? "Tomorrow " : "Today ");
+		}
+
+		return { value: date.format(), label: labelPrefix + date.format(timeDisplayFmt) } as SelectItem;
 	});
 
 	return (
 		<Modal
 			opened={props.editingEvent}
-			onClose={props.saveEditingEvent}
-			title={<Text>Edit Event</Text>}
+			onClose={props.closeNoSave}
+			title={<Text>Edit Event, {dayjs(props.eventBeingEdited.start! as Date).format("MMM D YYYY")}</Text>}
 			centered
 			onKeyDown={getHotkeyHandler([
 				["Enter", () => {
@@ -321,10 +342,11 @@ const EditEventModal = function(props: EditEventModalProps) {
 								label="Until"
 								placeholder="By default, this event repeats indefinitely until deleted"
 								allowDeselect
+								firstDayOfWeek={0}
 								popoverProps={{ zIndex: 201 }}
 								defaultValue={
 									(!props.eventBeingEdited.endRecur) ? undefined
-									: dayjs(props.eventBeingEdited.endRecur! as Date).toDate()
+									: dayjs(props.eventBeingEdited.endRecur! as Date).subtract(1, "day").toDate()
 								}
 								onChange={handlePickEndDate}
 							/>
@@ -365,7 +387,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 	const dummyEvent: EventRubric = {
 		id: createEventReprId("dummy" + uuid()),
-		title: "",
+		title: "dummy",
 		start: dayjs().startOf("hour").add(1, "hour").toDate(),
 		end: dayjs().startOf("hour").add(2, "hours").toDate(),
 		daysOfWeek: null,
@@ -391,9 +413,9 @@ const DayCalendar = function(props: DayCalendarProps) {
 		if (!newEventId) {
 			return;
 		}
-		handlers.open();
 		changeEventBeingEdited(props.events[newEventId]);
 		setNewEventId("");
+		handlers.open();
 	}, [newEventId]);
 
 	useEffect(() => {
@@ -419,7 +441,13 @@ const DayCalendar = function(props: DayCalendarProps) {
 		
 		setDraggedCalEventInfo({ newId: null, newStart: null, newEnd: null });
 		setDraggedCalEventOldId(null);
-	}, [draggedCalEventInfo])
+	}, [draggedCalEventInfo]);
+
+	useEffect(() => {
+		if (!editingEvent)
+			changeEventBeingEdited(dummyEvent);
+
+	}, [editingEvent])
 
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
 		// console.log("drag", changeInfo);
@@ -467,13 +495,20 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 		props.saveEvent(myStructuredClone(eventBeingEdited));
 		handlers.close();
-		changeEventBeingEdited(dummyEvent);
+	}
+
+	const closeNoSave = () => {
+		if (eventBeingEdited.title === "") {
+			deleteEditingEvent();
+			return;
+		}
+
+		handlers.close();
 	}
 
 	const deleteEditingEvent = () => {
 		handlers.close();
 		props.deleteEvent(eventBeingEdited.id);
-		changeEventBeingEdited(dummyEvent);
 	}
 
 	const handleAddEventThroughSelection = (info: DateSelectArg) => {
@@ -527,6 +562,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 				saveEditingEvent={saveEditingEvent}
 				eventBeingEdited={eventBeingEdited}
 				changeEventBeingEdited={changeEventBeingEdited}
+				closeNoSave={closeNoSave}
 				deleteEditingEvent={deleteEditingEvent}
 				dayDuration={dayDuration}
 			/>
@@ -591,10 +627,10 @@ const DayCalendar = function(props: DayCalendarProps) {
 								startTime: `${startHours}:${startMinutes}`,
 								endTime: `${endHours}:${endMinutes}`,
 								daysOfWeek: evt.daysOfWeek,
-								endRecur: evt.endRecur
+								endRecur: evt.endRecur,
+								startRecur: startDay.toDate()
 							}
 						}
-						console.log(output)
 						return output;
 					})}
 					eventChange={handleEventDrag}

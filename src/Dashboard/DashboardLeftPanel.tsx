@@ -161,6 +161,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                     <>
                         <DatePicker
                             defaultDate={props.date.toDate()}
+                            firstDayOfWeek={0}
                             value={props.date.toDate()}
                             onChange={(v) => props.setDate(dayjs(v))}
                             size="xs"
