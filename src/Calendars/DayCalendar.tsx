@@ -5,8 +5,10 @@ import type { DateSelectArg, EventAddArg, EventRemoveArg, EventChangeArg, EventC
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
-import { createStyles, Stack, Button, Title, Text, Modal, TextInput, Group, ActionIcon, Select, Grid, SelectItem, UnstyledButton, Avatar } from "@mantine/core";
+import { createStyles, Stack, Button, Title, Text, Modal, TextInput, Group, ActionIcon, Select, Grid, SelectItem, Avatar, Space } from "@mantine/core";
 import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
+import { DatePickerInput } from "@mantine/dates";
+import type { DateValue } from "@mantine/dates";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
 import { useNavigate, useLocation } from "react-router-dom"
@@ -52,6 +54,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const timeDisplayFmt = "h:mm a";
 	const dayBtnSize = 30;
+	const noRepeats = (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0);
 
 	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
 		props.changeEventBeingEdited({
@@ -64,22 +67,25 @@ const EditEventModal = function(props: EditEventModalProps) {
 		if (!newStart)
 			return;
 		
-		console.log(newStart);
-		// props.changeEventBeingEdited({
-		// 	...props.eventBeingEdited,
-		// 	start: 
-		// })
+		
+		props.changeEventBeingEdited({
+			...props.eventBeingEdited,
+			start: dayjs(newStart).toDate()
+		});
 	}
 
 	const handleChangeEndTime = (newEnd: string | null ) => {
 		if (!newEnd)
 			return;
 		
-		console.log("e", newEnd);
+		props.changeEventBeingEdited({
+			...props.eventBeingEdited,
+			end: dayjs(newEnd).toDate()
+		});
 	}
 
 	const toggleIncludeDayOfWeek = (num: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
-		if (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0) {
+		if (noRepeats) {
 			props.changeEventBeingEdited({
 				...props.eventBeingEdited,
 				daysOfWeek: [num]
@@ -102,7 +108,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 	}
 
 	const toggleDailyRepeat = () => {
-		if (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0) {
+		if (noRepeats) {
 			props.changeEventBeingEdited({
 				...props.eventBeingEdited,
 				daysOfWeek: [0, 1, 2, 3, 4, 5, 6]
@@ -111,12 +117,28 @@ const EditEventModal = function(props: EditEventModalProps) {
 		}
 
 		let newDaysOfWeek = myStructuredClone(props.eventBeingEdited.daysOfWeek!);
-		if (newDaysOfWeek.sort().every((val, idx) => val === [0, 1, 2, 3, 4, 5, 6, 7][idx])) {
+		if (newDaysOfWeek.sort().every((val, idx) => val === [0, 1, 2, 3, 4, 5, 6][idx])) {
 			props.changeEventBeingEdited({
 				...props.eventBeingEdited,
 				daysOfWeek: null
 			});
+		} else  {
+			props.changeEventBeingEdited({
+				...props.eventBeingEdited,
+				daysOfWeek: [0, 1, 2, 3, 4, 5, 6]
+			});
 		}
+	}
+
+	const handlePickEndDate = (value: DateValue) => {
+		// DateValue is Date | null
+		if (value !== null) {
+			value = dayjs(value).add(1, "day").startOf("day").toDate()
+		}
+		props.changeEventBeingEdited({
+			...props.eventBeingEdited,
+			endRecur: value
+		})
 	}
 
 	const possibleTimes = Array(24 * 4).fill(0).map((_, idx) => {
@@ -148,7 +170,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 						onChange={handleChangeTitle}
 					/>
 				</Grid.Col>
-				<Grid.Col span={6}>
+				<Grid.Col span={12}>
 					<Select
 						label="Start time"
 						placeholder="Pick a start time"
@@ -156,10 +178,10 @@ const EditEventModal = function(props: EditEventModalProps) {
 						onChange={handleChangeStartTime}
 						data={possibleTimes}
 						dropdownPosition="bottom"
-						maxDropdownHeight={280}
+						maxDropdownHeight={150}
 					/>
 				</Grid.Col>
-				<Grid.Col span={6}>
+				<Grid.Col span={12}>
 					<Select
 						label="End time"
 						placeholder="Pick an end time"
@@ -167,7 +189,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 						onChange={handleChangeEndTime}
 						data={possibleTimes}
 						dropdownPosition="bottom"
-						maxDropdownHeight={280}
+						maxDropdownHeight={150}
 					/>
 				</Grid.Col>
 				<Grid.Col span={2}>
@@ -175,7 +197,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 						<Text fz="sm" fw={450}>Repeats</Text>
 						<Text
 							c={
-								(!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0) ?
+								(noRepeats) ?
 								"dimmed" : "white"
 							}
 							fz="xs"
@@ -191,7 +213,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 								size={dayBtnSize}
 								color="blue"
 								variant={
-									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(0)) ?
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(0)) ?
 									"light" : "filled"
 								}
 							>
@@ -203,7 +225,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 								size={dayBtnSize}
 								color="blue"
 								variant={
-									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(1)) ?
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(1)) ?
 									"light" : "filled"
 								}
 							>
@@ -215,7 +237,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 								size={dayBtnSize}
 								color="blue"
 								variant={
-									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(2)) ?
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(2)) ?
 									"light" : "filled"
 								}
 							>
@@ -227,7 +249,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 								size={dayBtnSize}
 								color="blue"
 								variant={
-									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(3)) ?
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(3)) ?
 									"light" : "filled"
 								}
 							>
@@ -239,7 +261,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 								size={dayBtnSize}
 								color="blue"
 								variant={
-									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(4)) ?
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(4)) ?
 									"light" : "filled"
 								}
 							>
@@ -251,7 +273,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 								size={dayBtnSize}
 								color="blue"
 								variant={
-									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(5)) ?
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(5)) ?
 									"light" : "filled"
 								}
 							>
@@ -263,7 +285,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 								size={dayBtnSize}
 								color="blue"
 								variant={
-									(!props.eventBeingEdited || !props.eventBeingEdited.daysOfWeek?.includes(6)) ?
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(6)) ?
 									"light" : "filled"
 								}
 							>
@@ -275,14 +297,34 @@ const EditEventModal = function(props: EditEventModalProps) {
 						</Button>
 					</Group>
 				</Grid.Col>
+				{
+					(!noRepeats) ? 
+						<Grid.Col span={12}>
+							<DatePickerInput
+								label="Until"
+								placeholder="Pick a date"
+								allowDeselect
+								popoverProps={{ zIndex: 201 }}
+								defaultValue={
+									(!props.eventBeingEdited.endRecur) ? undefined
+									: dayjs(props.eventBeingEdited.endRecur! as Date).toDate()
+								}
+								onChange={handlePickEndDate}
+							/>
+						</Grid.Col>
+					: <></>
+				}
 			</Grid>
-			<Group position="right">
+			<Group position="apart">
 				<ActionIcon
 					className={classes.del}
 					onClick={props.deleteEditingEvent}
 				>
 					<DeleteIcon />
 				</ActionIcon>
+				<Button onClick={props.saveEditingEvent}>
+					Save
+				</Button>
 			</Group>
 		</Modal>
 	);
@@ -305,18 +347,15 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const location = useLocation();
 
 	const dummyEvent: EventRubric = {
-		id: createEventReprId(uuid()),
+		id: createEventReprId("dummy" + uuid()),
 		title: "",
 		start: dayjs().startOf("hour").add(1, "hour").toDate(),
 		end: dayjs().startOf("hour").add(2, "hours").toDate(),
-		daysOfWeek: null
+		daysOfWeek: null,
+		endRecur: null
 	};
 	const [editingEvent, handlers] = useDisclosure(false);
-	const [eventBeingEdited, cangeEventBeingEdited] = useState<EventRubric>(dummyEvent);
-	const changeEventBeingEdited = (x: EventRubric) => {
-		console.log(x);
-		cangeEventBeingEdited(x);
-	}
+	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
 	const [newEventId, setNewEventId] = useState<Id>("");
 	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay * 60 * 60 * 1000);
 	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
@@ -401,8 +440,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 	}
 
 	const saveEditingEvent = () => {
-		// debug
-		return;
 		// don't save events with empty titles
 		if (eventBeingEdited.title === "") {
 			deleteEditingEvent();
@@ -507,7 +544,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 					events={Object.keys(props.events).map(eid => {
 						const evt = props.events[eid];
 						let output: EventInput
-						if (evt.daysOfWeek !== null && evt.daysOfWeek !== undefined) {
+						if (!evt.daysOfWeek) {
 							output = {
 								id: evt.id,
 								title: evt.title,
@@ -528,7 +565,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 								endRecur: evt.endRecur
 							}
 						}
-
 						return output;
 					})}
 					eventChange={handleEventDrag}
