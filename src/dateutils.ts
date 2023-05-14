@@ -23,6 +23,10 @@ export const getToday = function(offset: ReturnType<typeof dayjs.duration> = DEF
     return dayjs().add(offset).startOf("day");
 }
 
+export const offsetDay = function(date: dayjs.Dayjs, offset: ReturnType<typeof dayjs.duration> = DEFAULT_OFFSET) {
+    return date.add(offset).startOf("day");
+}
+
 export const getNow = function(offset: ReturnType<typeof dayjs.duration> = DEFAULT_OFFSET) {
     return dayjs().add(offset);
 }

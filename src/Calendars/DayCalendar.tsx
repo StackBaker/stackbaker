@@ -13,6 +13,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
 import { useNavigate, useLocation } from "react-router-dom"
 import { os } from "@tauri-apps/api";
+import { getToday, offsetDay } from "../dateutils";
 
 import type { EventCollection, EventRubric } from "./Event";
 import { createEventReprId } from "./Event";
@@ -46,19 +47,18 @@ interface EditEventModalProps {
 	saveEditingEvent: () => void,
 	deleteEditingEvent: () => void,
 	eventBeingEdited: EventRubric,
-	changeEventBeingEdited: React.Dispatch<React.SetStateAction<EventRubric>>
+	changeEventBeingEdited: React.Dispatch<React.SetStateAction<EventRubric>>,
+	dayDuration: number
 };
 
 const EditEventModal = function(props: EditEventModalProps) {
 	const { classes } = useStyles();
 	const inputRef = useRef<HTMLInputElement>(null);
-	const timeDisplayFmt = "h:mm a";
+	const timeDisplayFmt = (props.dayDuration > 24) ? "ddd h:mm a" : "h:mm a";
 	const dayBtnSize = 30;
 	const noRepeats = (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0);
 
 	// TODO: test for bugs
-	// TODO: in particular, what happens if an event is 5 minutes long?
-
 	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
 		props.changeEventBeingEdited({
 			...props.eventBeingEdited,
@@ -70,10 +70,16 @@ const EditEventModal = function(props: EditEventModalProps) {
 		if (!newStart)
 			return;
 		
+		const startDate = dayjs(newStart);
+		var endDate = dayjs(props.eventBeingEdited.end! as Date);
+		if (endDate.isSame(startDate) || endDate.isBefore(startDate)) {
+			endDate = startDate.add(endDate.diff(dayjs(props.eventBeingEdited.start! as Date)));
+		}
 		
 		props.changeEventBeingEdited({
 			...props.eventBeingEdited,
-			start: dayjs(newStart).toDate()
+			start: startDate.toDate(),
+			end: endDate.toDate()
 		});
 	}
 
@@ -81,9 +87,16 @@ const EditEventModal = function(props: EditEventModalProps) {
 		if (!newEnd)
 			return;
 		
+		const endDate = dayjs(newEnd);
+		var startDate = dayjs(props.eventBeingEdited.start! as Date);
+		if (endDate.isSame(startDate) || endDate.isBefore(startDate)) {
+			startDate = endDate.add(startDate.diff(dayjs(props.eventBeingEdited.end! as Date)));
+		}
+		
 		props.changeEventBeingEdited({
 			...props.eventBeingEdited,
-			end: dayjs(newEnd).toDate()
+			start: startDate.toDate(),
+			end: endDate.toDate()
 		});
 	}
 
@@ -123,7 +136,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 		if (newDaysOfWeek.sort().every((val, idx) => val === [0, 1, 2, 3, 4, 5, 6][idx])) {
 			props.changeEventBeingEdited({
 				...props.eventBeingEdited,
-				daysOfWeek: null
+				daysOfWeek: []
 			});
 		} else  {
 			props.changeEventBeingEdited({
@@ -144,9 +157,10 @@ const EditEventModal = function(props: EditEventModalProps) {
 		})
 	}
 
-	const possibleTimes = Array(24 * 4).fill(0).map((_, idx) => {
+	// TODO: bug this is bad because it duplicates events
+	const possibleTimes = Array(props.dayDuration * 4).fill(0).map((_, idx) => {
 		const curTimeInMins = 15 * idx;
-		const date = dayjs().startOf("day").add(curTimeInMins, "minutes");
+		const date = getToday().startOf("day").add(curTimeInMins, "minutes");
 		return { value: date.format(), label: date.format(timeDisplayFmt) } as SelectItem;
 	});
 
@@ -305,7 +319,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 						<Grid.Col span={12}>
 							<DatePickerInput
 								label="Until"
-								placeholder="Pick a date"
+								placeholder="By default, this event repeats indefinitely until deleted"
 								allowDeselect
 								popoverProps={{ zIndex: 201 }}
 								defaultValue={
@@ -360,7 +374,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [editingEvent, handlers] = useDisclosure(false);
 	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
 	const [newEventId, setNewEventId] = useState<Id>("");
-	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay * 60 * 60 * 1000);
+	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay);
 	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
 	const [slotLabelInterval, setSlotLabelInterval] = useState<number>(props.user.dayCalLabelInterval);
 
@@ -387,7 +401,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 		if (!props.user)
 			return;
 		
-		setDayDuration(props.user.hoursInDay * 60 * 60 * 1000);
+		setDayDuration(props.user.hoursInDay);
 		setEventDuration(props.user.defaultEventLength);
 		setSlotLabelInterval(props.user.dayCalLabelInterval);
 	}, [props.user]);
@@ -514,6 +528,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 				eventBeingEdited={eventBeingEdited}
 				changeEventBeingEdited={changeEventBeingEdited}
 				deleteEditingEvent={deleteEditingEvent}
+				dayDuration={dayDuration}
 			/>
 			<Group position="apart">
 				<Title order={2} pl="xs">
@@ -549,7 +564,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 					events={Object.keys(props.events).map(eid => {
 						const evt = props.events[eid];
 						let output: EventInput
-						if (!evt.daysOfWeek) {
+						if (evt.daysOfWeek === undefined || evt.daysOfWeek === null || evt.daysOfWeek.length === 0) {
 							output = {
 								id: evt.id,
 								title: evt.title,
@@ -561,15 +576,27 @@ const DayCalendar = function(props: DayCalendarProps) {
 							// can be converted to Date
 							// i.e. that all EventRubric's should have their starts and ends
 							// stored as Dates
+
+							// milliseconds
+							const startDate = dayjs(evt.start! as Date);
+							const startDay = offsetDay(startDate);
+							const startHours = startDate.diff(startDay, "hours")
+							const startMinutes = startDate.format("mm");
+							const endDate = dayjs(evt.end! as Date);
+							const endDay = offsetDay(endDate);
+							const endHours = endDate.diff(endDay, "hours")
+							const endMinutes = endDate.format("mm");
+
 							output = {
 								id: evt.id,
 								title: evt.title,
-								startTime: dayjs(evt.start! as Date).format("HH:mm"),
-								endTime: dayjs(evt.end! as Date).format("HH:mm"),
+								startTime: `${startHours}:${startMinutes}`,
+								endTime: `${endHours}:${endMinutes}`,
 								daysOfWeek: evt.daysOfWeek,
 								endRecur: evt.endRecur
 							}
 						}
+						console.log(output)
 						return output;
 					})}
 					eventChange={handleEventDrag}
@@ -596,7 +623,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 						omitCommas: true
 					}}
 
-					scrollTime={dayjs().add(props.date.get("hour"), "hours").subtract(1, "hour").format("HH:00")}
+					scrollTime={dayjs().subtract(1, "hour").format()}
 					scrollTimeReset={false}
 
 					initialView="timeGridDay"
@@ -605,7 +632,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 					snapDuration={15 * 60 * 1000}
 					slotDuration={Math.max(slotLabelInterval / 4, 15) * 60 * 1000}
 					slotLabelInterval={slotLabelInterval * 60 * 1000}
-					slotMaxTime={dayDuration}
+					slotMaxTime={dayDuration * 60 * 60 * 1000}
 				/>}
 			</Stack>
 		</Stack>
