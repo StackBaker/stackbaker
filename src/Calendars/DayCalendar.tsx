@@ -576,11 +576,9 @@ const DayCalendar = function(props: DayCalendarProps) {
 							// can be converted to Date
 							// i.e. that all EventRubric's should have their starts and ends
 							// stored as Dates
-
-							// milliseconds
 							const startDate = dayjs(evt.start! as Date);
 							const startDay = offsetDay(startDate);
-							const startHours = startDate.diff(startDay, "hours")
+							const startHours = startDate.diff(startDay, "hours");
 							const startMinutes = startDate.format("mm");
 							const endDate = dayjs(evt.end! as Date);
 							const endDay = offsetDay(endDate);
@@ -623,7 +621,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 						omitCommas: true
 					}}
 
-					scrollTime={dayjs().subtract(1, "hour").format()}
+					scrollTime={`${dayjs().subtract(1, "hour").diff(getToday(), "hours")}:00`}
 					scrollTimeReset={false}
 
 					initialView="timeGridDay"
