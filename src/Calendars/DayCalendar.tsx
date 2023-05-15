@@ -13,7 +13,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
 import { useNavigate, useLocation } from "react-router-dom"
 import { os } from "@tauri-apps/api";
-import { getToday, offsetDay } from "../dateutils";
+import { getToday, offsetDay, endOfOffsetDay } from "../dateutils";
 
 import type { EventCollection, EventRubric } from "./Event";
 import { createEventReprId } from "./Event";
@@ -73,6 +73,8 @@ const EditEventModal = function(props: EditEventModalProps) {
 			return;
 
 		let startDate = dayjs(newStart);
+		const newStartDay = offsetDay(startDate);
+		const newStartDayEnd = endOfOffsetDay(newStartDay);
 		let endDate = dayjs(props.eventBeingEdited.end! as Date);
 
 		if (!noRepeats) {
@@ -80,7 +82,6 @@ const EditEventModal = function(props: EditEventModalProps) {
 			const originalStart = dayjs(props.eventBeingEdited.start! as Date);
 			const originalStartDay = offsetDay(originalStart);
 			// get the difference between the newStart and the beginning of its day
-			const newStartDay = offsetDay(startDate);
 			const diff = startDate.diff(newStartDay);
 			// then the new date is actually the original start + the new diff
 			startDate = originalStartDay.add(diff);
@@ -88,6 +89,9 @@ const EditEventModal = function(props: EditEventModalProps) {
 
 		if (endDate.isSame(startDate) || endDate.isBefore(startDate)) {
 			endDate = startDate.add(endDate.diff(dayjs(props.eventBeingEdited.start! as Date)));
+			if (endDate.isAfter(newStartDayEnd) || startDate.isSame(newStartDayEnd)) {
+				startDate = newStartDayEnd;
+			}
 		}
 
 		props.changeEventBeingEdited({
@@ -102,6 +106,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 			return;
 		
 		let endDate = dayjs(newEnd);
+		const newEndDay = offsetDay(endDate);
 		let startDate = dayjs(props.eventBeingEdited.start! as Date);
 
 		if (!noRepeats) {
@@ -109,7 +114,6 @@ const EditEventModal = function(props: EditEventModalProps) {
 			const originalEnd = dayjs(props.eventBeingEdited.end! as Date);
 			const originalEndDay = offsetDay(originalEnd);
 			// get the difference between the newEnd and the beginning of its day
-			const newEndDay = offsetDay(endDate);
 			const diff = endDate.diff(newEndDay);
 			// then the new end date is actually the original end's day + the new diff
 			endDate = originalEndDay.add(diff);
@@ -117,6 +121,9 @@ const EditEventModal = function(props: EditEventModalProps) {
 
 		if (endDate.isSame(startDate) || endDate.isBefore(startDate)) {
 			startDate = endDate.add(startDate.diff(dayjs(props.eventBeingEdited.end! as Date)));
+			if (startDate.isBefore(newEndDay) || startDate.isSame(newEndDay)) {
+				startDate = newEndDay;
+			}
 		}
 		
 		props.changeEventBeingEdited({
@@ -189,7 +196,8 @@ const EditEventModal = function(props: EditEventModalProps) {
 		})
 	}
 
-	const possibleTimes = Array(props.dayDuration * 4).fill(0).map((_, idx) => {
+	// add 1 for padding
+	const possibleTimes = Array(props.dayDuration * 4 + 1).fill(0).map((_, idx) => {
 		const curTimeInMins = 15 * idx;
 		const startDate = dayjs(props.eventBeingEdited.start! as Date);
 		const startDay = offsetDay(startDate);
@@ -209,7 +217,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 		<Modal
 			opened={props.editingEvent}
 			onClose={props.closeNoSave}
-			title={<Text>Edit Event, {dayjs(props.eventBeingEdited.start! as Date).format("MMM D YYYY")}</Text>}
+			title={<Text>Edit Event{ (!noRepeats) ? ", starts from " + offsetDay(dayjs(props.eventBeingEdited.start! as Date)).format("MMM D YYYY") : ""}</Text>}
 			centered
 			onKeyDown={getHotkeyHandler([
 				["Enter", () => {
@@ -448,14 +456,43 @@ const DayCalendar = function(props: DayCalendarProps) {
 	}, [editingEvent])
 
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
-		console.log("drag", changeInfo);
-		const newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[changeInfo.event.id].start;
-		const newEnd = (changeInfo.event.start) ? changeInfo.event.end : props.events[changeInfo.event.id].end;
+		const id = changeInfo.event.id;
+		const evt = props.events[id];
+		const noRepeats = (!evt.daysOfWeek || evt.daysOfWeek?.length === 0);
+		let oldStart = dayjs(props.events[id].start! as Date);
+		let _newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[id].start!;
+		let newStart = dayjs(_newStart as Date);
+		let oldEnd = dayjs(props.events[id].end! as Date);
+		let _newEnd = (changeInfo.event.start) ? changeInfo.event.end : props.events[id].end!;
+		let newEnd = dayjs(_newEnd as Date);
+		
+		// if the event is repeating, then we need different logic
+		// than just changing the start and end dates
+		const newStartDay = offsetDay(newStart);
+		const newEndDay = offsetDay(newEnd);
+
+		if (!noRepeats) {
+			// don't change the day of the end
+			const originalEndDay = offsetDay(oldEnd);
+			// get the difference between the newEnd and the beginning of its day
+			const ediff = newEnd.diff(newEndDay);
+			// then the new end date is actually the original end's day + the new diff
+			newEnd = originalEndDay.add(ediff);
+
+			const originalStartDay = offsetDay(oldStart);
+			// get the difference between the newStart and the beginning of its day
+			const sdiff = newStart.diff(newStartDay);
+			// then the new date is actually the original start + the new diff
+			newStart = originalStartDay.add(sdiff);
+		}
+
+		if (newStart.isSame(newEnd) || newStart.isAfter(newEnd))
+			return;
 
 		props.saveEvent({
 			...props.events[changeInfo.event.id],
-			start: newStart,
-			end: newEnd
+			start: newStart.toDate(),
+			end: newEnd.toDate()
 		});
 	};
 
@@ -531,6 +568,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 		props.saveEvent(draggedEvent);
 	};
 
+	// TODO: bug: can't have recurring events that end at 6am???
 	return ( (!props.user) ? <div></div> :
 		<Stack
 			className={classes.calendarWrapper}

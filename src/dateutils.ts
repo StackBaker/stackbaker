@@ -27,6 +27,10 @@ export const offsetDay = function(date: dayjs.Dayjs, offset: ReturnType<typeof d
     return date.add(offset).startOf("day");
 }
 
+export const endOfOffsetDay = function(date: dayjs.Dayjs, offset: ReturnType<typeof dayjs.duration> = DEFAULT_OFFSET) {
+    return date.startOf("day").add(1, "day").subtract(offset);
+}
+
 export const getNow = function(offset: ReturnType<typeof dayjs.duration> = DEFAULT_OFFSET) {
     return dayjs().add(offset);
 }
