@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import dayjs from "dayjs";
-import { Modal, Group, Stack, Navbar, Button, Space, TextInput, Text, Title } from "@mantine/core";
+import { Modal, Group, Stack, Navbar, Button, Space, TextInput, Text, Title, Select } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import SettingsIcon from '@mui/icons-material/Settings';
 import DangerousIcon from '@mui/icons-material/Dangerous';
+import CloseIcon from '@mui/icons-material/Close';
 import { useDisclosure } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
 
@@ -60,7 +61,8 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
         setAccountBeingEdited({
             email: props.user.email,
             hoursInDay: JSON.stringify(props.user.hoursInDay),
-            defaultEventLength: JSON.stringify(props.user.defaultEventLength)
+            defaultEventLength: JSON.stringify(props.user.defaultEventLength),
+            dayCalLabelInterval: JSON.stringify(props.user.dayCalLabelInterval)
         });
     }, [props.user]);
 
@@ -74,10 +76,14 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
         if (isNaN(newEvtLen))
             newEvtLen = props.user.defaultEventLength;
         
+        let newDayCalInterval: number = parseInt(accountBeingEdited!.dayCalLabelInterval);
+        if (isNaN(newDayCalInterval))
+            newDayCalInterval = props.user.dayCalLabelInterval;
+        
         newHours = Math.max(24, Math.min(newHours, 120));
         newEvtLen = Math.max(1, Math.min(newEvtLen, 300));
 
-        props.editUser({ defaultEventLength: newEvtLen, hoursInDay: newHours, });
+        props.editUser({ defaultEventLength: newEvtLen, hoursInDay: newHours, dayCalLabelInterval: newDayCalInterval });
     }
 
     const confirmDeleteEverything = () => {
@@ -130,12 +136,32 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                                 defaultEventLength: e.target.value
                             }))}
                         />
+                        <Select
+                            label="Day calendar labeling interval"
+                            description="Duration between consecutive labels in the day calendar"
+                            placeholder="30 min, 1 hour, or 2 hours"
+                            value={accountBeingEdited!.dayCalLabelInterval}
+                            onChange={(newVal: string | null) => {
+                                if (!newVal)
+                                    return;
+                                setAccountBeingEdited({
+                                    ...accountBeingEdited!,
+                                    dayCalLabelInterval: newVal
+                                });
+                            }}
+                            data={[
+                                { value: "30", label: "30 min" },
+                                { value: "60", label: "1 hour" },
+                                { value: "120", label: "2 hours" }
+                            ]}
+                        />
                         <Button onClick={handleSubmitSettings} fullWidth>Save</Button>
                     </Stack>
                     :
                     <>
                         <DatePicker
                             defaultDate={props.date.toDate()}
+                            firstDayOfWeek={0}
                             value={props.date.toDate()}
                             onChange={(v) => props.setDate(dayjs(v))}
                             size="xs"
@@ -173,7 +199,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                 <Button
                     fullWidth
                     variant="default"
-                    leftIcon={<SettingsIcon />}
+                    leftIcon={(settingsOpen) ? <CloseIcon/> : <SettingsIcon />}
                     onClick={handlers.toggle}
                 >
                     {(settingsOpen) ? "Close" : "Settings"}

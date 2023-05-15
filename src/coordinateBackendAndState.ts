@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import { useHotkeys } from "@mantine/hooks";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import dayjs from "dayjs";
-import { isEmpty } from "lodash";
 
 import { Id, DO_LATER_LIST_ID, DAY_LIST_TITLE, myStructuredClone } from "./globals";
 import type { ItemRubric, ItemCollection } from "./Item";
@@ -62,9 +61,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         if (loadStage !== LOADING_STAGES.NOTHING_LOADED)
             return;
         db.user.load().then();
-        // TODO: ISSUE: loads are necessary every time we have a useDatabase
-        // however after we call useDatabase once, the react state is preserved
-        // maybe that's okay? But we shouldn't have to load more than once right?
         db.items.loadAll().then();
         db.lists.loadAll().then();
         db.events.loadAll().then();
@@ -72,8 +68,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         setLoadStage(LOADING_STAGES.DB_LOADED);
     }, [loadStage]);
 
-    console.log(loadStage);
-    // TODO: try making the DB functions not async
     useMemo(() => {
         if (loadStage !== LOADING_STAGES.DB_LOADED)
             return;
@@ -92,11 +86,9 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
 
     useMemo(() => {
         const selectedDayId = dateToDayId(props.date);
-        // TODO: the lists may be undefined
         if (loadStage !== LOADING_STAGES.DB_UPDATED)
             return;
         
-        // debugger;
         var selectedDayList = getListFromDB(selectedDayId);
         var laterList = getListFromDB(DO_LATER_LIST_ID);
         if (selectedDayList === null || laterList === null) {
@@ -125,7 +117,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
             itemDeletedFlag = true;
         }
 
-        console.log("item deleted?", itemDeletedFlag);
         if (itemDeletedFlag) {
             db.lists.set(selectedDayId, selectedDayList);
             db.lists.set(DO_LATER_LIST_ID, laterList);
@@ -152,7 +143,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.unshift(newItemConfig.itemId);
         db.items.set(newItemConfig.itemId, newItemConfig);
         db.lists.set(listId, list);
-        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -167,7 +157,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         };
 
         db.items.set(itemId, editedItem)
-        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -180,7 +169,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.splice(index, 1);
         db.items.del(itemId);
         db.lists.set(listId, list);
-        setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -351,11 +339,16 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         console.log("s", loadStage);
     }
 
-    // TODO: put this back for debugging
+    // TODO: delete this back for release version
     useHotkeys([
         ['P', log]
     ]);
 
+    // useMemo is executed inline with the component if the dependencies have changed
+    // so it should execute before the function returns, i.e before all of this is returned
+    // meaning the lists and items and such should never be undefined when returned
+    // even if we are rendering the first time (which should trigger a rerender when changing loadingStage)
+    // because the first render should load everything from the DB synchronously.
     return {
         user: db.user.data!,
         date: props.date,

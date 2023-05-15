@@ -66,6 +66,9 @@ const Item = function(props: ItemProps) {
     }
 
     const handleSubmitContent = () => {
+        if (editableContent.length === 0)
+            return;
+
         handlers.close();
         props.mutateItem(props.itemId, { content: editableContent });
     }
