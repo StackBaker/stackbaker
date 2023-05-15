@@ -61,9 +61,6 @@ const EditEventModal = function(props: EditEventModalProps) {
 	const noRepeats = (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0);
 
 	// TODO: test for bugs
-	// TODO: bug: when adding an event through selection in the calendar, the modal
-	// does not automatically pick up its starting and ending times
-	console.log(props.eventBeingEdited);
 	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
 		props.changeEventBeingEdited({
 			...props.eventBeingEdited,
@@ -74,14 +71,25 @@ const EditEventModal = function(props: EditEventModalProps) {
 	const handleChangeStartTime = (newStart: string | null) => {
 		if (!newStart)
 			return;
-		
-		// TODO: bug where changing the start time deletes all recurrences before the day when it was changed
-		const startDate = dayjs(newStart);
-		var endDate = dayjs(props.eventBeingEdited.end! as Date);
+
+		let startDate = dayjs(newStart);
+		let endDate = dayjs(props.eventBeingEdited.end! as Date);
+
+		if (!noRepeats) {
+			// don't change the day of the start
+			const originalStart = dayjs(props.eventBeingEdited.start! as Date);
+			const originalStartDay = offsetDay(originalStart);
+			// get the difference between the newStart and the beginning of its day
+			const newStartDay = offsetDay(startDate);
+			const diff = startDate.diff(newStartDay);
+			// then the new date is actually the original start + the new diff
+			startDate = originalStartDay.add(diff);
+		}
+
 		if (endDate.isSame(startDate) || endDate.isBefore(startDate)) {
 			endDate = startDate.add(endDate.diff(dayjs(props.eventBeingEdited.start! as Date)));
 		}
-		
+
 		props.changeEventBeingEdited({
 			...props.eventBeingEdited,
 			start: startDate.toDate(),
@@ -89,12 +97,24 @@ const EditEventModal = function(props: EditEventModalProps) {
 		});
 	}
 
-	const handleChangeEndTime = (newEnd: string | null ) => {
+	const handleChangeEndTime = (newEnd: string | null) => {
 		if (!newEnd)
 			return;
 		
-		const endDate = dayjs(newEnd);
-		var startDate = dayjs(props.eventBeingEdited.start! as Date);
+		let endDate = dayjs(newEnd);
+		let startDate = dayjs(props.eventBeingEdited.start! as Date);
+
+		if (!noRepeats) {
+			// don't change the day of the end
+			const originalEnd = dayjs(props.eventBeingEdited.end! as Date);
+			const originalEndDay = offsetDay(originalEnd);
+			// get the difference between the newEnd and the beginning of its day
+			const newEndDay = offsetDay(endDate);
+			const diff = endDate.diff(newEndDay);
+			// then the new end date is actually the original end's day + the new diff
+			endDate = originalEndDay.add(diff);
+		}
+
 		if (endDate.isSame(startDate) || endDate.isBefore(startDate)) {
 			startDate = endDate.add(startDate.diff(dayjs(props.eventBeingEdited.end! as Date)));
 		}
