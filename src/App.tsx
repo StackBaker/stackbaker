@@ -57,17 +57,17 @@ const Root = function(props: RootProps) {
 		});
 	}, []);
 
-	const log = () => {
-        console.log("l", db.lists.data);
-        console.log("i", db.items.data);
-        console.log("e", db.events.data);
-        console.log("u", db.user.data);
-    }
+	// const log = () => {
+    //     console.log("l", db.lists.data);
+    //     console.log("i", db.items.data);
+    //     console.log("e", db.events.data);
+    //     console.log("u", db.user.data);
+    // }
 
-    // debugging
-    useHotkeys([
-        ['R', log]
-    ]);
+    // // debugging
+    // useHotkeys([
+    //     ['R', log]
+    // ]);
 
 	return <div></div>
 }

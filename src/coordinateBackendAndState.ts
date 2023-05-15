@@ -71,9 +71,8 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     useMemo(() => {
         if (loadStage !== LOADING_STAGES.DB_LOADED)
             return;
-        const selectedDayId = dateToDayId(props.date);
+        
         db.lists.has(selectedDayId).then((res) => {
-            console.log("has", res);
             if (!res) {
                 db.lists.create(props.date);
                 setLoadStage(LOADING_STAGES.NOTHING_LOADED);
@@ -85,7 +84,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     }, [loadStage, props.date]);
 
     useMemo(() => {
-        const selectedDayId = dateToDayId(props.date);
         if (loadStage !== LOADING_STAGES.DB_UPDATED)
             return;
         
@@ -293,20 +291,17 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         }
 
         todayList.itemIds = incompleteTasks.concat(todayList.itemIds);
-
         db.lists.setMany(newPrevDayIds.concat([todayId]), newPrevDayLists.concat(todayList));
-        console.log(newPrevDayLists);
+        setLoadStage(LOADING_STAGES.NOTHING_LOADED);
 
         return true;
     }
 
     const delManyItemsOrMutManyLists = (itemIds: Id[], newLists: ListRubric[]): boolean => {
         db.items.delMany(itemIds);
-        console.log("deleted items", itemIds);
         
         const listIds = newLists.map(l => l.listId);
         db.lists.setMany(listIds, newLists);
-        console.log("changed lists", listIds);
         setLoadStage(LOADING_STAGES.NOTHING_LOADED);
 
         return true;
@@ -331,18 +326,18 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         setLoadStage(LOADING_STAGES.NOTHING_LOADED);
     }
 
-    const log = () => {
-        console.log("l", db.lists.data);
-        console.log("i", db.items.data);
-        console.log("e", db.events.data);
-        console.log("u", db.user.data);
-        console.log("s", loadStage);
-    }
+    // const log = () => {
+    //     console.log("l", db.lists.data);
+    //     console.log("i", db.items.data);
+    //     console.log("e", db.events.data);
+    //     console.log("u", db.user.data);
+    //     console.log("s", loadStage);
+    // }
 
-    // TODO: delete this back for release version
-    useHotkeys([
-        ['P', log]
-    ]);
+    // // TODO: delete this back for release version
+    // useHotkeys([
+    //     ['P', log]
+    // ]);
 
     // useMemo is executed inline with the component if the dependencies have changed
     // so it should execute before the function returns, i.e before all of this is returned

@@ -549,7 +549,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 	}
 
 	const handleAddEventThroughDrop = (dropInfo: DropArg) => {
-		// console.log("drop", dropInfo);
 		const el = dropInfo.draggedEl;
 		const [id, _] = el.id.split(ID_IDX_DELIM);
 

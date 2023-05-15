@@ -138,7 +138,6 @@ const GridCalendar = function(props: GridCalendarProps) {
                 list.itemIds.splice(i, 1);
                 deletedItemIds.push(itemId);
                 deletedItem = true;
-                console.log("bruh", itemId);
             }
             if (deletedItem)
                 mutatedLists.push(list);
