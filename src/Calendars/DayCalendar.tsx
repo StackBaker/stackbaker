@@ -420,13 +420,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
 	const [slotLabelInterval, setSlotLabelInterval] = useState<number>(props.user.dayCalLabelInterval);
 
-	// again a stupid hack to deal with fullcalendar
-	const [draggedCalEventInfo, setDraggedCalEventInfo] =
-		useState<{ newId: Id | null, newStart: Date | null, newEnd: Date | null }>({
-			newId: null, newStart: null, newEnd: null
-		});
-	const [draggedCalEventOldId, setDraggedCalEventOldId] = useState<Id | null>(null);
-
 	useEffect(() => {
 		// hack for preventing that one long error when adding changing events
 		// and changing eventBeingEdited in the same sequence of actions
@@ -449,55 +442,22 @@ const DayCalendar = function(props: DayCalendarProps) {
 	}, [props.user]);
 
 	useEffect(() => {
-		if (Object.values(draggedCalEventInfo).some(x => (!x)) || !draggedCalEventOldId)
-			return;
-		
-		if (draggedCalEventOldId === draggedCalEventInfo.newId)
-			props.saveEvent({
-				...props.events[draggedCalEventInfo.newId!],
-				start: draggedCalEventInfo.newStart!,
-				end: draggedCalEventInfo.newEnd!
-			});
-		
-		setDraggedCalEventInfo({ newId: null, newStart: null, newEnd: null });
-		setDraggedCalEventOldId(null);
-	}, [draggedCalEventInfo]);
-
-	useEffect(() => {
 		if (!editingEvent)
 			changeEventBeingEdited(dummyEvent);
 
 	}, [editingEvent])
 
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
-		// console.log("drag", changeInfo);
+		console.log("drag", changeInfo);
 		const newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[changeInfo.event.id].start;
 		const newEnd = (changeInfo.event.start) ? changeInfo.event.end : props.events[changeInfo.event.id].end;
 
-		// TODO: test this thing on windows and macOS and in the release version
-		os.type().then(res => {
-			console.log(res);
-			// hack for dealing with fullcalendar
-			// FC fires eventChange, eventAdd, eventRemove and eventDrop when dragging events
-			// this function should only handle dragging the ending of an event
-			if (res !== "Darwin" && !dayjs(newStart! as Date).isSame(dayjs(props.events[changeInfo.event.id].start! as Date)))
-				return;
-
-			props.saveEvent({
-				...props.events[changeInfo.event.id],
-				start: newStart,
-				end: newEnd
-			});
+		props.saveEvent({
+			...props.events[changeInfo.event.id],
+			start: newStart,
+			end: newEnd
 		});
 	};
-
-	const handleEventAdd = (addInfo: EventAddArg) => {
-		setDraggedCalEventInfo({ newId: addInfo.event.id, newStart: addInfo.event.start!, newEnd: addInfo.event.end! });
-	}
-
-	const handleEventRemove = (removeInfo: EventRemoveArg) => {
-		setDraggedCalEventOldId(removeInfo.event.id);
-	}
 
 	const handleEventClick = (clickInfo: EventClickArg) => {
 		// open the edit modal
@@ -655,8 +615,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 					})}
 					eventChange={handleEventDrag}
 					eventClick={handleEventClick}
-					eventAdd={handleEventAdd}
-					eventRemove={handleEventRemove}
 
 					selectable={true}
 					select={handleAddEventThroughSelection}

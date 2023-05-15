@@ -143,7 +143,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.unshift(newItemConfig.itemId);
         db.items.set(newItemConfig.itemId, newItemConfig);
         db.lists.set(listId, list);
-        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -158,7 +157,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         };
 
         db.items.set(itemId, editedItem)
-        // setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
@@ -171,7 +169,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         list.itemIds.splice(index, 1);
         db.items.del(itemId);
         db.lists.set(listId, list);
-        setLoadStage(LOADING_STAGES.DB_UPDATED);
 
         return true;
     };
