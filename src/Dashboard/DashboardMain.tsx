@@ -14,7 +14,7 @@ import type { Id } from "../globals";
 import type { UserRubric } from "../Persistence/useUserDB";
 import { EventRubric, EventCollection } from "../Calendars/Event";
 import "../styles.css";
-import { getToday, DEFAULT_OFFSET } from "../dateutils";
+import { getToday, offsetDay } from "../dateutils";
 import { ROOT_PATH } from "../paths";
 
 dayjs.extend(durationPlugin);
@@ -40,17 +40,22 @@ const DashboardMain = function(props: DashboardMainProps) {
     
     // attempt reload the page at 6am
     useEffect(() => {
-        const today = getToday();
-        const tomorrow = today.startOf("day").add(1, "day").add(10, "seconds").subtract(DEFAULT_OFFSET);
+        const callback = () => {
+            const today = getToday();
+            const endOfToday = today.add(props.user.hoursInDay, "hours").add(-1, "minutes");
+            if (dayjs().isAfter(endOfToday)) {
+                navigate(ROOT_PATH);
+            }
+        }
 
-        if (setTimeout === undefined)
+        if (typeof setInterval === 'undefined') {
+            callback();
             return;
+        }
 
-        const _ = setTimeout(() => {
-            navigate(ROOT_PATH);
-        }, tomorrow.diff(dayjs(), "ms"));
+        const ref = setInterval(callback, 5 * 60 * 1000);
+        return () => clearInterval(ref);
     }, []);
-
 
     useEffect(() => {
         if (!props.user)

@@ -10,6 +10,7 @@ type ValidAttr = number | string | undefined;
 
 export interface UserRubric {
     email: string,
+    // in hours
     hoursInDay: number,
     // in minutes
     defaultEventLength: number,
