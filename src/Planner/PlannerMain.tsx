@@ -158,6 +158,7 @@ const PlannerMain = function(props: PlannerMainProps) {
             onDragEnd={onDragEnd}
         >
             <Group
+                className="fade-in"
                 position="left"
                 spacing="lg"
                 align="flex-start"

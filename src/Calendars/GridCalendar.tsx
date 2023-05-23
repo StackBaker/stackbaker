@@ -104,7 +104,7 @@ interface GridCalendarProps {
 const GridCalendar = function(props: GridCalendarProps) {
     const wrapperHeight = "85vh";
     const wrapperWidth = "45vw";
-    const actualHeight = "150vh";
+    const actualHeight = wrapperHeight; // "150vh"
     const dummyItem: ItemWithMutationInfo = {
         itemId: uuid(),
         content: "",
@@ -217,7 +217,6 @@ const GridCalendar = function(props: GridCalendarProps) {
 
     // TODO: be able to change the month while dragging?
     // TODO: bug: this is not working
-    // TODO: change the view to have a 100vh height
     const handleEventDrag = (oldDate: Date, newDate: Date, itemId: Id) => {
         const sourceListId = dateToDayId(oldDate);
         const destListId = dateToDayId(newDate);

@@ -12,6 +12,7 @@ import { getToday } from "../dateutils";
 import "../styles.css";
 import type { UserRubric } from "../Persistence/useUserDB";
 import { ROOT_PATH } from "../paths";
+import type { dashboardViewOption } from "../globals";
 
 interface ConfirmModalProps {
     opened: boolean,
@@ -41,6 +42,7 @@ const ConfirmModal = (props: ConfirmModalProps) => {
 
 
 export interface DashLeftPanelProps {
+    currentView: dashboardViewOption,
     user: UserRubric,
     date: dayjs.Dayjs,
     editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
