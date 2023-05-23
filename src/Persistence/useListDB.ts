@@ -65,7 +65,7 @@ const useListDB = function() {
         return true;
     }
 
-    const has = async( listId: Id): Promise<boolean> => {
+    const has = async (listId: Id): Promise<boolean> => {
         const listInStore = await store.has(listId);
         if (listInStore) {
             return true;

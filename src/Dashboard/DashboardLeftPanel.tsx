@@ -96,9 +96,6 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
         confirmHandlers.close();
     }
 
-    // TODO: feedback form link under settings
-    // TODO: 30 minutes / 1hr / 2hr view
-
     return (
         <Navbar
             p="md"

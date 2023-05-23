@@ -145,6 +145,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         return true;
     };
 
+    // TODO: change order of list when toggling completeness
     const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>): boolean => {
         if (!db.items.data?.hasOwnProperty(itemId))
             return false;
@@ -258,7 +259,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         if (todayList === null || todayList.planned)
             return false;
         
-        
         // find all the IDs of previous days to check for incomplete tasks
         var prevDayIds = [];
         for (var i = 1; i <= numPrevDaysToSearch; i++) {
@@ -334,7 +334,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
     //     console.log("s", loadStage);
     // }
 
-    // // TODO: delete this back for release version
     // useHotkeys([
     //     ['P', log]
     // ]);

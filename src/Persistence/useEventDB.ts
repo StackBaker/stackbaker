@@ -55,7 +55,6 @@ const useEventDB = function() {
         setEvents(newEvents);
         
         // then write through to disk
-        // TODO: are all these .then()s okay? Do they impact performance?
         store.delete(key);
         store.save();
     }

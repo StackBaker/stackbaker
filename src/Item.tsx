@@ -76,7 +76,6 @@ const Item = function(props: ItemProps) {
     const editRef = useClickOutside(handleSubmitContent);
     const itemTextAreaId = `${props.itemId}-textarea-for-editing`;
 
-    // TODO: bug: can no longer drag and drop into calendar
     useEffect(() => {
         // reference: https://github.com/fullcalendar/fullcalendar-react/issues/118#issuecomment-761278598
         let draggable = new ThirdPartyDraggable(document.getElementById(itemEltId)!, {

@@ -216,7 +216,8 @@ const GridCalendar = function(props: GridCalendarProps) {
     }
 
     // TODO: be able to change the month while dragging?
-
+    // TODO: bug: this is not working
+    // TODO: change the view to have a 100vh height
     const handleEventDrag = (oldDate: Date, newDate: Date, itemId: Id) => {
         const sourceListId = dateToDayId(oldDate);
         const destListId = dateToDayId(newDate);
