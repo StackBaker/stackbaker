@@ -164,6 +164,25 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                             value={props.date.toDate()}
                             onChange={(v) => props.setDate(dayjs(v))}
                             size="xs"
+                            renderDay={(date) => {
+                                // highlight today if it is not selected
+                                const day = dayjs(date);
+                                return (
+                                    <div
+                                        style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            borderRadius: "5px",
+                                            backgroundColor: (dayjs().isSame(day, "day") && !props.date.isSame(dayjs(), "day")) ? "rgba(255, 0, 0, 0.2)" : "none"
+                                        }}
+                                    >
+                                        {date.getDate()}
+                                    </div>
+                                );
+                            }}
                         />
                         <Space h="lg"></Space>
                         <Button fullWidth onClick={() => props.setDate(getToday())}>Today</Button>
