@@ -30,6 +30,7 @@ interface coordinateBackendAndStateOutput {
     editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
+    toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
@@ -159,6 +160,31 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
 
         return true;
     };
+
+    const toggleItemComplete = (itemId: Id, idx: number, listId: Id): boolean => {
+        if (!db.items.data?.hasOwnProperty(itemId) || !db.lists.data?.hasOwnProperty(listId))
+            return false;
+        
+        const prevComplete = db.items.data![itemId].complete;
+        const editedItem: ItemRubric = {
+            ...db.items.data![itemId],
+            complete: !prevComplete
+        };
+
+        let newListIds = db.lists.data![listId].itemIds;
+        newListIds.splice(idx, 1);
+        if (!prevComplete) {
+            // it was previously incomplete, now it is complete, push to bottom
+            newListIds.push(itemId);
+        } else {
+            // it was previously complete, now it is incomplete, push to top
+            newListIds.unshift(itemId);
+        }
+        db.items.set(itemId, editedItem);
+        db.lists.set(listId, { ...db.lists.data![listId], itemIds: newListIds });
+
+        return true;
+    }
 
     const deleteItem = (itemId: Id, listId: Id, index: number): boolean => {
         let list = getListFromDB(listId);
@@ -357,6 +383,7 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         editUser: editUser,
         createItem,
         mutateItem,
+        toggleItemComplete,
         deleteItem,
         mutateList,
         mutateLists,

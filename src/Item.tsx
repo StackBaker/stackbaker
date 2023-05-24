@@ -47,6 +47,7 @@ interface ItemProps extends ItemRubric {
     listId: Id,
     index: number,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
+    toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
 
     eventDuration: number,
@@ -62,7 +63,7 @@ const Item = function(props: ItemProps) {
 
     const handleToggleComplete = () => {
         handlers.close();
-        props.mutateItem(props.itemId, { complete: !props.complete });
+        props.toggleItemComplete(props.itemId, props.index, props.listId);
     }
 
     const handleSubmitContent = () => {

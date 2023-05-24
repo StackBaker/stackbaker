@@ -34,6 +34,7 @@ export interface DashboardMainProps {
     events: EventCollection,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
+    toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     delManyItemsOrMutManyLists: (itemIds: Id[], newLists: ListRubric[]) => boolean,
@@ -120,6 +121,7 @@ const DashboardMain = function(props: DashboardMainProps) {
                                     items={props.items}
                                     createItem={props.createItem}
                                     mutateItem={props.mutateItem}
+                                    toggleItemComplete={props.toggleItemComplete}
                                     deleteItem={props.deleteItem}
                                     eventDuration={eventDuration}
                                     {...props.relevantListCollection[tlid]}
@@ -142,6 +144,7 @@ const DashboardMain = function(props: DashboardMainProps) {
                         />
                         <List
                             items={props.items}
+                            toggleItemComplete={props.toggleItemComplete}
                             createItem={props.createItem}
                             mutateItem={props.mutateItem}
                             deleteItem={props.deleteItem}
