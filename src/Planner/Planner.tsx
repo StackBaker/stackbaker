@@ -70,6 +70,7 @@ const Planner = function(props: PlannerProps) {
                     events={coordination.events}
                     createItem={coordination.createItem}
                     mutateItem={coordination.mutateItem}
+                    toggleItemComplete={coordination.toggleItemComplete}
                     deleteItem={coordination.deleteItem}
                     mutateLists={coordination.mutateLists}
                     delManyItemsOrMutManyLists={coordination.delManyItemsOrMutManyLists}

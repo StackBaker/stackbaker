@@ -16,3 +16,5 @@ export const LOADING_STAGES: { [key: string]: loadingStage } = {
     DB_UPDATED: 1,
     READY: 2
 }
+
+export type dashboardViewOption = "day" | "month"; // TODO: week view

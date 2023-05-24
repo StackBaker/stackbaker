@@ -28,6 +28,7 @@ interface PlannerMainProps {
     events: EventCollection,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
+    toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     delManyItemsOrMutManyLists: (itemIds: Id[], newLists: ListRubric[]) => boolean,
@@ -68,6 +69,7 @@ const PlannerMain = function(props: PlannerMainProps) {
             items={props.items}
             createItem={props.createItem}
             mutateItem={props.mutateItem}
+            toggleItemComplete={props.toggleItemComplete}
             deleteItem={props.deleteItem}
             eventDuration={eventDuration}
             {...props.relevantListCollection[dateToDayId(props.date)]}
@@ -93,6 +95,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                         items={props.items}
                         createItem={props.createItem}
                         mutateItem={props.mutateItem}
+                        toggleItemComplete={props.toggleItemComplete}
                         deleteItem={props.deleteItem}
                         eventDuration={eventDuration}
                         {...props.relevantListCollection[tlid]}
@@ -118,6 +121,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 items={props.items}
                 createItem={props.createItem}
                 mutateItem={props.mutateItem}
+                toggleItemComplete={props.toggleItemComplete}
                 deleteItem={props.deleteItem}
                 eventDuration={eventDuration}
                 collapseItems={props.planningStage === 2}
@@ -144,6 +148,7 @@ const PlannerMain = function(props: PlannerMainProps) {
                 items={props.items}
                 createItem={props.createItem}
                 mutateItem={props.mutateItem}
+                toggleItemComplete={props.toggleItemComplete}
                 deleteItem={props.deleteItem}
                 eventDuration={eventDuration}
                 {...props.relevantListCollection[dateToDayId(props.date)]}
@@ -158,6 +163,7 @@ const PlannerMain = function(props: PlannerMainProps) {
             onDragEnd={onDragEnd}
         >
             <Group
+                className="fade-in"
                 position="left"
                 spacing="lg"
                 align="flex-start"

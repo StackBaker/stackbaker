@@ -6,23 +6,26 @@ import { myStructuredClone } from "../globals";
 
 const USER_FNAME = "users.dat";
 
-type ValidAttr = number | string | undefined;
+type ValidAttr = number | string | boolean | undefined;
 
 export interface UserRubric {
     email: string,
+    // in hours
     hoursInDay: number,
     // in minutes
     defaultEventLength: number,
     // in minutes
     // optional because it is a newly added attribute, possibly not present
-    dayCalLabelInterval: number
+    dayCalLabelInterval: number,
+    autoLoadPlanner: boolean
 };
 
 const defaultUser: UserRubric = {
     email: "",
     hoursInDay: 30,
     defaultEventLength: 60,
-    dayCalLabelInterval: 60
+    dayCalLabelInterval: 60,
+    autoLoadPlanner: true
 };
 
 const useUserDB = function() {
@@ -61,7 +64,7 @@ const useUserDB = function() {
         for (const key in defaultUser) {
             const k = key as keyof UserRubric;
             const val = await get(k);
-            if (!val)
+            if (val === undefined)
                 set(k, defaultUser[k]);
             else
                 newUser = { ...newUser, [k]: val };

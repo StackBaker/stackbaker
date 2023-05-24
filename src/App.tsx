@@ -12,6 +12,7 @@ import Dashboard from "./Dashboard/Dashboard";
 import Planner from "./Planner/Planner";
 import { dateToDayId, getToday } from "./dateutils";
 import { ListRubric } from "./List";
+import { UserRubric } from "./Persistence/useUserDB";
 
 interface RootProps {
 	date: dayjs.Dayjs
@@ -36,22 +37,25 @@ const Root = function(props: RootProps) {
 				return;
 			}
 			else {
-				const todayId = dateToDayId(props.date);
-				db.lists.has(todayId).then((res: boolean) => {
-					if (res) {
-						db.lists.get(todayId).then((val) => {
-							if (getToday().isSame(props.date, "day") && !(val as ListRubric).planned)
+				db.user.get("autoLoadPlanner").then((alp) => {
+					let autoLoadPlanner = alp as boolean;
+					const todayId = dateToDayId(props.date);
+					db.lists.has(todayId).then((res: boolean) => {
+						if (res) {
+							db.lists.get(todayId).then((val) => {
+								if (getToday().isSame(props.date, "day") && autoLoadPlanner && !(val as ListRubric).planned)
+									navigate(paths.PLANNER_PATH);
+								else
+									navigate(paths.DASHBOARD_PATH);
+							});
+						} else {
+							db.lists.create(props.date);
+							if (getToday().isSame(props.date, "day"))
 								navigate(paths.PLANNER_PATH);
 							else
-								navigate(paths.DASHBOARD_PATH)
-						});
-					} else {
-						db.lists.create(props.date);
-						if (getToday().isSame(props.date, "day"))
-							navigate(paths.PLANNER_PATH);
-						else
-							navigate(paths.DASHBOARD_PATH);
-					}
+								navigate(paths.DASHBOARD_PATH);
+						}
+					});
 				});
 			}
 		});

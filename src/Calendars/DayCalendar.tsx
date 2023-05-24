@@ -60,7 +60,6 @@ const EditEventModal = function(props: EditEventModalProps) {
 	const dayBtnSize = 30;
 	const noRepeats = (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0);
 
-	// TODO: test for bugs
 	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
 		props.changeEventBeingEdited({
 			...props.eventBeingEdited,
@@ -73,6 +72,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 			return;
 
 		let startDate = dayjs(newStart);
+		// TODO: bug: offsetDay should use dayDuration
 		const newStartDay = offsetDay(startDate);
 		const newStartDayEnd = endOfOffsetDay(newStartDay);
 		let endDate = dayjs(props.eventBeingEdited.end! as Date);

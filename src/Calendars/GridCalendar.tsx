@@ -4,10 +4,10 @@ import { createRef, useEffect, useState, useRef } from "react";
 import { createStyles, ActionIcon, TextInput, Text, Group, Modal, Stack } from "@mantine/core";
 import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
 import FullCalendar from "@fullcalendar/react";
-import interactionPlugin from "@fullcalendar/interaction";
+import interactionPlugin, { EventDragStartArg, EventDragStopArg } from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import type { EventAddArg, EventRemoveArg, EventClickArg, EventInput } from "@fullcalendar/core";
+import type { EventAddArg, EventRemoveArg, EventClickArg, EventInput, EventDropArg } from "@fullcalendar/core";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import DeleteIcon from "@mui/icons-material/Delete";
 
@@ -18,7 +18,7 @@ import { ID_IDX_DELIM } from "../Item";
 import type { ItemCollection, ItemRubric } from "../Item";
 import type { ListCollection, ListRubric } from "../List";
 import type { loadingStage } from "../globals";
-import { dateToDayId, dayIdToDay } from "../dateutils";
+import { dateToDayId, dayIdToDay, getToday } from "../dateutils";
 import { DO_LATER_LIST_ID, Id } from "../globals";
 
 type ItemWithMutationInfo = ItemRubric & { listId: Id, index: number };
@@ -117,11 +117,6 @@ const GridCalendar = function(props: GridCalendarProps) {
     const [events, setEvents] = useState<EventList>([]);
     const [editingItem, handlers] = useDisclosure(false);
     const [itemBeingEdited, changeItemBeingEdited] = useState<ItemWithMutationInfo>(dummyItem);
-    
-    // TODO: starter: can this be cleaned up, made into one setState object?
-    const [draggedCalItemId, setDraggedCalItemId] = useState<Id | null>(null);
-    const [calendarItemOldDate, setCalItemOldDate] = useState<Date | null>(null);
-    const [calendarItemNewDate, setCalItemNewDate] = useState<Date | null>(null);
 
     useEffect(() => {
         // run once on render to initialize the events
@@ -216,8 +211,12 @@ const GridCalendar = function(props: GridCalendarProps) {
     }
 
     // TODO: be able to change the month while dragging?
+    // TODO: test this on windows
+    const handleEventDrag = (dropInfo: EventDropArg) => {
+        const oldDate = dropInfo.oldEvent.start!;
+        const newDate = dropInfo.event.start!;
+        const itemId = getIdFromEventRepr(dropInfo.event.id);
 
-    const handleEventDrag = (oldDate: Date, newDate: Date, itemId: Id) => {
         const sourceListId = dateToDayId(oldDate);
         const destListId = dateToDayId(newDate);
 
@@ -238,26 +237,6 @@ const GridCalendar = function(props: GridCalendarProps) {
         );
     }
 
-    const handleEventAdd = (addInfo: EventAddArg) => {
-        setDraggedCalItemId(getIdFromEventRepr(addInfo.event.id));
-        setCalItemNewDate(addInfo.event.start!);
-    }
-
-    const handleEventRemove = (removeInfo: EventRemoveArg) => {
-        setCalItemOldDate(removeInfo.event.start!);
-    }
-
-    useEffect(() => {
-        if (!draggedCalItemId || !calendarItemOldDate || !calendarItemNewDate)
-            return;
-        
-        handleEventDrag(calendarItemOldDate!, calendarItemNewDate!, draggedCalItemId!)
-        
-        setDraggedCalItemId(null);
-        setCalItemNewDate(null);
-        setCalItemOldDate(null);
-    }, [draggedCalItemId, calendarItemOldDate, calendarItemNewDate]);
-
     return (
         <Stack className="grid-cal" h={wrapperHeight} w={wrapperWidth} sx={{ overflow: "hidden" }}>
             <EditItemModal
@@ -273,11 +252,9 @@ const GridCalendar = function(props: GridCalendarProps) {
                     plugins={[dayGridPlugin, interactionPlugin]}
                     viewHeight={actualHeight}
                     height={actualHeight}
-                    nowIndicator={true}
                     
                     editable={true}
-                    eventAdd={handleEventAdd}
-                    eventRemove={handleEventRemove}
+                    eventDrop={handleEventDrag}
                     eventClick={handleEventClick}
                     events={events.map(x => x as EventInput)}
 
@@ -295,7 +272,7 @@ const GridCalendar = function(props: GridCalendarProps) {
                     initialView="dayGridMonth"
                     displayEventTime={false}
                     dayMaxEventRows={true}
-                    now={dayjs().toDate()}
+                    now={getToday().toDate()}
                     scrollTime={dayjs().format("HH:00")}
                 />
             </Stack>

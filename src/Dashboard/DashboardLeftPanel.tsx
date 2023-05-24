@@ -12,6 +12,7 @@ import { getToday } from "../dateutils";
 import "../styles.css";
 import type { UserRubric } from "../Persistence/useUserDB";
 import { ROOT_PATH } from "../paths";
+import type { dashboardViewOption } from "../globals";
 
 interface ConfirmModalProps {
     opened: boolean,
@@ -41,6 +42,7 @@ const ConfirmModal = (props: ConfirmModalProps) => {
 
 
 export interface DashLeftPanelProps {
+    currentView: dashboardViewOption,
     user: UserRubric,
     date: dayjs.Dayjs,
     editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
@@ -62,7 +64,8 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
             email: props.user.email,
             hoursInDay: JSON.stringify(props.user.hoursInDay),
             defaultEventLength: JSON.stringify(props.user.defaultEventLength),
-            dayCalLabelInterval: JSON.stringify(props.user.dayCalLabelInterval)
+            dayCalLabelInterval: JSON.stringify(props.user.dayCalLabelInterval),
+            autoLoadPlanner: JSON.stringify(props.user.autoLoadPlanner)
         });
     }, [props.user]);
 
@@ -83,7 +86,14 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
         newHours = Math.max(24, Math.min(newHours, 120));
         newEvtLen = Math.max(1, Math.min(newEvtLen, 300));
 
-        props.editUser({ defaultEventLength: newEvtLen, hoursInDay: newHours, dayCalLabelInterval: newDayCalInterval });
+        let newautoLoadPlanner: boolean = (accountBeingEdited!.autoLoadPlanner === "false") ? false : true;
+
+        props.editUser({
+            defaultEventLength: newEvtLen,
+            hoursInDay: newHours,
+            dayCalLabelInterval: newDayCalInterval,
+            autoLoadPlanner: newautoLoadPlanner
+        });
     }
 
     const confirmDeleteEverything = () => {
@@ -96,9 +106,6 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
         confirmHandlers.close();
     }
 
-    // TODO: feedback form link under settings
-    // TODO: 30 minutes / 1hr / 2hr view
-
     return (
         <Navbar
             p="md"
@@ -106,8 +113,9 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
             hiddenBreakpoint="sm"
             hidden={false}
             width={{ sm: 250, lg: 250 }}
+            sx={(settingsOpen) ? { overflow: "scroll" } : {}}
         >
-            <Navbar.Section>
+            <Navbar.Section pb="xs">
                 <ConfirmModal
                     opened={confirmOpen}
                     confirm={confirmDeleteEverything}
@@ -155,6 +163,24 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                                 { value: "120", label: "2 hours" }
                             ]}
                         />
+                        <Select
+                            label="Auto-load the planner"
+                            description="Whether or not to automatically load the planner on opening StackBaker at the beginning of each day"
+                            placeholder="Yes or no"
+                            value={accountBeingEdited!.autoLoadPlanner}
+                            onChange={(newVal: string | null) => {
+                                if (!newVal)
+                                    return;
+                                setAccountBeingEdited({
+                                    ...accountBeingEdited!,
+                                    autoLoadPlanner: newVal
+                                });
+                            }}
+                            data={[
+                                { value: "true", label: "Yes" },
+                                { value: "false", label: "No" }
+                            ]}
+                        />
                         <Button onClick={handleSubmitSettings} fullWidth>Save</Button>
                     </Stack>
                     :
@@ -165,6 +191,25 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                             value={props.date.toDate()}
                             onChange={(v) => props.setDate(dayjs(v))}
                             size="xs"
+                            renderDay={(date) => {
+                                // highlight today if it is not selected
+                                const day = dayjs(date);
+                                return (
+                                    <div
+                                        style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            borderRadius: "5px",
+                                            backgroundColor: (dayjs().isSame(day, "day") && !props.date.isSame(dayjs(), "day")) ? "rgba(255, 0, 0, 0.2)" : "none"
+                                        }}
+                                    >
+                                        {date.getDate()}
+                                    </div>
+                                );
+                            }}
                         />
                         <Space h="lg"></Space>
                         <Button fullWidth onClick={() => props.setDate(getToday())}>Today</Button>
@@ -175,24 +220,13 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
             <Navbar.Section>
                 {
                     (settingsOpen) ?
-                    <Stack>
-                        <Button
-                            fullWidth
-                            variant="outline"
-                            onClick={() => props.editUser(null)}
-                        >
-                            Reset to defaults
-                        </Button>
-                        <Button
-                            fullWidth
-                            variant="outline"
-                            color="red"
-                            leftIcon={<DangerousIcon />}
-                            onClick={() => confirmHandlers.open()}
-                        >
-                            Clear data
-                        </Button>
-                    </Stack>
+                    <Button
+                        fullWidth
+                        variant="outline"
+                        onClick={() => props.editUser(null)}
+                    >
+                        Reset to defaults
+                    </Button>
                     : null
                 }
                 <Space h="lg"></Space>
@@ -202,8 +236,22 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                     leftIcon={(settingsOpen) ? <CloseIcon/> : <SettingsIcon />}
                     onClick={handlers.toggle}
                 >
-                    {(settingsOpen) ? "Close" : "Settings"}
+                    {(settingsOpen) ? "Close Settings" : "Settings"}
                 </Button>
+                <Space h="lg"></Space>
+                {
+                    (settingsOpen) ?
+                    <Button
+                        fullWidth
+                        variant="outline"
+                        color="red"
+                        leftIcon={<DangerousIcon />}
+                        onClick={() => confirmHandlers.open()}
+                    >
+                        Clear data
+                    </Button>
+                    : null
+                }
             </Navbar.Section>
         </Navbar>
     );
