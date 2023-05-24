@@ -37,23 +37,24 @@ const Root = function(props: RootProps) {
 				return;
 			}
 			else {
-				let user = db.user.data!;
-				const todayId = dateToDayId(props.date);
-				db.lists.has(todayId).then((res: boolean) => {
-					if (res) {
-						db.lists.get(todayId).then((val) => {
-							if (getToday().isSame(props.date, "day") && user.autoLoadPlanner && !(val as ListRubric).planned)
+				db.user.get("autoLoadPlanner").then((alp) => {
+					const todayId = dateToDayId(props.date);
+					db.lists.has(todayId).then((res: boolean) => {
+						if (res) {
+							db.lists.get(todayId).then((val) => {
+								if (getToday().isSame(props.date, "day") && alp && !(val as ListRubric).planned)
+									navigate(paths.PLANNER_PATH);
+								else
+									navigate(paths.DASHBOARD_PATH);
+							});
+						} else {
+							db.lists.create(props.date);
+							if (getToday().isSame(props.date, "day"))
 								navigate(paths.PLANNER_PATH);
 							else
 								navigate(paths.DASHBOARD_PATH);
-						});
-					} else {
-						db.lists.create(props.date);
-						if (getToday().isSame(props.date, "day"))
-							navigate(paths.PLANNER_PATH);
-						else
-							navigate(paths.DASHBOARD_PATH);
-					}
+						}
+					});
 				});
 			}
 		});
