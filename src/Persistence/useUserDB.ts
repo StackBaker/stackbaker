@@ -64,7 +64,7 @@ const useUserDB = function() {
         for (const key in defaultUser) {
             const k = key as keyof UserRubric;
             const val = await get(k);
-            if (!val)
+            if (!val && val !== false)
                 set(k, defaultUser[k]);
             else
                 newUser = { ...newUser, [k]: val };

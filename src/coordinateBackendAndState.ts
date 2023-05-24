@@ -352,17 +352,17 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         setLoadStage(LOADING_STAGES.NOTHING_LOADED);
     }
 
-    const log = () => {
-        console.log("l", db.lists.data);
-        console.log("i", db.items.data);
-        console.log("e", db.events.data);
-        console.log("u", db.user.data);
-        console.log("s", loadStage);
-    }
+    // const log = () => {
+    //     console.log("l", db.lists.data);
+    //     console.log("i", db.items.data);
+    //     console.log("e", db.events.data);
+    //     console.log("u", db.user.data);
+    //     console.log("s", loadStage);
+    // }
 
-    useHotkeys([
-        ['P', log]
-    ]);
+    // useHotkeys([
+    //     ['P', log]
+    // ]);
 
     // useMemo is executed inline with the component if the dependencies have changed
     // so it should execute before the function returns, i.e before all of this is returned

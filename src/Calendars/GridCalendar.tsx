@@ -117,11 +117,6 @@ const GridCalendar = function(props: GridCalendarProps) {
     const [events, setEvents] = useState<EventList>([]);
     const [editingItem, handlers] = useDisclosure(false);
     const [itemBeingEdited, changeItemBeingEdited] = useState<ItemWithMutationInfo>(dummyItem);
-    
-    // TODO: starter: can this be cleaned up, made into one setState object?
-    const [draggedCalItemId, setDraggedCalItemId] = useState<Id | null>(null);
-    const [calendarItemOldDate, setCalItemOldDate] = useState<Date | null>(null);
-    const [calendarItemNewDate, setCalItemNewDate] = useState<Date | null>(null);
 
     useEffect(() => {
         // run once on render to initialize the events
@@ -241,29 +236,6 @@ const GridCalendar = function(props: GridCalendarProps) {
             true
         );
     }
-
-    const handleEventDrop = (addInfo: EventDragStopArg | EventDropArg) => {
-        setDraggedCalItemId(getIdFromEventRepr(addInfo.event.id));
-        console.log(addInfo);
-        setCalItemNewDate(addInfo.event.start!);
-    }
-
-    const handleEventRemove = (removeInfo: EventDragStartArg) => {
-        setCalItemOldDate(removeInfo.event.start!);
-    }
-
-    // useEffect(() => {
-    //     if (!draggedCalItemId || !calendarItemOldDate || !calendarItemNewDate)
-    //         return;
-
-    //     console.log(draggedCalItemId, calendarItemNewDate, calendarItemOldDate)
-        
-    //     // handleEventDrop(calendarItemOldDate!, calendarItemNewDate!, draggedCalItemId!)
-        
-    //     setDraggedCalItemId(null);
-    //     setCalItemNewDate(null);
-    //     setCalItemOldDate(null);
-    // }, [draggedCalItemId, calendarItemOldDate, calendarItemNewDate]);
 
     return (
         <Stack className="grid-cal" h={wrapperHeight} w={wrapperWidth} sx={{ overflow: "hidden" }}>
