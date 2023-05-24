@@ -38,11 +38,12 @@ const Root = function(props: RootProps) {
 			}
 			else {
 				db.user.get("autoLoadPlanner").then((alp) => {
+					let autoLoadPlanner = alp as boolean;
 					const todayId = dateToDayId(props.date);
 					db.lists.has(todayId).then((res: boolean) => {
 						if (res) {
 							db.lists.get(todayId).then((val) => {
-								if (getToday().isSame(props.date, "day") && alp && !(val as ListRubric).planned)
+								if (getToday().isSame(props.date, "day") && autoLoadPlanner && !(val as ListRubric).planned)
 									navigate(paths.PLANNER_PATH);
 								else
 									navigate(paths.DASHBOARD_PATH);
@@ -60,17 +61,17 @@ const Root = function(props: RootProps) {
 		});
 	}, []);
 
-	const log = () => {
-        console.log("l", db.lists.data);
-        console.log("i", db.items.data);
-        console.log("e", db.events.data);
-        console.log("u", db.user.data);
-    }
+	// const log = () => {
+    //     console.log("l", db.lists.data);
+    //     console.log("i", db.items.data);
+    //     console.log("e", db.events.data);
+    //     console.log("u", db.user.data);
+    // }
 
-    // debugging
-    useHotkeys([
-        ['R', log]
-    ]);
+    // // debugging
+    // useHotkeys([
+    //     ['R', log]
+    // ]);
 
 	return <div></div>
 }
