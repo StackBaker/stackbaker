@@ -6,7 +6,7 @@ import { myStructuredClone } from "../globals";
 
 const USER_FNAME = "users.dat";
 
-type ValidAttr = number | string | undefined;
+type ValidAttr = number | string | boolean | undefined;
 
 export interface UserRubric {
     email: string,
@@ -16,14 +16,16 @@ export interface UserRubric {
     defaultEventLength: number,
     // in minutes
     // optional because it is a newly added attribute, possibly not present
-    dayCalLabelInterval: number
+    dayCalLabelInterval: number,
+    autoLoadPlanner: boolean
 };
 
 const defaultUser: UserRubric = {
     email: "",
     hoursInDay: 30,
     defaultEventLength: 60,
-    dayCalLabelInterval: 60
+    dayCalLabelInterval: 60,
+    autoLoadPlanner: true
 };
 
 const useUserDB = function() {

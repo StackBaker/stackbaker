@@ -12,6 +12,7 @@ import Dashboard from "./Dashboard/Dashboard";
 import Planner from "./Planner/Planner";
 import { dateToDayId, getToday } from "./dateutils";
 import { ListRubric } from "./List";
+import { UserRubric } from "./Persistence/useUserDB";
 
 interface RootProps {
 	date: dayjs.Dayjs
@@ -36,14 +37,15 @@ const Root = function(props: RootProps) {
 				return;
 			}
 			else {
+				let user = db.user.data!;
 				const todayId = dateToDayId(props.date);
 				db.lists.has(todayId).then((res: boolean) => {
 					if (res) {
 						db.lists.get(todayId).then((val) => {
-							if (getToday().isSame(props.date, "day") && !(val as ListRubric).planned)
+							if (getToday().isSame(props.date, "day") && user.autoLoadPlanner && !(val as ListRubric).planned)
 								navigate(paths.PLANNER_PATH);
 							else
-								navigate(paths.DASHBOARD_PATH)
+								navigate(paths.DASHBOARD_PATH);
 						});
 					} else {
 						db.lists.create(props.date);
