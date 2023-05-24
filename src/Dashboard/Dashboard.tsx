@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AppShell, Text, Header, Group, Button } from "@mantine/core";
 import dayjs from "dayjs";
 import { open } from "@tauri-apps/api/shell";
+import { ResponseType, fetch as tauriFetch } from "@tauri-apps/api/http";
 
 import DashboardMain from "./DashboardMain";
 import DashboardLeftPanel from "./DashboardLeftPanel";
@@ -27,15 +28,16 @@ const Dashboard = function(props: DashboardProps) {
     useEffect(() => {
         const serverURL = "https://hwsrv-1063075.hostwindsdns.com/click_count";
         const callback = () => {
-            fetch(serverURL, {
+            tauriFetch(serverURL, {
                 method: "POST",
                 headers: {
                     "X-Desktop-App-Id": import.meta.env.VITE_SERVER_ACCESS_HEADER
-                }
+                },
+                responseType: ResponseType.Text
             }).then(res => console.log(res));
         }
 
-        if (typeof window === "undefined") {
+        if (typeof window === "undefined" || typeof (import.meta.env.VITE_SERVER_ACCESS_HEADER) === "undefined") {
             return;
         }
 
