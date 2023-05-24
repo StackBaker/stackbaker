@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppShell, Text, Header, Group, Button } from "@mantine/core";
 import dayjs from "dayjs";
 import { open } from "@tauri-apps/api/shell";
@@ -23,6 +23,25 @@ const Dashboard = function(props: DashboardProps) {
     const [currentView, setCurrentView] = useState<dashboardViewOption>("day");
     
     const coordination = coordinateBackendAndState(props);
+
+    useEffect(() => {
+        const serverURL = "https://hwsrv-1063075.hostwindsdns.com/click_count";
+        const callback = () => {
+            fetch(serverURL, {
+                method: "POST",
+                headers: {
+                    "X-Desktop-App-Id": import.meta.env.VITE_SERVER_ACCESS_HEADER
+                }
+            }).then(res => console.log(res));
+        }
+
+        if (typeof window === "undefined") {
+            return;
+        }
+
+        window.addEventListener("click", callback);
+        return () => window.removeEventListener("click", callback);
+    })
 
     // have to do this sx thing because AppShell automatically renders too large
     return (
