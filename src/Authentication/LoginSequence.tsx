@@ -83,7 +83,7 @@ const LoginSequence = function(props: LoginProps) {
                     accessToken,
                     refreshToken,
                     expiryDate
-                }, true);
+                });
 
                 navigate(paths.ROOT_PATH)
             }

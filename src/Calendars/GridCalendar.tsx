@@ -211,7 +211,6 @@ const GridCalendar = function(props: GridCalendarProps) {
     }
 
     // TODO: be able to change the month while dragging?
-    // TODO: test this on windows
     const handleEventDrag = (dropInfo: EventDropArg) => {
         const oldDate = dropInfo.oldEvent.start!;
         const newDate = dropInfo.event.start!;

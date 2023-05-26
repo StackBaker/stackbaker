@@ -41,8 +41,9 @@ const Dashboard = function(props: DashboardProps) {
             return;
         }
 
-        window.addEventListener("click", callback);
-        return () => window.removeEventListener("click", callback);
+        // TODO: put this back
+        // window.addEventListener("click", callback);
+        // return () => window.removeEventListener("click", callback);
     })
 
     // have to do this sx thing because AppShell automatically renders too large

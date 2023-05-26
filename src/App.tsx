@@ -31,34 +31,6 @@ const Root = function(props: RootProps) {
 		db.events.loadAll().then();
 	}, []);
 
-	useEffect(() => {
-		// depending on the existence of a user, route accordingly
-		db.user.get("authData").then(u => {
-			if (!u) {
-				navigate(paths.LOGIN_PATH);
-			}
-			else {
-				const todayId = dateToDayId(props.date);
-				db.lists.has(todayId).then((res: boolean) => {
-					if (res) {
-						db.lists.get(todayId).then((val) => {
-							if (getToday().isSame(props.date, "day") && !(val as ListRubric).planned)
-								navigate(paths.PLANNER_PATH);
-							else
-								navigate(paths.DASHBOARD_PATH)
-						});
-					} else {
-						db.lists.create(props.date);
-						if (getToday().isSame(props.date, "day"))
-							navigate(paths.PLANNER_PATH);
-						else
-							navigate(paths.DASHBOARD_PATH);
-					}
-				});
-			}
-		});
-	}, []);
-
 	// TODO: if can't find the user
 	// move to the Login View
 	// the login view will have a few stages
@@ -100,30 +72,20 @@ const Root = function(props: RootProps) {
 		});
 	}, []);
 
-	useEffect(() => {
-		invoke("create_oauth_request_url").then((r) => {
-			let res = r as string;
-			setX(res);
-			console.log(res);
-		});
-	}, []);
+	const log = () => {
+        console.log("l", db.lists.data);
+        console.log("i", db.items.data);
+        console.log("e", db.events.data);
+        console.log("u", db.user.data);
+    }
 
-	// const log = () => {
-    //     console.log("l", db.lists.data);
-    //     console.log("i", db.items.data);
-    //     console.log("e", db.events.data);
-    //     console.log("u", db.user.data);
-    // }
-
-    // // debugging
-    // useHotkeys([
-    //     ['R', log]
-    // ]);
+    // debugging
+    useHotkeys([
+        ['R', log]
+    ]);
 
 	return (
-		<div>
-
-		</div>
+		<div></div>
 	);
 }
 

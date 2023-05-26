@@ -1,20 +1,26 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use std::collections::HashMap;
-use std::env;
+use std::{option_env};
 
 const AUTH_URI: &str = "https://accounts.google.com/o/oauth2/auth";
 const TOKEN_URI: &str = "https://oauth2.googleapis.com/token";
 
 const SCOPES: &str = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email";
-const CLIENT_ID: &str = env!("GOOGLE_CLIENT_ID", "client ID not set");
-const CLIENT_SECRET: &str = env!("GOOGLE_CLIENT_SECRET", "client secret not set");
 const REDIRECT_URI: &str = "urn:ietf:wg:oauth:2.0:oob";
+
+fn get_client_id() -> &'static str {
+    option_env!("GOOGLE_CLIENT_ID").expect("client ID not set")
+}
+
+fn get_client_secret() -> &'static str {
+    option_env!("GOOGLE_CLIENT_SECRET").expect("client secret not set")
+}
 
 #[tauri::command]
 fn create_oauth_request_url() -> String {
     let mut params: HashMap<&str, &str> = HashMap::new();
-    params.insert("client_id", CLIENT_ID);
+    params.insert("client_id", get_client_id());
     params.insert("redirect_uri", REDIRECT_URI);
     params.insert("scope", SCOPES);
 
@@ -32,8 +38,8 @@ fn exchange_code_for_tokens(authorization_code: String) -> serde_json::Value {
 
     params.insert("grant_type", "authorization_code");
     params.insert("code", authorization_code);
-    params.insert("client_id", CLIENT_ID);
-    params.insert("client_secret", CLIENT_SECRET);
+    params.insert("client_id", get_client_id());
+    params.insert("client_secret", get_client_secret());
     params.insert("redirect_uri", REDIRECT_URI);
 
     let client = reqwest::blocking::Client::new();
