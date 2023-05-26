@@ -39,7 +39,6 @@ const Root = function(props: RootProps) {
 	// - stage 3: once the auth code is saved to the db, reload to the root
 	// 				then use the auth code to handle calendar events
 
-	const [x, setX] = useState("");
 	useEffect(() => {
 		// depending on the existence of a user, route accordingly
 		db.user.get("email").then(u => {

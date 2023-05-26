@@ -51,9 +51,9 @@ const DashboardMain = function(props: DashboardMainProps) {
     // attempt reload the page at 6am
     useEffect(() => {
         const callback = () => {
-            const today = getToday();
+            const today = offsetDay(props.date);
             const endOfToday = today.add(props.user.hoursInDay, "hours").add(-1, "minutes");
-            if (dayjs().isAfter(endOfToday)) {
+            if (dayjs().isAfter(endOfToday) || dayjs().isBefore(today)) {
                 navigate(ROOT_PATH);
             }
         }
@@ -63,7 +63,7 @@ const DashboardMain = function(props: DashboardMainProps) {
             return;
         }
 
-        const ref = setInterval(callback, 5 * 60 * 1000);
+        const ref = setInterval(callback, 2 * 60 * 1000);
         return () => clearInterval(ref);
     }, []);
 

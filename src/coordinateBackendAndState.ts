@@ -235,8 +235,8 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
                     return false;
 
             var temp = list.itemIds[sourceOfDrag.index];
-            list.itemIds[sourceOfDrag.index] = list.itemIds[destinationOfDrag.index];
-            list.itemIds[destinationOfDrag.index] = temp;
+            list.itemIds.splice(sourceOfDrag.index, 1);
+            list.itemIds.splice(destinationOfDrag.index, 0, temp);
             db.lists.set(sourceOfDrag.droppableId, list);
         } else {
             var sourceList = getListFromDB(sourceOfDrag.droppableId);
