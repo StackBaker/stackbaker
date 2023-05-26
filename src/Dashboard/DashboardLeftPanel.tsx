@@ -7,11 +7,14 @@ import DangerousIcon from '@mui/icons-material/Dangerous';
 import CloseIcon from '@mui/icons-material/Close';
 import { useDisclosure } from "@mantine/hooks";
 import { useNavigate } from "react-router-dom";
+import { Google } from "@mui/icons-material";
+import { invoke } from "@tauri-apps/api";
+import { open } from "@tauri-apps/api/shell";
 
 import { getToday } from "../dateutils";
 import "../styles.css";
 import type { UserRubric } from "../Persistence/useUserDB";
-import { ROOT_PATH } from "../paths";
+import { LOGIN_PATH, ROOT_PATH } from "../paths";
 import type { dashboardViewOption } from "../globals";
 
 interface ConfirmModalProps {
@@ -52,6 +55,7 @@ export interface DashLeftPanelProps {
 
 const DashboardLeftPanel = function(props: DashLeftPanelProps) {
     const navigate = useNavigate();
+	const [oauthURL, setOAuthUrl] = useState("");
     const [settingsOpen, handlers] = useDisclosure(false);
     const [confirmOpen, confirmHandlers] = useDisclosure(false);
     const [accountBeingEdited, setAccountBeingEdited] = useState<{ [k in keyof UserRubric]: string }>();
@@ -69,6 +73,14 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
             autoLoadPlanner: JSON.stringify(props.user.autoLoadPlanner)
         });
     }, [props.user]);
+
+	useEffect(() => {
+		invoke("create_oauth_request_url").then((r) => {
+			let res = r as string;
+			setOAuthUrl(res);
+			console.log("Auth URL:", res);
+		});
+	}, []);
 
     const handleSubmitSettings = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         e.preventDefault();
@@ -125,6 +137,18 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                 { (settingsOpen) ? 
                     <Stack spacing="md">
                         <Title order={2}>Settings</Title>
+                        <Button
+                            leftIcon={<Google />}
+                            disabled={props.user.authData !== null}
+                            onClick={() => {
+                                if (props.user.authData === null) {
+                                    open(oauthURL);
+                                    navigate(LOGIN_PATH);
+                                }
+                            }}
+                        >
+                            Connect Calendar
+                        </Button>
                         <TextInput
                             label="Hours in a day"
                             description="How long the day calendar column is in hours"

@@ -10,7 +10,7 @@ import useUserDB from "../Persistence/useUserDB";
 import * as paths from "../paths";
 
 // 2: error
-type loginStage = 0 | 1 | 2;
+type loginStage = 0 | 1;
 
 interface LoginProps {
 
@@ -25,9 +25,9 @@ const LoginSequence = function(props: LoginProps) {
 
     useEffect(() => {
         udb.load();
-    }, [])
+    }, []);
 
-	useEffect(() => {
+    useEffect(() => {
 		invoke("create_oauth_request_url").then((r) => {
 			let res = r as string;
 			setOAuthUrl(res);
@@ -35,20 +35,6 @@ const LoginSequence = function(props: LoginProps) {
 		});
 	}, []);
 
-    const Welcome = (
-        <>
-            <Title>Welcome to StackBaker</Title>
-            <Button
-                onClick={() => {
-                    open(oauthURL).then();
-                    setLoginStage(1);
-                }}
-                leftIcon={<Google />}
-            >
-                Login with Google
-            </Button>
-        </>
-    );
 
     // accept an authorization code
     // need: email -- why? Canvas?
@@ -75,7 +61,7 @@ const LoginSequence = function(props: LoginProps) {
                 const expiryDate = dayjs().add(Math.max(res.expires_in - 10, 0), "seconds").format();
 
                 if (!accessToken || !refreshToken || !expiryDate) {
-                    setLoginStage(2);
+                    setLoginStage(1);
                     return;
                 }
 
@@ -85,7 +71,7 @@ const LoginSequence = function(props: LoginProps) {
                     expiryDate
                 });
 
-                navigate(paths.ROOT_PATH)
+                navigate(paths.ROOT_PATH);
             }
         )
     }
@@ -103,8 +89,11 @@ const LoginSequence = function(props: LoginProps) {
                     placeholder="Auth code"
                 />
                 <Group position="apart" w="100%">
-                    <Button onClick={() => setLoginStage(0)} variant="outline">
+                    <Button onClick={() => navigate(paths.DASHBOARD_PATH)} variant="outline">
                         Back
+                    </Button>
+                    <Button onClick={() => open(oauthURL)} variant="subtle" opacity={0.5}>
+                        Restart Google OAuth sequence
                     </Button>
                     <Button type="submit">
                         Submit
@@ -118,7 +107,7 @@ const LoginSequence = function(props: LoginProps) {
     const Error = (
         <>
             <Title>Something went wrong...</Title>
-            <Text maw="35vw">Return to the Welcome page to try again.</Text>
+            <Text maw="35vw">Return to the previous page to try again.</Text>
             <Group position="apart">
                 <Button onClick={() => {
                     setLoginStage(0);
@@ -127,7 +116,7 @@ const LoginSequence = function(props: LoginProps) {
         </>
     );
 
-    const stages = [Welcome, AcceptCode, Error];
+    const stages = [AcceptCode, Error];
 
     return (
         <Group miw="100vw" mih="100vh" position="center">
