@@ -110,6 +110,7 @@ const Dashboard = function(props: DashboardProps) {
                     currentView={currentView}
                     loadStage={coordination.loadStage}
                     user={coordination.user}
+                    editUser={coordination.editUser}
                     date={props.date}
                     items={coordination.items}
                     lists={coordination.lists}

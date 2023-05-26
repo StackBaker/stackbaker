@@ -64,7 +64,15 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                         </Button>
                         :
                         <Button
-                            onClick={() => navigate(DASHBOARD_PATH)}
+                            onClick={() => {
+                                // only set today to planned
+                                if (getToday().isSame(props.date, "day")) {
+                                    const id = dateToDayId(props.date);
+                                    // .then() without a callback properly waits for this to finish
+                                    props.mutateList(id, { planned: true }).then();
+                                }
+                                navigate(DASHBOARD_PATH);
+                            }}
                             variant="subtle"
                             sx={{
                                 opacity: 0.5,

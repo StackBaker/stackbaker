@@ -43,7 +43,6 @@ const ConfirmModal = (props: ConfirmModalProps) => {
     );
 }
 
-
 export interface DashLeftPanelProps {
     currentView: dashboardViewOption,
     user: UserRubric,

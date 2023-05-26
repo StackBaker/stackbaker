@@ -9,8 +9,6 @@ import { LOADING_STAGES } from "../globals";
 import PlannerLeftPanel from "./PlannerLeftPanel";
 import PlannerMain from "./PlannerMain";
 import "../styles.css";
-import { dateToDayId, getToday } from "../dateutils";
-import { ListCollection } from "../List";
 
 interface PlannerProps {
     date: dayjs.Dayjs,
@@ -61,6 +59,7 @@ const Planner = function(props: PlannerProps) {
                 (coordination.loadStage !== LOADING_STAGES.READY) ? <div></div> :
                 <PlannerMain
                     user={coordination.user}
+                    editUser={coordination.editUser}
                     date={coordination.date}
                     loadStage={coordination.loadStage}
                     planningStage={planningStage}

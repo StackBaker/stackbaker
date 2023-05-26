@@ -55,7 +55,7 @@ const LoginSequence = function(props: LoginProps) {
         invoke("exchange_code_for_tokens", { authorizationCode: authcode }).then(
             (r) => {
                 let res = r as { expires_in: number, access_token: string, refresh_token: string };
-                // using the access token, retrieve the user email
+                // using the access token, retrieve the access and refresh tokens
                 const accessToken = res.access_token;
                 const refreshToken = res.refresh_token;
                 const expiryDate = dayjs().add(Math.max(res.expires_in - 10, 0), "seconds").format();

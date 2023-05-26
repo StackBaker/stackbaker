@@ -42,8 +42,9 @@ const Root = function(props: RootProps) {
 	useEffect(() => {
 		// depending on the existence of a user, route accordingly
 		db.user.get("email").then(u => {
-			if (u) {
-				// FIRST RELEASE: no users
+			if (!u) {
+				// get the user's email
+
 				return;
 			}
 			else {
@@ -69,7 +70,7 @@ const Root = function(props: RootProps) {
 				});
 			}
 		});
-	}, []);
+	}, [db.user.data]);
 
 	const log = () => {
         console.log("l", db.lists.data);

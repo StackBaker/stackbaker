@@ -32,6 +32,7 @@ export interface DashboardMainProps {
     lists: ListCollection,
     relevantListCollection: ListCollection,
     events: EventCollection,
+    editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
@@ -53,7 +54,8 @@ const DashboardMain = function(props: DashboardMainProps) {
         const callback = () => {
             const today = offsetDay(props.date);
             const endOfToday = today.add(props.user.hoursInDay, "hours").add(-1, "minutes");
-            if (dayjs().isAfter(endOfToday) || dayjs().isBefore(today)) {
+            // TODO: fix this logic
+            if (dayjs().isAfter(endOfToday)) {
                 navigate(ROOT_PATH);
             }
         }
@@ -106,6 +108,7 @@ const DashboardMain = function(props: DashboardMainProps) {
                     <>
                         <DayCalendar
                             user={props.user}
+                            editUser={props.editUser}
                             height="80vh"
                             width="310px"
                             date={props.date.startOf("day")}
