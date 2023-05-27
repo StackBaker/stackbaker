@@ -487,7 +487,7 @@ const DayCalendar = function(props: DayCalendarProps) {
                 const expiryDate = dayjs().add(Math.max(res.expires_in - 10, 0), "seconds").format();
 
                 if (!accessToken || !expiryDate) {
-					console.log("bruh", accessToken, expiryDate)
+					console.log("no access token or expiry", accessToken, expiryDate)
                     return;
                 }
 

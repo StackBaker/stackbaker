@@ -5,6 +5,7 @@ import { useNavigate, createMemoryRouter, RouterProvider, Link } from "react-rou
 import { Button, MantineProvider } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
 import { invoke } from "@tauri-apps/api";
+import { fetch as tauriFetch } from "@tauri-apps/api/http";
 
 import "./App.css";
 import "./styles.css";
@@ -15,6 +16,9 @@ import LoginSequence from "./Authentication/LoginSequence";
 import { dateToDayId, getToday } from "./dateutils";
 import { ListRubric } from "./List";
 import { UserRubric } from "./Persistence/useUserDB";
+
+type baseEmailResType = { data: { email: string } };
+interface emailResType extends baseEmailResType {};
 
 interface RootProps {
 	date: dayjs.Dayjs
@@ -42,33 +46,64 @@ const Root = function(props: RootProps) {
 	useEffect(() => {
 		// depending on the existence of a user, route accordingly
 		db.user.get("email").then(u => {
-			if (!u) {
+			const accessTokenExpiryDate = db.user.data.authData?.expiryDate;
+			if (!u && accessTokenExpiryDate !== undefined) {
+				// no email, and google was connected
 				// get the user's email
+				const expiryDate = dayjs(accessTokenExpiryDate!);
+				// using the refresh token, refresh the access token
+				if (dayjs().isAfter(expiryDate)) {
+					invoke("exchange_refresh_for_access_token", { refreshToken: db.user.data.authData!.refreshToken }).then(r => {
+						let res = r as { expires_in: number, access_token: string };
+						const accessToken = res.access_token;
+						const expiryDate = dayjs().add(Math.max(res.expires_in - 10, 0), "seconds").format();
+		
+						if (!accessToken || !expiryDate) {
+							console.log("no access token or expiry", accessToken, expiryDate)
+							return;
+						}
+		
+						db.user.set("authData", {
+							refreshToken: db.user.data.authData!.refreshToken,
+							accessToken,
+							expiryDate
+						});
+					});
+				}
 
-				return;
+				// get the uer's email
+				tauriFetch("https://www.googleapis.com/oauth2/v1/userinfo?alt=json", {
+					method: "GET",
+					headers: {
+						"Authorization": `Bearer ${db.user.data.authData!.accessToken}`
+					}
+				}).then(r => {
+					let res = r as emailResType;
+					db.user.set("email", res.data.email);
+				});
+
 			}
-			else {
-				db.user.get("autoLoadPlanner").then((alp) => {
-					let autoLoadPlanner = alp as boolean;
-					const todayId = dateToDayId(props.date);
-					db.lists.has(todayId).then((res: boolean) => {
-						if (res) {
-							db.lists.get(todayId).then((val) => {
-								if (getToday().isSame(props.date, "day") && autoLoadPlanner && !(val as ListRubric).planned)
-									navigate(paths.PLANNER_PATH);
-								else
-									navigate(paths.DASHBOARD_PATH);
-							});
-						} else {
-							db.lists.create(props.date);
-							if (getToday().isSame(props.date, "day"))
+
+			db.user.get("autoLoadPlanner").then((alp) => {
+				let autoLoadPlanner = alp as boolean;
+				const todayId = dateToDayId(props.date);
+				db.lists.has(todayId).then((res: boolean) => {
+					if (res) {
+						db.lists.get(todayId).then((val) => {
+							if (getToday().isSame(props.date, "day") && autoLoadPlanner && !(val as ListRubric).planned)
 								navigate(paths.PLANNER_PATH);
 							else
 								navigate(paths.DASHBOARD_PATH);
-						}
-					});
+						});
+					} else {
+						db.lists.create(props.date);
+						if (getToday().isSame(props.date, "day"))
+							navigate(paths.PLANNER_PATH);
+						else
+							navigate(paths.DASHBOARD_PATH);
+					}
 				});
-			}
+			});
 		});
 	}, [db.user.data]);
 

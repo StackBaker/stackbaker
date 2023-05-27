@@ -53,6 +53,14 @@ const useUserDB = function() {
         console.log("user saved");
     }
 
+    const del = (key: keyof UserRubric) => {
+        let newUser = myStructuredClone(user);
+        delete newUser[key];
+        setUser(newUser);
+        store.delete(key);
+        store.save();
+    }
+
     const replaceUser = (newUserConfig: UserRubric | null) => {
         if (newUserConfig === null)
             newUserConfig = { ...defaultUser, email: user.email };
@@ -96,7 +104,7 @@ const useUserDB = function() {
         store.save();
     }
 
-    return { data: user, get, set, replaceUser, load, clear, logout };
+    return { data: user, get, set, del, replaceUser, load, clear, logout };
 };
 
 export default useUserDB;

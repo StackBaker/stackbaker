@@ -146,7 +146,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                                 }
                             }}
                         >
-                            Connect Calendar
+                            Connect Google
                         </Button>
                         <TextInput
                             label="Hours in a day"
