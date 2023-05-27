@@ -71,7 +71,7 @@ const Root = function(props: RootProps) {
 					});
 				}
 
-				// get the uer's email
+				// get the user's email
 				tauriFetch("https://www.googleapis.com/oauth2/v1/userinfo?alt=json", {
 					method: "GET",
 					headers: {
@@ -82,6 +82,8 @@ const Root = function(props: RootProps) {
 					db.user.set("email", res.data.email);
 				});
 
+				// TODO: we can get the user's email if they have auth data
+				// but we might not actually need it
 			}
 
 			db.user.get("autoLoadPlanner").then((alp) => {

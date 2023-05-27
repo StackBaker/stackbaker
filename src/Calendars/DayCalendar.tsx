@@ -13,9 +13,10 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
 import { useNavigate, useLocation } from "react-router-dom"
 import { invoke } from "@tauri-apps/api";
+import { fetch as tauriFetch } from "@tauri-apps/api/http";
 import { getToday, offsetDay, endOfOffsetDay } from "../dateutils";
 
-import type { EventCollection, EventRubric } from "./Event";
+import type { EventCollection, EventRubric, GCalData, GCalItem } from "./Event";
 import { createEventReprId } from "./Event";
 import { Id, myStructuredClone } from "../globals";
 import "./fullcalendar-vars.css";
@@ -42,6 +43,7 @@ const useStyles = createStyles((theme) => ({
     }
 }));
 
+// TODO: make this a separate file, please, at some point
 interface EditEventModalProps {
 	editingEvent: boolean,
 	saveEditingEvent: () => void,
@@ -471,6 +473,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 			}
 			return output;
 		});
+		setEvents(out);
 
 		const accessTokenExpiryDate = props.user.authData?.expiryDate;
 		if (accessTokenExpiryDate === undefined) {
@@ -499,6 +502,27 @@ const DayCalendar = function(props: DayCalendarProps) {
 			});
 		} else {
 			// get the user's calendar events
+			// THIS WORKS!
+			// TODO: search with a mintime and maxtime
+			tauriFetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+				method: "GET",
+				headers: {
+					"Authorization": `Bearer ${props.user.authData?.accessToken}`
+				}
+			}).then(r => {
+				let res = r as GCalData;
+				let gcalOut = res.data.items.map((i: GCalItem) => {
+					let ret: EventInput = {
+						start: dayjs(i.start.dateTime as Date).toDate(),
+						end: dayjs(i.end.dateTime as Date).toDate(),
+						title: i.summary,
+						id: i.id,
+						daysOfWeek: []
+					}
+					return ret;
+				});
+				console.log(gcalOut)
+			});
 		}
 	}, [props.user]);
 

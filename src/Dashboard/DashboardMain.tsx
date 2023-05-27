@@ -52,10 +52,11 @@ const DashboardMain = function(props: DashboardMainProps) {
     // attempt reload the page at 6am
     useEffect(() => {
         const callback = () => {
-            const today = offsetDay(props.date);
+            const today = getToday(); // offsetDay(props.date);
             const endOfToday = today.add(props.user.hoursInDay, "hours").add(-1, "minutes");
             // TODO: fix this logic
             if (dayjs().isAfter(endOfToday)) {
+                console.log('here');
                 navigate(ROOT_PATH);
             }
         }

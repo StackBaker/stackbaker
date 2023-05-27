@@ -17,3 +17,16 @@ export interface EventRubric {
 export type EventCollection = { [key: Id]: EventRubric };
 
 export type EventList = EventRubric[];
+
+export type GCalItem = {
+    start: { dateTime: DateInput, timeZone: string }
+    end: { dateTime: DateInput, timeZone: string },
+    summary: string,
+    id: Id
+};
+
+export type GCalData = {
+    data: {
+        items: GCalItem[]
+    }
+};
