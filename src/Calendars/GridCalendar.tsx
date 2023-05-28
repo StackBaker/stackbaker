@@ -102,6 +102,7 @@ interface GridCalendarProps {
 };
 
 const GridCalendar = function(props: GridCalendarProps) {
+    // TODO: use the Mantine datepicker?
     const wrapperHeight = "85vh";
     const wrapperWidth = "45vw";
     const actualHeight = "150vh";

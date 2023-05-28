@@ -1,12 +1,13 @@
 import { useRef, useEffect, useState } from "react";
 import dayjs from "dayjs";
+import dayjsUTCPlugin from "dayjs/plugin/utc"
 import FullCalendar from "@fullcalendar/react";
 import type { DateSelectArg, EventAddArg, EventRemoveArg, EventChangeArg, EventClickArg, EventInput } from "@fullcalendar/core";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
 import { createStyles, Stack, Button, Title, Text, Modal, TextInput, Group, ActionIcon, Select, Grid, SelectItem, Avatar, Space } from "@mantine/core";
-import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
+import { getHotkeyHandler, useDisclosure, useHotkeys } from "@mantine/hooks";
 import { DatePickerInput } from "@mantine/dates";
 import type { DateValue } from "@mantine/dates";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -17,12 +18,14 @@ import { fetch as tauriFetch } from "@tauri-apps/api/http";
 import { getToday, offsetDay, endOfOffsetDay } from "../dateutils";
 
 import type { EventCollection, EventRubric, GCalData, GCalItem } from "./Event";
-import { createEventReprId } from "./Event";
+import { createEventReprId, createGCalEventReprId } from "./Event";
 import { Id, myStructuredClone } from "../globals";
 import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM, ItemCollection } from "../Item";;
 import { PLANNER_PATH } from "../paths";
 import type { UserRubric } from "../Persistence/useUserDB";
+
+dayjs.extend(dayjsUTCPlugin);
 
 const useStyles = createStyles((theme) => ({
 	calendarWrapper: {
@@ -425,7 +428,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 		endRecur: null
 	};
 
-	const [events, setEvents] = useState<EventInput[]>([]);
+	const [gcalEvents, setGcalEvents] = useState<EventInput[]>([]);
 	const [editingEvent, handlers] = useDisclosure(false);
 	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
 	const [newEventId, setNewEventId] = useState<Id>("");
@@ -434,46 +437,8 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [slotLabelInterval, setSlotLabelInterval] = useState<number>(props.user.dayCalLabelInterval);
 
 	useEffect(() => {
-		if (!props.user)
+		if (!props.user || !props.user.authData)
 			return;
-
-		let out = Object.keys(props.events).map(eid => {
-			const evt = props.events[eid];
-			let output: EventInput
-			if (evt.daysOfWeek === undefined || evt.daysOfWeek === null || evt.daysOfWeek.length === 0) {
-				output = {
-					id: evt.id,
-					title: evt.title,
-					start: evt.start!,
-					end: evt.end!
-				}
-			} else {
-				// enforcing that the start and end stored in EventRubric
-				// can be converted to Date
-				// i.e. that all EventRubric's should have their starts and ends
-				// stored as Dates
-				const startDate = dayjs(evt.start! as Date);
-				const startDay = offsetDay(startDate);
-				const startHours = startDate.diff(startDay, "hours");
-				const startMinutes = startDate.format("mm");
-				const endDate = dayjs(evt.end! as Date);
-				const endDay = offsetDay(endDate);
-				const endHours = endDate.diff(endDay, "hours")
-				const endMinutes = endDate.format("mm");
-
-				output = {
-					id: evt.id,
-					title: evt.title,
-					startTime: `${startHours}:${startMinutes}`,
-					endTime: `${endHours}:${endMinutes}`,
-					daysOfWeek: evt.daysOfWeek,
-					endRecur: evt.endRecur,
-					startRecur: startDay.toDate()
-				}
-			}
-			return output;
-		});
-		setEvents(out);
 
 		const accessTokenExpiryDate = props.user.authData?.expiryDate;
 		if (accessTokenExpiryDate === undefined) {
@@ -489,11 +454,6 @@ const DayCalendar = function(props: DayCalendarProps) {
                 const accessToken = res.access_token;
                 const expiryDate = dayjs().add(Math.max(res.expires_in - 10, 0), "seconds").format();
 
-                if (!accessToken || !expiryDate) {
-					console.log("no access token or expiry", accessToken, expiryDate)
-                    return;
-                }
-
                 props.editUser({ authData: {
 					refreshToken: props.user.authData!.refreshToken,
 					accessToken,
@@ -503,8 +463,14 @@ const DayCalendar = function(props: DayCalendarProps) {
 		} else {
 			// get the user's calendar events
 			// THIS WORKS!
-			// TODO: search with a mintime and maxtime
-			tauriFetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+			const primaryCalURL = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+			var searchParams = new URLSearchParams();
+			// parameters should be in UTC time
+			searchParams.append("timeMin", getToday().utc().format());
+			searchParams.append("timeMax", getToday().add(dayDuration, "hours").subtract(1, "minute").utc().format());
+			const fetchURL = `${primaryCalURL}?${searchParams.toString()}`;
+
+			tauriFetch(fetchURL, {
 				method: "GET",
 				headers: {
 					"Authorization": `Bearer ${props.user.authData?.accessToken}`
@@ -513,18 +479,18 @@ const DayCalendar = function(props: DayCalendarProps) {
 				let res = r as GCalData;
 				let gcalOut = res.data.items.map((i: GCalItem) => {
 					let ret: EventInput = {
-						start: dayjs(i.start.dateTime as Date).toDate(),
-						end: dayjs(i.end.dateTime as Date).toDate(),
-						title: i.summary,
-						id: i.id,
-						daysOfWeek: []
-					}
+						id: createGCalEventReprId(i.id),
+						start: i.start.dateTime,
+						end: i.end.dateTime,
+						title: i.summary
+					};
 					return ret;
 				});
-				console.log(gcalOut)
+				setGcalEvents(gcalOut);
+				console.log("here", gcalOut);
 			});
 		}
-	}, [props.user]);
+	}, [props.user])
 
 	useEffect(() => {
 		// hack for preventing that one long error when adding changing events
@@ -556,6 +522,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
 		const id = changeInfo.event.id;
 		const evt = props.events[id];
+		// TODO: evt may be in gcalEvents now, not in props.events!!!
 		const noRepeats = (!evt.daysOfWeek || evt.daysOfWeek?.length === 0);
 		let oldStart = dayjs(props.events[id].start! as Date);
 		let _newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[id].start!;
@@ -712,7 +679,44 @@ const DayCalendar = function(props: DayCalendarProps) {
 					nowIndicator={true}
 
 					editable={true}
-					events={events}
+					events={
+						Object.keys(props.events).map(eid => {
+							const evt = props.events[eid];
+							let output: EventInput
+							if (evt.daysOfWeek === undefined || evt.daysOfWeek === null || evt.daysOfWeek.length === 0) {
+								output = {
+									id: evt.id,
+									title: evt.title,
+									start: evt.start!,
+									end: evt.end!
+								}
+							} else {
+								// enforcing that the start and end stored in EventRubric
+								// can be converted to Date
+								// i.e. that all EventRubric's should have their starts and ends
+								// stored as Dates
+								const startDate = dayjs(evt.start! as Date);
+								const startDay = offsetDay(startDate);
+								const startHours = startDate.diff(startDay, "hours");
+								const startMinutes = startDate.format("mm");
+								const endDate = dayjs(evt.end! as Date);
+								const endDay = offsetDay(endDate);
+								const endHours = endDate.diff(endDay, "hours")
+								const endMinutes = endDate.format("mm");
+				
+								output = {
+									id: evt.id,
+									title: evt.title,
+									startTime: `${startHours}:${startMinutes}`,
+									endTime: `${endHours}:${endMinutes}`,
+									daysOfWeek: evt.daysOfWeek,
+									endRecur: evt.endRecur,
+									startRecur: startDay.toDate()
+								}
+							}
+							return output;
+						}).concat(gcalEvents)
+					}
 					eventChange={handleEventDrag}
 					eventClick={handleEventClick}
 
