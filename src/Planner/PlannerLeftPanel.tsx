@@ -15,6 +15,7 @@ interface PlannerLeftPanelProps {
     planningStage: planningStage,
     setPlanningStage: React.Dispatch<React.SetStateAction<planningStage>>,
     mutateList: (listId: Id, newListConfig: Partial<ListRubric>) => Promise<boolean>,
+    numLaterTasks: number
 };
 
 const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
@@ -56,7 +57,13 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                     {
                         (props.planningStage !== 0) ?
                         <Button
-                            onClick={() => props.setPlanningStage(props.planningStage - 1 as planningStage)}
+                            onClick={() => {
+                                if (props.numLaterTasks === 0 && props.planningStage === 3) {
+                                    props.setPlanningStage(1);
+                                    return;
+                                }
+                                props.setPlanningStage(props.planningStage - 1 as planningStage);
+                            }}
                             leftIcon={<NavigateBeforeIcon />}
                             variant="default"
                         >
@@ -87,7 +94,13 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                     {
                         (props.planningStage !== 3) ?
                         <Button
-                            onClick={() => props.setPlanningStage(props.planningStage + 1 as planningStage)}
+                            onClick={() => {
+                                if (props.numLaterTasks === 0 && props.planningStage === 1) {
+                                    props.setPlanningStage(3);
+                                    return;
+                                }
+                                props.setPlanningStage(props.planningStage + 1 as planningStage);
+                            }}
                             rightIcon={<NavigateNextIcon />}
                             variant="default"
                         >

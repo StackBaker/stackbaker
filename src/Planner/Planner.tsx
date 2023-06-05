@@ -5,7 +5,7 @@ import { useDisclosure } from "@mantine/hooks";
 
 import { planningStage } from "./plannerutils";
 import coordinateBackendAndState from "../coordinateBackendAndState";
-import { LOADING_STAGES } from "../globals";
+import { DO_LATER_LIST_ID, LOADING_STAGES } from "../globals";
 import PlannerLeftPanel from "./PlannerLeftPanel";
 import PlannerMain from "./PlannerMain";
 import "../styles.css";
@@ -53,6 +53,7 @@ const Planner = function(props: PlannerProps) {
                     planningStage={planningStage}
                     setPlanningStage={setPlanningStage}
                     mutateList={coordination.mutateList}
+                    numLaterTasks={coordination.lists![DO_LATER_LIST_ID].itemIds.length}
                 />
             }
         >
