@@ -54,7 +54,8 @@ interface EditEventModalProps {
 	closeNoSave: () => void,
 	eventBeingEdited: EventRubric,
 	changeEventBeingEdited: React.Dispatch<React.SetStateAction<EventRubric>>,
-	dayDuration: number
+	dayDuration: number,
+	snapDuration: number,
 };
 
 const EditEventModal = function(props: EditEventModalProps) {
@@ -435,6 +436,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay);
 	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
 	const [slotLabelInterval, setSlotLabelInterval] = useState<number>(props.user.dayCalLabelInterval);
+	const [snapDuration, setSnapDuration] = useState<number>(props.user.dayCalSnapDuration);
 
 	useEffect(() => {
 		if (!props.user || !props.user.authData)
@@ -490,7 +492,11 @@ const DayCalendar = function(props: DayCalendarProps) {
 				console.log("here", gcalOut);
 			});
 		}
-	}, [props.user])
+	}, [props.user]);
+
+	// TODO: be able to edit events locally and have that sync to GCal
+	// TODO: google calendar logo should be at the top right of the Day Calendar
+	// TODO: and that should be the button to enable or disable it
 
 	useEffect(() => {
 		// hack for preventing that one long error when adding changing events
@@ -511,6 +517,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 		setDayDuration(props.user.hoursInDay);
 		setEventDuration(props.user.defaultEventLength);
 		setSlotLabelInterval(props.user.dayCalLabelInterval);
+		setSnapDuration(props.user.dayCalSnapDuration);
 	}, [props.user]);
 
 	useEffect(() => {
@@ -647,6 +654,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 				closeNoSave={closeNoSave}
 				deleteEditingEvent={deleteEditingEvent}
 				dayDuration={dayDuration}
+				snapDuration={snapDuration}
 			/>
 			<Group position="apart">
 				<Title order={2} pl="xs">
@@ -745,7 +753,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 					initialView="timeGridDay"
 					initialDate={props.date.toDate()}
 
-					snapDuration={15 * 60 * 1000}
+					snapDuration={snapDuration * 60 * 1000}
 					slotDuration={Math.max(slotLabelInterval / 4, 15) * 60 * 1000}
 					slotLabelInterval={slotLabelInterval * 60 * 1000}
 					slotMaxTime={dayDuration * 60 * 60 * 1000}

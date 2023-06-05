@@ -41,9 +41,9 @@ const Dashboard = function(props: DashboardProps) {
             return;
         }
 
-        // TODO: put this back
-        // window.addEventListener("click", callback);
-        // return () => window.removeEventListener("click", callback);
+        // TODO: take this away
+        window.addEventListener("click", callback);
+        return () => window.removeEventListener("click", callback);
     })
 
     // have to do this sx thing because AppShell automatically renders too large
@@ -112,6 +112,7 @@ const Dashboard = function(props: DashboardProps) {
                     user={coordination.user}
                     editUser={coordination.editUser}
                     date={props.date}
+                    setDate={props.setDate}
                     items={coordination.items}
                     lists={coordination.lists}
                     relevantListCollection={coordination.relevantListCollection}

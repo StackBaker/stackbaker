@@ -16,6 +16,7 @@ interface PlannerProps {
 };;
 
 const Planner = function(props: PlannerProps) {
+    // TODO: skip stage 3 if there are no later tasks
     const actionAreaHeight = "95vh";
     const [planningStage, setPlanningStage] = useState<planningStage>(0);
 

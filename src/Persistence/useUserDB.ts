@@ -18,13 +18,14 @@ type ValidAttr = number | string | boolean | AuthData | undefined;
 export interface UserRubric {
     email: string,
     authData: AuthData,
-    // i hours
+    // in hours
     hoursInDay: number,
     // in minutes
     defaultEventLength: number,
     // in minutes
-    // optional because it is a newly added attribute, possibly not present
     dayCalLabelInterval: number,
+    // in minutes
+    dayCalSnapDuration: number,
     autoLoadPlanner: boolean
 };
 
@@ -34,6 +35,7 @@ const defaultUser: UserRubric = {
     hoursInDay: 30,
     defaultEventLength: 60,
     dayCalLabelInterval: 60,
+    dayCalSnapDuration: 15,
     autoLoadPlanner: true
 };
 
@@ -63,7 +65,11 @@ const useUserDB = function() {
 
     const replaceUser = (newUserConfig: UserRubric | null) => {
         if (newUserConfig === null)
-            newUserConfig = { ...defaultUser, email: user.email };
+            newUserConfig = {
+                ...defaultUser,
+                email: user.email,
+                authData: user.authData
+            };
 
         setUser(newUserConfig);
         for (const key in newUserConfig) {
@@ -81,7 +87,7 @@ const useUserDB = function() {
         for (const key in defaultUser) {
             const k = key as keyof UserRubric;
             const val = await get(k);
-            if (val === undefined)
+            if (val === undefined || val === null)
                 set(k, defaultUser[k]);
             else
                 newUser = { ...newUser, [k]: val };
@@ -91,11 +97,14 @@ const useUserDB = function() {
     }
 
     const clear = () => {
+        // TODO: does this need .thens() to avoid the bug where clearing data
+        // makes the calendar disappear?
         const email: string = user.email;
         const authData: AuthData = user.authData;
         store.clear();
         // assumption: set saves the database
         set("email", email);
+        set("authData", authData);
         store.save();
     }
 

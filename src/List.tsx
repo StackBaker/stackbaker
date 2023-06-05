@@ -100,7 +100,6 @@ const List = function(props: ListProps) {
         ]);
     }
 
-    // TODO: bug: later tasks are not getting saved
     return (
         <Stack
             justify="flex-start"

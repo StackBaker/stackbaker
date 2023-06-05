@@ -28,6 +28,7 @@ export interface DashboardMainProps {
     loadStage: loadingStage,
     readonly user: UserRubric,
     date: dayjs.Dayjs,
+    setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
     items: ItemCollection,
     lists: ListCollection,
     relevantListCollection: ListCollection,
@@ -51,12 +52,17 @@ const DashboardMain = function(props: DashboardMainProps) {
     
     // attempt reload the page at 6am
     useEffect(() => {
+        const resolution = 5 * 60 * 1000;
         const callback = () => {
-            const today = getToday(); // offsetDay(props.date);
+            const today = getToday();
             const endOfToday = today.add(props.user.hoursInDay, "hours").add(-1, "minutes");
-            // TODO: fix this logic
-            if (dayjs().isAfter(endOfToday)) {
-                console.log('here');
+
+            const todayDiff = endOfToday.diff(endOfToday.startOf("day"));
+            const _curDiff = dayjs();
+            const curDiff = _curDiff.diff(_curDiff.startOf("day"));
+            
+            if (Math.abs(curDiff - todayDiff) <= resolution && !props.date.startOf("day").isSame(today)) {
+                props.setDate(today);
                 navigate(ROOT_PATH);
             }
         }
@@ -66,7 +72,7 @@ const DashboardMain = function(props: DashboardMainProps) {
             return;
         }
 
-        const ref = setInterval(callback, 2 * 60 * 1000);
+        const ref = setInterval(callback, resolution);
         return () => clearInterval(ref);
     }, []);
 

@@ -69,6 +69,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
             hoursInDay: JSON.stringify(props.user.hoursInDay),
             defaultEventLength: JSON.stringify(props.user.defaultEventLength),
             dayCalLabelInterval: JSON.stringify(props.user.dayCalLabelInterval),
+            dayCalSnapDuration: JSON.stringify(props.user.dayCalSnapDuration),
             autoLoadPlanner: JSON.stringify(props.user.autoLoadPlanner)
         });
     }, [props.user]);
@@ -91,12 +92,16 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
         if (isNaN(newEvtLen))
             newEvtLen = props.user.defaultEventLength;
         
+        newHours = Math.max(24, Math.min(newHours, 120));
+        newEvtLen = Math.max(1, Math.min(newEvtLen, 300));
+
         let newDayCalInterval: number = parseInt(accountBeingEdited!.dayCalLabelInterval);
         if (isNaN(newDayCalInterval))
             newDayCalInterval = props.user.dayCalLabelInterval;
         
-        newHours = Math.max(24, Math.min(newHours, 120));
-        newEvtLen = Math.max(1, Math.min(newEvtLen, 300));
+        let newDayCalSnapDuration: number = parseInt(accountBeingEdited!.dayCalSnapDuration);
+        if (isNaN(newDayCalInterval))
+            newDayCalSnapDuration = props.user.dayCalSnapDuration;
 
         let newautoLoadPlanner: boolean = (accountBeingEdited!.autoLoadPlanner === "false") ? false : true;
 
@@ -104,6 +109,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
             defaultEventLength: newEvtLen,
             hoursInDay: newHours,
             dayCalLabelInterval: newDayCalInterval,
+            dayCalSnapDuration: newDayCalSnapDuration,
             autoLoadPlanner: newautoLoadPlanner
         });
     }
@@ -136,7 +142,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                 { (settingsOpen) ? 
                     <Stack spacing="md">
                         <Title order={2}>Settings</Title>
-                        <Button
+                        {/* <Button
                             leftIcon={<Google />}
                             disabled={props.user.authData !== null}
                             onClick={() => {
@@ -147,7 +153,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                             }}
                         >
                             Connect Google
-                        </Button>
+                        </Button> */}
                         <TextInput
                             label="Hours in a day"
                             description="How long the day calendar column is in hours"
@@ -185,6 +191,24 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                                 { value: "30", label: "30 min" },
                                 { value: "60", label: "1 hour" },
                                 { value: "120", label: "2 hours" }
+                            ]}
+                        />
+                        <Select
+                            label="Day calendar snap duration"
+                            description="Precision with which to snap events to the day calendar"
+                            placeholder="5 or 15 min"
+                            value={accountBeingEdited!.dayCalSnapDuration}
+                            onChange={(newVal: string | null) => {
+                                if (!newVal)
+                                    return;
+                                setAccountBeingEdited({
+                                    ...accountBeingEdited!,
+                                    dayCalSnapDuration: newVal
+                                })
+                            }}
+                            data={[
+                                { value: "5", label: "5 min" },
+                                { value: "15", label: "15 min" }
                             ]}
                         />
                         <Select

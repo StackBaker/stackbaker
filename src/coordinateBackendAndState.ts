@@ -146,7 +146,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         return true;
     };
 
-    // TODO: change order of list when toggling completeness
     const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>): boolean => {
         if (!db.items.data?.hasOwnProperty(itemId))
             return false;
