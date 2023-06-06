@@ -14,7 +14,7 @@ import type { Id } from "../globals";
 import type { UserRubric } from "../Persistence/useUserDB";
 import { EventRubric, EventCollection } from "../Calendars/Event";
 import "../styles.css";
-import { getToday, offsetDay } from "../dateutils";
+import { DEFAULT_OFFSET, getToday, offsetDay } from "../dateutils";
 import { ROOT_PATH } from "../paths";
 import GridCalendar from "../Calendars/GridCalendar";
 import type { overrideDragEndAttrs } from "../Calendars/GridCalendar";
@@ -55,7 +55,7 @@ const DashboardMain = function(props: DashboardMainProps) {
         const resolution = 5 * 60 * 1000;
         const callback = () => {
             const today = getToday();
-            const endOfToday = today.add(props.user.hoursInDay, "hours").add(-1, "minutes");
+            const endOfToday = today.subtract(DEFAULT_OFFSET).add(-1, "minutes");
 
             const todayDiff = endOfToday.diff(endOfToday.startOf("day"));
             const _curDiff = dayjs();

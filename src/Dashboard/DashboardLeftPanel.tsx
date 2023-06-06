@@ -93,7 +93,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
             newEvtLen = props.user.defaultEventLength;
         
         newHours = Math.max(24, Math.min(newHours, 120));
-        newEvtLen = Math.max(1, Math.min(newEvtLen, 300));
+        newEvtLen = Math.ceil(Math.max(1, Math.min(newEvtLen, 300)) / 5) * 5;
 
         let newDayCalInterval: number = parseInt(accountBeingEdited!.dayCalLabelInterval);
         if (isNaN(newDayCalInterval))
@@ -166,8 +166,8 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                         />
                         <TextInput
                             label="Default event length"
-                            description="Default duration in minutes of events created by drag and drop from lists into day calendar"
-                            placeholder="0 < input ≤ 300"
+                            description="Default duration in minutes of events created by drag and drop into the day calendar, a multiple of 5"
+                            placeholder="5 ≤ input ≤ 300"
                             value={accountBeingEdited!.defaultEventLength}
                             onChange={(e) => (setAccountBeingEdited({
                                 ...accountBeingEdited!,

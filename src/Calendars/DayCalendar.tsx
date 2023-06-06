@@ -203,8 +203,8 @@ const EditEventModal = function(props: EditEventModalProps) {
 	}
 
 	// add 1 for padding
-	const possibleTimes = Array(props.dayDuration * 4 + 1).fill(0).map((_, idx) => {
-		const curTimeInMins = 15 * idx;
+	const possibleTimes = Array(props.dayDuration * 12 + 1).fill(0).map((_, idx) => {
+		const curTimeInMins = 5 * idx;
 		const startDate = dayjs(props.eventBeingEdited.start! as Date);
 		const startDay = offsetDay(startDate);
 		const date = startDay.startOf("day").add(curTimeInMins, "minutes");
