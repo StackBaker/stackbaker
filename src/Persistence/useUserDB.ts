@@ -6,25 +6,36 @@ import { myStructuredClone } from "../globals";
 
 const USER_FNAME = "users.dat";
 
-type ValidAttr = number | string | boolean | undefined;
+type AuthData = null | {
+    accessToken: string,
+    refreshToken: string,
+    expiryDate: string
+};
+
+type ValidAttr = number | string | boolean | AuthData | undefined;
+
 
 export interface UserRubric {
     email: string,
+    authData: AuthData,
     // in hours
     hoursInDay: number,
     // in minutes
     defaultEventLength: number,
     // in minutes
-    // optional because it is a newly added attribute, possibly not present
     dayCalLabelInterval: number,
+    // in minutes
+    dayCalSnapDuration: number,
     autoLoadPlanner: boolean
 };
 
 const defaultUser: UserRubric = {
     email: "",
+    authData: null,
     hoursInDay: 30,
     defaultEventLength: 60,
     dayCalLabelInterval: 60,
+    dayCalSnapDuration: 15,
     autoLoadPlanner: true
 };
 
@@ -44,9 +55,21 @@ const useUserDB = function() {
         console.log("user saved");
     }
 
+    const del = (key: keyof UserRubric) => {
+        let newUser = myStructuredClone(user);
+        delete newUser[key];
+        setUser(newUser);
+        store.delete(key);
+        store.save();
+    }
+
     const replaceUser = (newUserConfig: UserRubric | null) => {
         if (newUserConfig === null)
-            newUserConfig = { ...defaultUser, email: user.email };
+            newUserConfig = {
+                ...defaultUser,
+                email: user.email,
+                authData: user.authData
+            };
 
         setUser(newUserConfig);
         for (const key in newUserConfig) {
@@ -64,7 +87,7 @@ const useUserDB = function() {
         for (const key in defaultUser) {
             const k = key as keyof UserRubric;
             const val = await get(k);
-            if (val === undefined)
+            if (val === undefined || val === null)
                 set(k, defaultUser[k]);
             else
                 newUser = { ...newUser, [k]: val };
@@ -74,13 +97,23 @@ const useUserDB = function() {
     }
 
     const clear = () => {
-        const email: string = user["email"];
+        // TODO: does this need .thens() to avoid the bug where clearing data
+        // makes the calendar disappear?
+        const email: string = user.email;
+        const authData: AuthData = user.authData;
         store.clear();
         // assumption: set saves the database
         set("email", email);
+        set("authData", authData);
+        store.save();
     }
 
-    return { data: user, get, set, replaceUser, load, clear };
+    const logout = () => {
+        store.clear();
+        store.save();
+    }
+
+    return { data: user, get, set, del, replaceUser, load, clear, logout };
 };
 
 export default useUserDB;

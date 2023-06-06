@@ -1,27 +1,31 @@
 import { useRef, useEffect, useState } from "react";
 import dayjs from "dayjs";
+import dayjsUTCPlugin from "dayjs/plugin/utc"
 import FullCalendar from "@fullcalendar/react";
 import type { DateSelectArg, EventAddArg, EventRemoveArg, EventChangeArg, EventClickArg, EventInput } from "@fullcalendar/core";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
 import { createStyles, Stack, Button, Title, Text, Modal, TextInput, Group, ActionIcon, Select, Grid, SelectItem, Avatar, Space } from "@mantine/core";
-import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
+import { getHotkeyHandler, useDisclosure, useHotkeys } from "@mantine/hooks";
 import { DatePickerInput } from "@mantine/dates";
 import type { DateValue } from "@mantine/dates";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { v4 as uuid } from "uuid";
 import { useNavigate, useLocation } from "react-router-dom"
-import { os } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api";
+import { fetch as tauriFetch } from "@tauri-apps/api/http";
 import { getToday, offsetDay, endOfOffsetDay } from "../dateutils";
 
-import type { EventCollection, EventRubric } from "./Event";
-import { createEventReprId } from "./Event";
+import type { EventCollection, EventRubric, GCalData, GCalItem } from "./Event";
+import { createEventReprId, createGCalEventReprId } from "./Event";
 import { Id, myStructuredClone } from "../globals";
 import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM, ItemCollection } from "../Item";;
 import { PLANNER_PATH } from "../paths";
 import type { UserRubric } from "../Persistence/useUserDB";
+
+dayjs.extend(dayjsUTCPlugin);
 
 const useStyles = createStyles((theme) => ({
 	calendarWrapper: {
@@ -42,6 +46,7 @@ const useStyles = createStyles((theme) => ({
     }
 }));
 
+// TODO: make this a separate file, please, at some point
 interface EditEventModalProps {
 	editingEvent: boolean,
 	saveEditingEvent: () => void,
@@ -49,7 +54,8 @@ interface EditEventModalProps {
 	closeNoSave: () => void,
 	eventBeingEdited: EventRubric,
 	changeEventBeingEdited: React.Dispatch<React.SetStateAction<EventRubric>>,
-	dayDuration: number
+	dayDuration: number,
+	snapDuration: number,
 };
 
 const EditEventModal = function(props: EditEventModalProps) {
@@ -197,8 +203,8 @@ const EditEventModal = function(props: EditEventModalProps) {
 	}
 
 	// add 1 for padding
-	const possibleTimes = Array(props.dayDuration * 4 + 1).fill(0).map((_, idx) => {
-		const curTimeInMins = 15 * idx;
+	const possibleTimes = Array(props.dayDuration * 12 + 1).fill(0).map((_, idx) => {
+		const curTimeInMins = 5 * idx;
 		const startDate = dayjs(props.eventBeingEdited.start! as Date);
 		const startDay = offsetDay(startDate);
 		const date = startDay.startOf("day").add(curTimeInMins, "minutes");
@@ -403,6 +409,7 @@ interface DayCalendarProps {
 	date: dayjs.Dayjs,
 	readonly user: UserRubric,
 	readonly items: ItemCollection,
+	editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
 	events: EventCollection,
 	saveEvent: (newEventConfig: EventRubric) => boolean,
 	deleteEvent: (eventId: Id) => boolean,
@@ -421,12 +428,75 @@ const DayCalendar = function(props: DayCalendarProps) {
 		daysOfWeek: null,
 		endRecur: null
 	};
+
+	const [gcalEvents, setGcalEvents] = useState<EventInput[]>([]);
 	const [editingEvent, handlers] = useDisclosure(false);
 	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
 	const [newEventId, setNewEventId] = useState<Id>("");
 	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay);
 	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
 	const [slotLabelInterval, setSlotLabelInterval] = useState<number>(props.user.dayCalLabelInterval);
+	const [snapDuration, setSnapDuration] = useState<number>(props.user.dayCalSnapDuration);
+
+	useEffect(() => {
+		if (!props.user || !props.user.authData)
+			return;
+
+		const accessTokenExpiryDate = props.user.authData?.expiryDate;
+		if (accessTokenExpiryDate === undefined) {
+			console.log("undefined expiry");
+			return;
+		}
+
+		const expiryDate = dayjs(accessTokenExpiryDate!);
+		// using the refresh token, refresh the access token
+		if (dayjs().isAfter(expiryDate)) {
+			invoke("exchange_refresh_for_access_token", { refreshToken: props.user.authData!.refreshToken }).then(r => {
+				let res = r as { expires_in: number, access_token: string };
+                const accessToken = res.access_token;
+                const expiryDate = dayjs().add(Math.max(res.expires_in - 10, 0), "seconds").format();
+
+                props.editUser({ authData: {
+					refreshToken: props.user.authData!.refreshToken,
+					accessToken,
+					expiryDate
+				}});
+			});
+		} else {
+			// get the user's calendar events
+			// THIS WORKS!
+			const primaryCalURL = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+			var searchParams = new URLSearchParams();
+			// parameters should be in UTC time
+			searchParams.append("timeMin", getToday().utc().format());
+			searchParams.append("timeMax", getToday().add(dayDuration, "hours").subtract(1, "minute").utc().format());
+			const fetchURL = `${primaryCalURL}?${searchParams.toString()}`;
+
+			tauriFetch(fetchURL, {
+				method: "GET",
+				headers: {
+					"Authorization": `Bearer ${props.user.authData?.accessToken}`
+				}
+			}).then(r => {
+				let res = r as GCalData;
+				let gcalOut = res.data.items.map((i: GCalItem) => {
+					let ret: EventInput = {
+						id: createGCalEventReprId(i.id),
+						start: i.start.dateTime,
+						end: i.end.dateTime,
+						title: i.summary
+					};
+					return ret;
+				});
+				setGcalEvents(gcalOut);
+				console.log("here", gcalOut);
+			});
+		}
+	}, [props.user]);
+
+	// TODO: be able to edit events locally and have that sync to GCal
+	// TODO: google calendar logo should be at the top right of the Day Calendar
+	// TODO: and that should be the button to enable or disable it
 
 	useEffect(() => {
 		// hack for preventing that one long error when adding changing events
@@ -447,17 +517,19 @@ const DayCalendar = function(props: DayCalendarProps) {
 		setDayDuration(props.user.hoursInDay);
 		setEventDuration(props.user.defaultEventLength);
 		setSlotLabelInterval(props.user.dayCalLabelInterval);
+		setSnapDuration(props.user.dayCalSnapDuration);
 	}, [props.user]);
 
 	useEffect(() => {
 		if (!editingEvent)
 			changeEventBeingEdited(dummyEvent);
 
-	}, [editingEvent])
+	}, [editingEvent]);
 
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
 		const id = changeInfo.event.id;
 		const evt = props.events[id];
+		// TODO: evt may be in gcalEvents now, not in props.events!!!
 		const noRepeats = (!evt.daysOfWeek || evt.daysOfWeek?.length === 0);
 		let oldStart = dayjs(props.events[id].start! as Date);
 		let _newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[id].start!;
@@ -582,6 +654,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 				closeNoSave={closeNoSave}
 				deleteEditingEvent={deleteEditingEvent}
 				dayDuration={dayDuration}
+				snapDuration={snapDuration}
 			/>
 			<Group position="apart">
 				<Title order={2} pl="xs">
@@ -614,42 +687,44 @@ const DayCalendar = function(props: DayCalendarProps) {
 					nowIndicator={true}
 
 					editable={true}
-					events={Object.keys(props.events).map(eid => {
-						const evt = props.events[eid];
-						let output: EventInput
-						if (evt.daysOfWeek === undefined || evt.daysOfWeek === null || evt.daysOfWeek.length === 0) {
-							output = {
-								id: evt.id,
-								title: evt.title,
-								start: evt.start!,
-								end: evt.end!
+					events={
+						Object.keys(props.events).map(eid => {
+							const evt = props.events[eid];
+							let output: EventInput
+							if (evt.daysOfWeek === undefined || evt.daysOfWeek === null || evt.daysOfWeek.length === 0) {
+								output = {
+									id: evt.id,
+									title: evt.title,
+									start: evt.start!,
+									end: evt.end!
+								}
+							} else {
+								// enforcing that the start and end stored in EventRubric
+								// can be converted to Date
+								// i.e. that all EventRubric's should have their starts and ends
+								// stored as Dates
+								const startDate = dayjs(evt.start! as Date);
+								const startDay = offsetDay(startDate);
+								const startHours = startDate.diff(startDay, "hours");
+								const startMinutes = startDate.format("mm");
+								const endDate = dayjs(evt.end! as Date);
+								const endDay = offsetDay(endDate);
+								const endHours = endDate.diff(endDay, "hours")
+								const endMinutes = endDate.format("mm");
+				
+								output = {
+									id: evt.id,
+									title: evt.title,
+									startTime: `${startHours}:${startMinutes}`,
+									endTime: `${endHours}:${endMinutes}`,
+									daysOfWeek: evt.daysOfWeek,
+									endRecur: evt.endRecur,
+									startRecur: startDay.toDate()
+								}
 							}
-						} else {
-							// enforcing that the start and end stored in EventRubric
-							// can be converted to Date
-							// i.e. that all EventRubric's should have their starts and ends
-							// stored as Dates
-							const startDate = dayjs(evt.start! as Date);
-							const startDay = offsetDay(startDate);
-							const startHours = startDate.diff(startDay, "hours");
-							const startMinutes = startDate.format("mm");
-							const endDate = dayjs(evt.end! as Date);
-							const endDay = offsetDay(endDate);
-							const endHours = endDate.diff(endDay, "hours")
-							const endMinutes = endDate.format("mm");
-
-							output = {
-								id: evt.id,
-								title: evt.title,
-								startTime: `${startHours}:${startMinutes}`,
-								endTime: `${endHours}:${endMinutes}`,
-								daysOfWeek: evt.daysOfWeek,
-								endRecur: evt.endRecur,
-								startRecur: startDay.toDate()
-							}
-						}
-						return output;
-					})}
+							return output;
+						}).concat(gcalEvents)
+					}
 					eventChange={handleEventDrag}
 					eventClick={handleEventClick}
 
@@ -678,7 +753,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 					initialView="timeGridDay"
 					initialDate={props.date.toDate()}
 
-					snapDuration={15 * 60 * 1000}
+					snapDuration={snapDuration * 60 * 1000}
 					slotDuration={Math.max(slotLabelInterval / 4, 15) * 60 * 1000}
 					slotLabelInterval={slotLabelInterval * 60 * 1000}
 					slotMaxTime={dayDuration * 60 * 60 * 1000}

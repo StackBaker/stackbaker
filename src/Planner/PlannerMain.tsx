@@ -19,6 +19,7 @@ import { UserRubric } from "../Persistence/useUserDB";
 
 interface PlannerMainProps {
     readonly user: UserRubric,
+    editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
     date: dayjs.Dayjs,
     loadStage: loadingStage,
     planningStage: planningStage,
@@ -80,6 +81,7 @@ const PlannerMain = function(props: PlannerMainProps) {
         <>
             <DayCalendar
                 user={props.user}
+                editUser={props.editUser}
                 height="80vh"
                 width="310px"
                 date={props.date}
@@ -136,6 +138,7 @@ const PlannerMain = function(props: PlannerMainProps) {
         <>
             <DayCalendar
                 user={props.user}
+                editUser={props.editUser}
                 height="80vh"
                 width="310px"
                 date={props.date}

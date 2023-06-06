@@ -14,7 +14,7 @@ import type { Id } from "../globals";
 import type { UserRubric } from "../Persistence/useUserDB";
 import { EventRubric, EventCollection } from "../Calendars/Event";
 import "../styles.css";
-import { getToday, offsetDay } from "../dateutils";
+import { DEFAULT_OFFSET, getToday, offsetDay } from "../dateutils";
 import { ROOT_PATH } from "../paths";
 import GridCalendar from "../Calendars/GridCalendar";
 import type { overrideDragEndAttrs } from "../Calendars/GridCalendar";
@@ -28,10 +28,12 @@ export interface DashboardMainProps {
     loadStage: loadingStage,
     readonly user: UserRubric,
     date: dayjs.Dayjs,
+    setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
     items: ItemCollection,
     lists: ListCollection,
     relevantListCollection: ListCollection,
     events: EventCollection,
+    editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
@@ -50,10 +52,17 @@ const DashboardMain = function(props: DashboardMainProps) {
     
     // attempt reload the page at 6am
     useEffect(() => {
+        const resolution = 5 * 60 * 1000;
         const callback = () => {
             const today = getToday();
-            const endOfToday = today.add(props.user.hoursInDay, "hours").add(-1, "minutes");
-            if (dayjs().isAfter(endOfToday)) {
+            const endOfToday = today.subtract(DEFAULT_OFFSET).add(-1, "minutes");
+
+            const todayDiff = endOfToday.diff(endOfToday.startOf("day"));
+            const _curDiff = dayjs();
+            const curDiff = _curDiff.diff(_curDiff.startOf("day"));
+            
+            if (Math.abs(curDiff - todayDiff) <= resolution && !props.date.startOf("day").isSame(today)) {
+                props.setDate(today);
                 navigate(ROOT_PATH);
             }
         }
@@ -63,7 +72,7 @@ const DashboardMain = function(props: DashboardMainProps) {
             return;
         }
 
-        const ref = setInterval(callback, 5 * 60 * 1000);
+        const ref = setInterval(callback, resolution);
         return () => clearInterval(ref);
     }, []);
 
@@ -106,6 +115,7 @@ const DashboardMain = function(props: DashboardMainProps) {
                     <>
                         <DayCalendar
                             user={props.user}
+                            editUser={props.editUser}
                             height="80vh"
                             width="310px"
                             date={props.date.startOf("day")}

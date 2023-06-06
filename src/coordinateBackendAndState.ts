@@ -146,7 +146,6 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         return true;
     };
 
-    // TODO: change order of list when toggling completeness
     const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>): boolean => {
         if (!db.items.data?.hasOwnProperty(itemId))
             return false;
@@ -235,8 +234,8 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
                     return false;
 
             var temp = list.itemIds[sourceOfDrag.index];
-            list.itemIds[sourceOfDrag.index] = list.itemIds[destinationOfDrag.index];
-            list.itemIds[destinationOfDrag.index] = temp;
+            list.itemIds.splice(sourceOfDrag.index, 1);
+            list.itemIds.splice(destinationOfDrag.index, 0, temp);
             db.lists.set(sourceOfDrag.droppableId, list);
         } else {
             var sourceList = getListFromDB(sourceOfDrag.droppableId);
@@ -352,17 +351,17 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         setLoadStage(LOADING_STAGES.NOTHING_LOADED);
     }
 
-    // const log = () => {
-    //     console.log("l", db.lists.data);
-    //     console.log("i", db.items.data);
-    //     console.log("e", db.events.data);
-    //     console.log("u", db.user.data);
-    //     console.log("s", loadStage);
-    // }
+    const log = () => {
+        console.log("l", db.lists.data);
+        console.log("i", db.items.data);
+        console.log("e", db.events.data);
+        console.log("u", db.user.data);
+        console.log("s", loadStage);
+    }
 
-    // useHotkeys([
-    //     ['P', log]
-    // ]);
+    useHotkeys([
+        ['P', log]
+    ]);
 
     // useMemo is executed inline with the component if the dependencies have changed
     // so it should execute before the function returns, i.e before all of this is returned

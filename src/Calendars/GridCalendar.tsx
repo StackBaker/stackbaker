@@ -102,6 +102,7 @@ interface GridCalendarProps {
 };
 
 const GridCalendar = function(props: GridCalendarProps) {
+    // TODO: use the Mantine datepicker?
     const wrapperHeight = "85vh";
     const wrapperWidth = "45vw";
     const actualHeight = "150vh";
@@ -211,7 +212,6 @@ const GridCalendar = function(props: GridCalendarProps) {
     }
 
     // TODO: be able to change the month while dragging?
-    // TODO: test this on windows
     const handleEventDrag = (dropInfo: EventDropArg) => {
         const oldDate = dropInfo.oldEvent.start!;
         const newDate = dropInfo.event.start!;

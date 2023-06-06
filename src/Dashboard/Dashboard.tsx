@@ -41,6 +41,7 @@ const Dashboard = function(props: DashboardProps) {
             return;
         }
 
+        // TODO: take this away
         window.addEventListener("click", callback);
         return () => window.removeEventListener("click", callback);
     })
@@ -109,7 +110,9 @@ const Dashboard = function(props: DashboardProps) {
                     currentView={currentView}
                     loadStage={coordination.loadStage}
                     user={coordination.user}
+                    editUser={coordination.editUser}
                     date={props.date}
+                    setDate={props.setDate}
                     items={coordination.items}
                     lists={coordination.lists}
                     relevantListCollection={coordination.relevantListCollection}

@@ -1,18 +1,24 @@
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import useDatabase from "./Persistence/useDatabase";
-import { useNavigate, createMemoryRouter, RouterProvider } from "react-router-dom";
-import { MantineProvider } from "@mantine/core";
+import { useNavigate, createMemoryRouter, RouterProvider, Link } from "react-router-dom";
+import { Button, MantineProvider } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
+import { invoke } from "@tauri-apps/api";
+import { fetch as tauriFetch } from "@tauri-apps/api/http";
+
 import "./App.css";
 import "./styles.css";
-
 import * as paths from "./paths";
 import Dashboard from "./Dashboard/Dashboard";
 import Planner from "./Planner/Planner";
+import LoginSequence from "./Authentication/LoginSequence";
 import { dateToDayId, getToday } from "./dateutils";
 import { ListRubric } from "./List";
 import { UserRubric } from "./Persistence/useUserDB";
+
+type baseEmailResType = { data: { email: string } };
+interface emailResType extends baseEmailResType {};
 
 interface RootProps {
 	date: dayjs.Dayjs
@@ -29,51 +35,95 @@ const Root = function(props: RootProps) {
 		db.events.loadAll().then();
 	}, []);
 
+	// TODO: if can't find the user
+	// move to the Login View
+	// the login view will have a few stages
+	// - stage 1: login with google 
+	// - stage 2: accept an authorization code or go back -> save this to the database
+	// - stage 3: once the auth code is saved to the db, reload to the root
+	// 				then use the auth code to handle calendar events
+
 	useEffect(() => {
 		// depending on the existence of a user, route accordingly
 		db.user.get("email").then(u => {
-			if (u) {
-				// FIRST RELEASE: no users
-				return;
+			const accessTokenExpiryDate = db.user.data.authData?.expiryDate;
+			if (!u && accessTokenExpiryDate !== undefined) {
+				// no email, and google was connected
+				// get the user's email
+				const expiryDate = dayjs(accessTokenExpiryDate!);
+				// using the refresh token, refresh the access token
+				if (dayjs().isAfter(expiryDate)) {
+					invoke("exchange_refresh_for_access_token", { refreshToken: db.user.data.authData!.refreshToken }).then(r => {
+						let res = r as { expires_in: number, access_token: string };
+						const accessToken = res.access_token;
+						const expiryDate = dayjs().add(Math.max(res.expires_in - 10, 0), "seconds").format();
+		
+						if (!accessToken || !expiryDate) {
+							console.log("no access token or expiry", accessToken, expiryDate)
+							return;
+						}
+		
+						db.user.set("authData", {
+							refreshToken: db.user.data.authData!.refreshToken,
+							accessToken,
+							expiryDate
+						});
+					});
+				}
+
+				// get the user's email
+				tauriFetch("https://www.googleapis.com/oauth2/v1/userinfo?alt=json", {
+					method: "GET",
+					headers: {
+						"Authorization": `Bearer ${db.user.data.authData!.accessToken}`
+					}
+				}).then(r => {
+					let res = r as emailResType;
+					db.user.set("email", res.data.email);
+				});
+
+				// TODO: we can get the user's email if they have auth data
+				// but we might not actually need it
 			}
-			else {
-				db.user.get("autoLoadPlanner").then((alp) => {
-					let autoLoadPlanner = alp as boolean;
-					const todayId = dateToDayId(props.date);
-					db.lists.has(todayId).then((res: boolean) => {
-						if (res) {
-							db.lists.get(todayId).then((val) => {
-								if (getToday().isSame(props.date, "day") && autoLoadPlanner && !(val as ListRubric).planned)
-									navigate(paths.PLANNER_PATH);
-								else
-									navigate(paths.DASHBOARD_PATH);
-							});
-						} else {
-							db.lists.create(props.date);
-							if (getToday().isSame(props.date, "day"))
+
+			db.user.get("autoLoadPlanner").then((alp) => {
+				let autoLoadPlanner = alp as boolean;
+				const todayId = dateToDayId(props.date);
+				db.lists.has(todayId).then((res: boolean) => {
+					if (res) {
+						db.lists.get(todayId).then((val) => {
+							if (getToday().isSame(props.date, "day") && autoLoadPlanner && !(val as ListRubric).planned)
 								navigate(paths.PLANNER_PATH);
 							else
 								navigate(paths.DASHBOARD_PATH);
-						}
-					});
+						});
+					} else {
+						db.lists.create(props.date);
+						if (getToday().isSame(props.date, "day"))
+							navigate(paths.PLANNER_PATH);
+						else
+							navigate(paths.DASHBOARD_PATH);
+					}
 				});
-			}
+			});
 		});
-	}, []);
+	}, [db.user.data]);
 
-	// const log = () => {
-    //     console.log("l", db.lists.data);
-    //     console.log("i", db.items.data);
-    //     console.log("e", db.events.data);
-    //     console.log("u", db.user.data);
-    // }
+	const log = () => {
+        console.log("l", db.lists.data);
+        console.log("i", db.items.data);
+        console.log("e", db.events.data);
+        console.log("u", db.user.data);
+    }
 
-    // // debugging
-    // useHotkeys([
-    //     ['R', log]
-    // ]);
+    // debugging
+    useHotkeys([
+        ['R', log]
+    ]);
 
-	return <div></div>
+	return (
+		<div></div>
+	);
 }
 
 const App = function() {
@@ -92,6 +142,10 @@ const App = function() {
 		{
 			path: paths.PLANNER_PATH,
 			element: <Planner date={date} setDate={setDate} />
+		},
+		{
+			path: paths.LOGIN_PATH,
+			element: <LoginSequence />
 		}
 	]);
 

@@ -5,12 +5,10 @@ import { useDisclosure } from "@mantine/hooks";
 
 import { planningStage } from "./plannerutils";
 import coordinateBackendAndState from "../coordinateBackendAndState";
-import { LOADING_STAGES } from "../globals";
+import { DO_LATER_LIST_ID, LOADING_STAGES } from "../globals";
 import PlannerLeftPanel from "./PlannerLeftPanel";
 import PlannerMain from "./PlannerMain";
 import "../styles.css";
-import { dateToDayId, getToday } from "../dateutils";
-import { ListCollection } from "../List";
 
 interface PlannerProps {
     date: dayjs.Dayjs,
@@ -18,6 +16,7 @@ interface PlannerProps {
 };;
 
 const Planner = function(props: PlannerProps) {
+    // TODO: skip stage 3 if there are no later tasks
     const actionAreaHeight = "95vh";
     const [planningStage, setPlanningStage] = useState<planningStage>(0);
 
@@ -54,6 +53,7 @@ const Planner = function(props: PlannerProps) {
                     planningStage={planningStage}
                     setPlanningStage={setPlanningStage}
                     mutateList={coordination.mutateList}
+                    numLaterTasks={coordination.lists![DO_LATER_LIST_ID].itemIds.length}
                 />
             }
         >
@@ -61,6 +61,7 @@ const Planner = function(props: PlannerProps) {
                 (coordination.loadStage !== LOADING_STAGES.READY) ? <div></div> :
                 <PlannerMain
                     user={coordination.user}
+                    editUser={coordination.editUser}
                     date={coordination.date}
                     loadStage={coordination.loadStage}
                     planningStage={planningStage}
