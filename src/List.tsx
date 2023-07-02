@@ -1,16 +1,13 @@
 import { FormEvent, useEffect, useState } from "react"; 
 import type { Id } from "./globals"
-import { Droppable, DragDropContext } from "@hello-pangea/dnd";
-import type { DraggableLocation } from "@hello-pangea/dnd"
+import { Droppable } from "@hello-pangea/dnd";
 import { Button, createStyles, Stack, TextInput, Title } from "@mantine/core";
 import Item from "./Item";
 import type { ItemRubric, ItemCollection } from "./Item";
 import { useDisclosure, useHotkeys, useClickOutside } from "@mantine/hooks";
 import { v4 as uuid } from "uuid";
 import { useForm } from "@mantine/form";
-
-import { DAY_LIST_ID, DO_LATER_LIST_ID } from "./globals";
-import { UserRubric } from "./Persistence/useUserDB";
+import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, LIST_WIDTH } from "./globals";
 
 const useStyles = createStyles((theme) => ({
     listWrapper: {
@@ -19,7 +16,7 @@ const useStyles = createStyles((theme) => ({
         overflow: "hidden!important"
     },
     list: {
-        width: "250px", // TODO: make this some constant somewhere, perhaps in globals along with height
+        width: LIST_WIDTH,
         padding: theme.spacing.xs,
         overflow: "scroll!important",
         msOverflowStyle: "none",
@@ -27,9 +24,6 @@ const useStyles = createStyles((theme) => ({
         "&::-webkit-scrollbar": {
             display: "none"
         }
-    },
-    addButton: {
-        // backgroundColor: theme.colors.stackblue[3]
     }
 }));
 
@@ -47,9 +41,16 @@ const useStyles = createStyles((theme) => ({
 
 export interface ListRubric {
     listId: Id,
-    title: string,
-    itemIds: Id[],
-    planned: boolean
+    planned: boolean,
+    items: { [key: Id]: ItemRubric }
+}
+
+function getTitleFromId(listId: Id) {
+    if (listId === DO_LATER_LIST_ID) {
+        return DO_LATER_LIST_TITLE;
+    } else {
+        return DAY_LIST_TITLE;
+    }
 }
 
 export type ListCollection = { [key: Id]: ListRubric };
@@ -75,7 +76,6 @@ const List = function(props: ListProps) {
         initialValues: {
             content: newItemContent
         },
-        
         validate: {
             content: (val: string) => (val.length !== 0)
         }

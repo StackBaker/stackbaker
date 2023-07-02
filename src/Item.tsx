@@ -11,13 +11,14 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { ThirdPartyDraggable } from "@fullcalendar/interaction";
 
-import type { Id } from "./globals";
+import { LIST_WIDTH } from "./globals";
+import type { Id, PriorityLevel } from "./globals";
 
 export const ID_IDX_DELIM = "~";
 
 const useStyles = createStyles((theme) => ({
     item: {
-        maxWidth: "250px",
+        maxWidth: LIST_WIDTH,
         alignItems: "center",
         marginBottom: theme.spacing.sm,
     },
@@ -38,14 +39,16 @@ const useStyles = createStyles((theme) => ({
 export interface ItemRubric {
     itemId: Id,
     content: string,
-    complete: boolean
+    complete: boolean,
+    duration: number,
+    priority: PriorityLevel,
+    index: number
 };
 
 export type ItemCollection = { [key: Id]: ItemRubric };
 
 interface ItemProps extends ItemRubric {
     listId: Id,
-    index: number,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
     toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,

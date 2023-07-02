@@ -18,7 +18,7 @@ import { DEFAULT_OFFSET, endOfOffsetDay, getToday, offsetDay } from "../dateutil
 import { ROOT_PATH } from "../paths";
 import GridCalendar from "../Calendars/GridCalendar";
 import type { overrideDragEndAttrs } from "../Calendars/GridCalendar";
-import type { loadingStage, dashboardViewOption } from "../globals";
+import type { loadingStage, DashboardViewOption } from "../globals";
 import { DO_LATER_LIST_ID } from "../globals";
 
 dayjs.extend(durationPlugin);
@@ -45,7 +45,6 @@ export interface DashboardMainProps {
 };
 
 const DashboardMain = function(props: DashboardMainProps) {
-    const listWidth = "250px";
     const [override, setDragOverride] = useState<overrideDragEndAttrs | null>(null);
     const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
     const navigate = useNavigate();
