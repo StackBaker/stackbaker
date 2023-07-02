@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AppShell, Text, Header, Group, Button } from "@mantine/core";
 import dayjs from "dayjs";
 import { open } from "@tauri-apps/api/shell";
 import { ResponseType, fetch as tauriFetch } from "@tauri-apps/api/http";
+import { useDisclosure } from "@mantine/hooks";
 
 import DashboardMain from "./DashboardMain";
 import DashboardLeftPanel from "./DashboardLeftPanel";
@@ -42,9 +43,9 @@ const Dashboard = function(props: DashboardProps) {
         }
 
         // TODO: put this back
-        // window.addEventListener("click", callback);
-        // return () => window.removeEventListener("click", callback);
-    })
+        window.addEventListener("click", callback);
+        return () => window.removeEventListener("click", callback);
+    });
 
     // have to do this sx thing because AppShell automatically renders too large
     return (
