@@ -316,8 +316,8 @@ const coordinateBackendAndState = function(props: coordinateBackendAndStateProps
         }
 
         todayList.itemIds = incompleteTasks.concat(todayList.itemIds);
-        db.lists.setMany(newPrevDayIds.concat([todayId]), newPrevDayLists.concat(todayList));
-        setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+        db.lists.setMany(newPrevDayIds.concat([todayId]), newPrevDayLists.concat([todayList]));
+        //setLoadStage(LOADING_STAGES.NOTHING_LOADED);
 
         return true;
     }

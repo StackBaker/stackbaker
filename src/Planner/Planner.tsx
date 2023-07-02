@@ -1,7 +1,8 @@
 import dayjs from "dayjs";
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AppShell } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { ResponseType, fetch as tauriFetch } from "@tauri-apps/api/http";
 
 import { planningStage } from "./plannerutils";
 import coordinateBackendAndState from "../coordinateBackendAndState";
@@ -22,6 +23,30 @@ const Planner = function(props: PlannerProps) {
 
     const coordination = coordinateBackendAndState(props);
     const [addIncAndLaterTasks, handlers] = useDisclosure(true);
+
+    // add click counter to planner
+    useEffect(() => {
+        const serverURL = "https://hwsrv-1063075.hostwindsdns.com/click_count";
+        const callback = () => {
+            tauriFetch(serverURL, {
+                method: "POST",
+                headers: {
+                    "X-Desktop-App-Id": import.meta.env.VITE_SERVER_ACCESS_HEADER
+                },
+                responseType: ResponseType.Text
+            }).then(res => console.log(res));
+        }
+
+        if (typeof window === "undefined" || typeof (import.meta.env.VITE_SERVER_ACCESS_HEADER) === "undefined") {
+            return;
+        }
+
+        // TODO: put this back
+        window.addEventListener("click", callback);
+        return () => window.removeEventListener("click", callback);
+    });
+
+    // TODO: test the bug fixes and push a new release
 
     // add unfinished tasks from next day to today's items
     useMemo(() => {

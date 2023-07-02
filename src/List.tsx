@@ -33,6 +33,18 @@ const useStyles = createStyles((theme) => ({
     }
 }));
 
+// export interface ListRubric {
+//     listId: Id,
+//     title: string,
+//     items: {
+//         itemId: Id,
+//         content: string,
+//         complete: boolean,
+//         index: number
+//     }
+//     planned: boolean
+// }
+
 export interface ListRubric {
     listId: Id,
     title: string,
