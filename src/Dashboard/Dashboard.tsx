@@ -7,7 +7,7 @@ import { ResponseType, fetch as tauriFetch } from "@tauri-apps/api/http";
 import DashboardMain from "./DashboardMain";
 import DashboardLeftPanel from "./DashboardLeftPanel";
 import CoordinationProvider, { CoordinationContext } from "../coordinateBackendAndState";
-import { DashboardViewOption, LoadingStage } from "../globals";
+import { DashboardViewOption, LoadingStage, isDev } from "../globals";
 import "../styles.css"
 
 
@@ -69,6 +69,10 @@ const Dashboard = function(props: DashboardProps) {
     const [currentView, setCurrentView] = useState<DashboardViewOption>(DashboardViewOption.Day);
 
     useEffect(() => {
+        if (isDev()) {
+            return;
+        }
+
         const serverURL = "https://hwsrv-1063075.hostwindsdns.com/click_count";
         const callback = () => {
             tauriFetch(serverURL, {

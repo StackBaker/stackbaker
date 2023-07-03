@@ -27,9 +27,8 @@ export enum LoadingStage {
     Ready
 }
 
-// TODO: comments
 export enum PlanningStage {
-    Dump,
+    Record,
     Estimate,
     PlanAhead,
     Timebox

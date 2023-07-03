@@ -24,8 +24,6 @@ type coordinateBackendAndStateOutput = {
     // TODO: write some damn types for this
     _db: { user: any, items: any, lists: any, events: any },
     user: UserRubric,
-    date: dayjs.Dayjs,
-    setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
     loadStage: LoadingStage,
     items: ItemCollection,
     lists: ListCollection,
@@ -349,8 +347,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     return {
         _db: db,
         user: db.user.data!,
-        date: props.date,
-        setDate: props.setDate,
         loadStage: props.loadStage,
         items: db.items.data!,
         lists: db.lists.data!,

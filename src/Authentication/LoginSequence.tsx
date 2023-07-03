@@ -10,15 +10,17 @@ import useUserDB from "../Persistence/useUserDB";
 import * as paths from "../paths";
 
 // 2: error
-type loginStage = 0 | 1;
+export enum LoginStage {
+    AcceptCode,
+    Error
+}
 
 interface LoginProps {
-
 };
 
 const LoginSequence = function(props: LoginProps) {
 	const [oauthURL, setOAuthUrl] = useState("");
-    const [loginStage, setLoginStage] = useState<loginStage>(0);
+    const [loginStage, setLoginStage] = useState<LoginStage>(LoginStage.AcceptCode);
 
     const udb = useUserDB();
     const navigate = useNavigate();
@@ -61,7 +63,7 @@ const LoginSequence = function(props: LoginProps) {
                 const expiryDate = dayjs().add(Math.max(res.expires_in - 10, 0), "seconds").format();
 
                 if (!accessToken || !refreshToken || !expiryDate) {
-                    setLoginStage(1);
+                    setLoginStage(LoginStage.Error);
                     return;
                 }
 
@@ -110,7 +112,7 @@ const LoginSequence = function(props: LoginProps) {
             <Text maw="35vw">Return to the previous page to try again.</Text>
             <Group position="apart">
                 <Button onClick={() => {
-                    setLoginStage(0);
+                    setLoginStage(LoginStage.AcceptCode);
                 }}>Return</Button>
             </Group>
         </>
