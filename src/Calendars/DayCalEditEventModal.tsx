@@ -1,4 +1,16 @@
-import { createStyles } from "@mantine/core";
+import { useRef } from "react";
+import dayjs from "dayjs";
+import { createStyles, Stack, Button, Text, Modal, TextInput, Group, ActionIcon, Select, Grid, SelectItem, Avatar } from "@mantine/core";
+import { getHotkeyHandler } from "@mantine/hooks";
+import { DatePickerInput } from "@mantine/dates";
+import type { DateValue } from "@mantine/dates";
+import DeleteIcon from "@mui/icons-material/Delete";
+
+import type { EventRubric } from "./Event";
+import { myStructuredClone } from "../globals";
+import "./fullcalendar-vars.css";
+import { CoordinationContext } from "../coordinateBackendAndState";
+import { endOfOffsetDay, offsetDay } from "../dateutils";
 
 const useStyles = createStyles((theme) => ({
     del: {
@@ -361,3 +373,5 @@ const EditEventModal = function(props: EditEventModalProps) {
 		</Modal>
 	);
 }
+
+export default EditEventModal;

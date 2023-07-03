@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 import dayjs from "dayjs";
 import dayjsUTCPlugin from "dayjs/plugin/utc"
 import FullCalendar from "@fullcalendar/react";
@@ -6,16 +6,13 @@ import type { DateSelectArg, EventChangeArg, EventClickArg, EventInput } from "@
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
-import { createStyles, Stack, Button, Title, Text, Modal, TextInput, Group, ActionIcon, Select, Grid, SelectItem, Avatar, Space } from "@mantine/core";
-import { getHotkeyHandler, useDisclosure, useHotkeys } from "@mantine/hooks";
-import { DatePickerInput } from "@mantine/dates";
-import type { DateValue } from "@mantine/dates";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { createStyles, Stack, Button, Title, Group } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { v4 as uuid } from "uuid";
 import { useNavigate, useLocation } from "react-router-dom"
 import { invoke } from "@tauri-apps/api";
 import { fetch as tauriFetch } from "@tauri-apps/api/http";
-import { getToday, offsetDay, endOfOffsetDay } from "../dateutils";
+import { getToday, offsetDay } from "../dateutils";
 
 import type { EventRubric, GCalData, GCalItem } from "./Event";
 import { createEventReprId, createGCalEventReprId } from "./Event";
@@ -24,6 +21,7 @@ import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM } from "../Item";;
 import { PLANNER_PATH } from "../paths";
 import { CoordinationContext } from "../coordinateBackendAndState";
+import EditEventModal from "./DayCalEditEventModal";
 
 dayjs.extend(dayjsUTCPlugin);
 
@@ -50,6 +48,8 @@ interface DayCalendarProps {
 	date: dayjs.Dayjs
 };
 
+// TODO: refactor the logic of this entire file
+
 const DayCalendar = function(props: DayCalendarProps) {
 	const coordination = useContext(CoordinationContext);
 
@@ -72,16 +72,18 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [editingEvent, handlers] = useDisclosure(false);
 	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
 	const [newEventId, setNewEventId] = useState<Id>("");
-	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay);
-	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
-	const [slotLabelInterval, setSlotLabelInterval] = useState<number>(props.user.dayCalLabelInterval);
-	const [snapDuration, setSnapDuration] = useState<number>(props.user.dayCalSnapDuration);
+
+	// TODO: are these useStates necessary?
+	const [dayDuration, setDayDuration] = useState<number>(coordination.user.hoursInDay);
+	const [eventDuration, setEventDuration] = useState<number>(coordination.user.defaultEventLength);
+	const [slotLabelInterval, setSlotLabelInterval] = useState<number>(coordination.user.dayCalLabelInterval);
+	const [snapDuration, setSnapDuration] = useState<number>(coordination.user.dayCalSnapDuration);
 
 	useEffect(() => {
-		if (!props.user || !props.user.authData)
+		if (!coordination.user || !coordination.user.authData)
 			return;
 
-		const accessTokenExpiryDate = props.user.authData?.expiryDate;
+		const accessTokenExpiryDate = coordination.user.authData?.expiryDate;
 		if (accessTokenExpiryDate === undefined) {
 			console.log("undefined expiry");
 			return;
@@ -90,13 +92,13 @@ const DayCalendar = function(props: DayCalendarProps) {
 		const expiryDate = dayjs(accessTokenExpiryDate!);
 		// using the refresh token, refresh the access token
 		if (dayjs().isAfter(expiryDate)) {
-			invoke("exchange_refresh_for_access_token", { refreshToken: props.user.authData!.refreshToken }).then(r => {
+			invoke("exchange_refresh_for_access_token", { refreshToken: coordination.user.authData!.refreshToken }).then(r => {
 				let res = r as { expires_in: number, access_token: string };
                 const accessToken = res.access_token;
                 const expiryDate = dayjs().add(Math.max(res.expires_in - 10, 0), "seconds").format();
 
-                props.editUser({ authData: {
-					refreshToken: props.user.authData!.refreshToken,
+                coordination.editUser({ authData: {
+					refreshToken: coordination.user.authData!.refreshToken,
 					accessToken,
 					expiryDate
 				}});
@@ -114,7 +116,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 			tauriFetch(fetchURL, {
 				method: "GET",
 				headers: {
-					"Authorization": `Bearer ${props.user.authData?.accessToken}`
+					"Authorization": `Bearer ${coordination.user.authData?.accessToken}`
 				}
 			}).then(r => {
 				let res = r as GCalData;
@@ -131,11 +133,12 @@ const DayCalendar = function(props: DayCalendarProps) {
 				console.log("here", gcalOut);
 			});
 		}
-	}, [props.user]);
+	}, [coordination.user]);
 
 	// TODO: be able to edit events locally and have that sync to GCal
 	// TODO: google calendar logo should be at the top right of the Day Calendar
 	// TODO: and that should be the button to enable or disable it
+	// TODO: maybe a dropdown with the logo (GCal / Outlook / None) as the items
 
 	useEffect(() => {
 		// hack for preventing that one long error when adding changing events
@@ -143,21 +146,21 @@ const DayCalendar = function(props: DayCalendarProps) {
 		if (!newEventId) {
 			return;
 		}
-		changeEventBeingEdited(props.events[newEventId]);
+		changeEventBeingEdited(coordination.events[newEventId]);
 		setNewEventId("");
 		handlers.open();
 	}, [newEventId]);
 
 	useEffect(() => {
 		// this is to handle changes to the user in settings while the app is running
-		if (!props.user)
+		if (!coordination.user)
 			return;
 		
-		setDayDuration(props.user.hoursInDay);
-		setEventDuration(props.user.defaultEventLength);
-		setSlotLabelInterval(props.user.dayCalLabelInterval);
-		setSnapDuration(props.user.dayCalSnapDuration);
-	}, [props.user]);
+		setDayDuration(coordination.user.hoursInDay);
+		setEventDuration(coordination.user.defaultEventLength);
+		setSlotLabelInterval(coordination.user.dayCalLabelInterval);
+		setSnapDuration(coordination.user.dayCalSnapDuration);
+	}, [coordination.user]);
 
 	useEffect(() => {
 		if (!editingEvent)
@@ -167,14 +170,14 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
 		const id = changeInfo.event.id;
-		const evt = props.events[id];
-		// TODO: evt may be in gcalEvents now, not in props.events!!!
+		const evt = coordination.events[id];
+		// TODO: evt may be in gcalEvents now, not in coordination.events!!!
 		const noRepeats = (!evt.daysOfWeek || evt.daysOfWeek?.length === 0);
-		let oldStart = dayjs(props.events[id].start! as Date);
-		let _newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[id].start!;
+		let oldStart = dayjs(coordination.events[id].start! as Date);
+		let _newStart = (changeInfo.event.start) ? changeInfo.event.start : coordination.events[id].start!;
 		let newStart = dayjs(_newStart as Date);
-		let oldEnd = dayjs(props.events[id].end! as Date);
-		let _newEnd = (changeInfo.event.start) ? changeInfo.event.end : props.events[id].end!;
+		let oldEnd = dayjs(coordination.events[id].end! as Date);
+		let _newEnd = (changeInfo.event.end) ? changeInfo.event.end : coordination.events[id].end!;
 		let newEnd = dayjs(_newEnd as Date);
 		
 		// if the event is repeating, then we need different logic
@@ -200,8 +203,8 @@ const DayCalendar = function(props: DayCalendarProps) {
 		if (newStart.isSame(newEnd) || newStart.isAfter(newEnd))
 			return;
 
-		props.saveEvent({
-			...props.events[changeInfo.event.id],
+		coordination.saveEvent({
+			...coordination.events[changeInfo.event.id],
 			start: newStart.toDate(),
 			end: newEnd.toDate()
 		});
@@ -210,7 +213,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const handleEventClick = (clickInfo: EventClickArg) => {
 		// open the edit modal
 		const id = clickInfo.event.id;
-		changeEventBeingEdited(props.events[id]);
+		changeEventBeingEdited(coordination.events[id]);
 		handlers.open();
 	}
 
@@ -221,7 +224,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 			return;
 		}
 
-		props.saveEvent(myStructuredClone(eventBeingEdited));
+		coordination.saveEvent(myStructuredClone(eventBeingEdited));
 		handlers.close();
 	}
 
@@ -236,7 +239,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 	const deleteEditingEvent = () => {
 		handlers.close();
-		props.deleteEvent(eventBeingEdited.id);
+		coordination.deleteEvent(eventBeingEdited.id);
 	}
 
 	const handleAddEventThroughSelection = (info: DateSelectArg) => {
@@ -255,7 +258,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 			start: start.toDate(),
 			end: end.toDate()
 		};
-		props.saveEvent(newEvent);
+		coordination.saveEvent(newEvent);
 		setNewEventId(newEventId);
 	}
 
@@ -264,7 +267,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 		const [id, _] = el.id.split(ID_IDX_DELIM);
 
 		// NOTE: operating assumption: the div id of the item is exactly the itemId
-		const item = props.items[id];
+		const item = coordination.items[id];
 		if (!item)
 			return;
 
@@ -275,11 +278,11 @@ const DayCalendar = function(props: DayCalendarProps) {
 			end: dayjs(dropInfo.date).add(eventDuration, "minutes").toDate()
 		};
 
-		props.saveEvent(draggedEvent);
+		coordination.saveEvent(draggedEvent);
 	};
 
 	// TODO: bug: can't have recurring events that end at 6am???
-	return ( (!props.user) ? <div></div> :
+	return ( (!coordination.user) ? <div></div> :
 		<Stack
 			className={classes.calendarWrapper}
 			sx={{ width: width }}
@@ -327,8 +330,8 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 					editable={true}
 					events={
-						Object.keys(props.events).map(eid => {
-							const evt = props.events[eid];
+						Object.keys(coordination.events).map(eid => {
+							const evt = coordination.events[eid];
 							let output: EventInput
 							if (evt.daysOfWeek === undefined || evt.daysOfWeek === null || evt.daysOfWeek.length === 0) {
 								output = {
