@@ -3,15 +3,18 @@ import { useState } from "react";
 import { Store } from "tauri-plugin-store-api";
 
 import type { ListRubric, ListCollection } from "../List";
-import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, Id, myStructuredClone, isDev } from "../globals";
+import { DO_LATER_LIST_ID, myStructuredClone, isDev } from "../globals";
+import type { Id } from "../globals";
 import dayjs from "dayjs";
 import { dateToDayId } from "../dateutils";
 
-const LISTS_FNAME = (isDev()) ? "dev-lists.dat" : "lists.dat";
-
-// TODO: properly test this
-const useListDB = function() {
-    const store = new Store(LISTS_FNAME);
+// TODO: write unit tests
+const useListDB = function(fname: string = "") {
+    if (!fname) {
+        fname = (isDev()) ? "dev-lists.dat" : "lists.dat";
+    }
+    
+    const store = new Store(fname);
     const [lists, setLists] = useState<ListCollection>({});
 
     const get = async (key: Id) => {
@@ -37,20 +40,21 @@ const useListDB = function() {
         }
 
         store.set(key, val);
-        // suspicion: loads can be run before saves complete
         store.save();
         console.log("lists saved");
     }
 
     const setMany = (keys: Id[], vals: ListRubric[]): boolean => {
-        if (keys.length !== vals.length)
+        if (keys.length !== vals.length) {
             return false;
+        }
 
         let newLists: ListCollection;
-        if (lists)
+        if (lists) {
             newLists = myStructuredClone(lists);
-        else
+        } else {
             newLists = {};
+        }
         
         keys.map((k, i) => {
             let v = vals[i];
@@ -77,16 +81,16 @@ const useListDB = function() {
     const create = (date: dayjs.Dayjs | null): boolean => {
         // create a new empty list for a particular date or the do later list
         let listId;
-        if (date === null)
+        if (date === null) {
             listId = DO_LATER_LIST_ID
-        else
+        } else {
             listId = dateToDayId(date!);
+        }
 
-        const newList = {
+        const newList: ListRubric = {
             listId: listId,
-            title: (!date) ? DO_LATER_LIST_TITLE: DAY_LIST_TITLE,
-            itemIds: [],
-            planned: false
+            planned: false,
+            items: {}
         };
         set(listId, newList);
         
@@ -95,10 +99,11 @@ const useListDB = function() {
 
     const del = (key: Id) => {
         let newLists: ListCollection;
-        if (lists)
+        if (lists) {
             newLists = myStructuredClone(lists);
-        else
+        } else {
             newLists = {};
+        }
         delete newLists[key];
         setLists(newLists);
         

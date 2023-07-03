@@ -31,7 +31,7 @@ type coordinateBackendAndStateOutput = {
     events: EventCollection,
     editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
-    mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
+    mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>, listId: Id) => boolean,
     toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
@@ -52,19 +52,23 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     const selectedDayId = dateToDayId(props.date);
 
     const getListFromDB = (listId: Id): ListRubric | null => {
-        if (!db.lists.data)
+        if (!db.lists.data) {
             return null;
+        }
+        
         var newList: ListRubric = myStructuredClone(db.lists.data![listId]);
-        if (!newList)
+        if (!newList) {
             return null;
+        }
         
         return newList;
     };
 
     // TODO: clean up these functions AND TEST THEM
     useMemo(() => {
-        if (props.loadStage !== LoadingStage.NothingLoaded)
+        if (props.loadStage !== LoadingStage.NothingLoaded) {
             return;
+        }
         db.user.load().then();
         db.items.loadAll().then();
         // TODO: perhaps db.lists should take a date as argument to create if it doesn't exist
@@ -75,8 +79,9 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     }, [props.loadStage]);
 
     useMemo(() => {
-        if (props.loadStage !== LoadingStage.DBLoaded)
+        if (props.loadStage !== LoadingStage.DBLoaded) {
             return;
+        }
         
         db.lists.has(selectedDayId).then((res) => {
             if (!res) {
@@ -90,8 +95,10 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     }, [props.loadStage, props.date]);
 
     useMemo(() => {
-        if (props.loadStage !== LoadingStage.DBUpdated)
+        // TODO: test removing the dependence of this on loadStage
+        if (props.loadStage !== LoadingStage.DBUpdated) {
             return;
+        }
         
         var selectedDayList = getListFromDB(selectedDayId);
         var laterList = getListFromDB(DO_LATER_LIST_ID);
@@ -105,35 +112,60 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
 
     const editUser = (newUserConfig: Partial<UserRubric> | null): boolean => {
         let newUserData: UserRubric = { ...db.user.data!, ...newUserConfig };
-        if (newUserConfig === null)
+        if (newUserConfig === null) {
             db.user.replaceUser(null);
-        else
+        } else {
             db.user.replaceUser(newUserData);
+        }
         return true;
     }
 
-    // TODO: fix the create item logic to actually properly deal with the index
     const createItem = (newItemConfig: ItemRubric, listId: Id): boolean => {
         let list = getListFromDB(listId);
-        if (list === null) return false;
+        if (list === null) {
+            return false;
+        }
 
-        list.itemIds.unshift(newItemConfig.itemId);
-        db.items.set(newItemConfig.itemId, newItemConfig);
+        const numItems = Object.keys(list.items).length;
+        let idx = newItemConfig.index;
+        // bound the index to the length of the list
+        idx = Math.max(0, Math.min(idx, numItems));
+
+        Object.keys(list.items).forEach((itemId) => {
+            // for each item in the list
+            const itm = list!.items[itemId];
+            if (itm.index < idx) {
+                return;
+            }
+
+            // if the index of itm is >= newItemConfig.index
+            // increment the index of itm
+            list!.items[itemId].index += 1;
+        });
+
+        // add the new item to the list
+        list!.items[newItemConfig.itemId] = newItemConfig;
         db.lists.set(listId, list);
-
         return true;
     };
 
-    const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>): boolean => {
-        if (!db.items.data?.hasOwnProperty(itemId))
+    const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>, listId: Id): boolean => {
+        let list = getListFromDB(listId);
+        if (list === null) {
             return false;
+        }
 
+        // prevent the index from being mutated through this function
         const editedItem: ItemRubric = {
-            ...db.items.data![itemId],
-            ...newConfig
-        };
+            ...list!.items[itemId],
+            ...newConfig,
+            index: list!.items[itemId].index
+        }
 
-        db.items.set(itemId, editedItem)
+        list!.items[itemId] = editedItem;
+        // TODO: create a db.lists.setItem function for editing an item in a list
+        // TODO: avoiding having to rewrite the entire list every time
+        db.lists.set(listId, list);
 
         return true;
     };
@@ -370,7 +402,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     };
 }
 
-// @ts-ignore
+// @ts-expect-error
 export const CoordinationContext = React.createContext<coordinateBackendAndStateOutput>();
 
 interface CoordinationProviderProps {

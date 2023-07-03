@@ -6,6 +6,14 @@ export const DAY_LIST_TITLE: string = "Items";
 export const DO_LATER_LIST_TITLE: string = "Later";
 export const LIST_WIDTH = "250px";
 
+export function getTitleFromId(listId: Id) {
+    if (listId === DO_LATER_LIST_ID) {
+        return DO_LATER_LIST_TITLE;
+    } else {
+        return DAY_LIST_TITLE;
+    }
+}
+
 export enum PriorityLevel {
     VeryLow,
     Low,

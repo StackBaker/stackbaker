@@ -68,11 +68,12 @@ const Item = function(props: ItemProps) {
     }
 
     const handleSubmitContent = () => {
-        if (editableContent.length === 0)
+        if (editableContent.length === 0) {
             return;
+        }
 
         handlers.close();
-        coordination.mutateItem(props.itemId, { content: editableContent });
+        coordination.mutateItem(props.itemId, { content: editableContent }, props.listId);
     }
 
     const editRef = useClickOutside(handleSubmitContent);
@@ -91,7 +92,6 @@ const Item = function(props: ItemProps) {
         // a cleanup function
         return () => draggable.destroy();
     }, [props.content, props.duration]);
-
 
     useEffect(() => {
         if (editing) {
