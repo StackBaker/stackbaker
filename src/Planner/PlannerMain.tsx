@@ -77,29 +77,16 @@ const PlannerMain = function(props: PlannerMainProps) {
         />
     );
 
+    // TODO: StageOne should be about reordering things, not putting things in the daycalendar
     const StageOne = (
         <>
             <DayCalendar
-                user={props.user}
-                editUser={props.editUser}
-                height="80vh"
-                width="310px"
                 date={props.date}
-                items={props.items}
-                events={props.events}
-                saveEvent={props.saveEvent}
-                deleteEvent={props.deleteEvent}
             />
             {Object.keys(props.relevantListCollection).map(tlid => {
                 return (
                     <List
                         key={tlid}
-                        items={props.items}
-                        createItem={props.createItem}
-                        mutateItem={props.mutateItem}
-                        toggleItemComplete={props.toggleItemComplete}
-                        deleteItem={props.deleteItem}
-                        eventDuration={eventDuration}
                         {...props.relevantListCollection[tlid]}
                     />
                 )})}
@@ -110,23 +97,8 @@ const PlannerMain = function(props: PlannerMainProps) {
         <>
             <GridCalendar
                 setDragOverride={setDragOverride}
-                loadStage={props.loadStage}
-                items={props.items}
-                lists={props.lists}
-                createItem={props.createItem}
-                mutateItem={props.mutateItem}
-                deleteItem={props.deleteItem}
-                mutateLists={props.mutateLists}
-                delManyItemsOrMutManyLists={props.delManyItemsOrMutManyLists}
             />
             <List
-                items={props.items}
-                createItem={props.createItem}
-                mutateItem={props.mutateItem}
-                toggleItemComplete={props.toggleItemComplete}
-                deleteItem={props.deleteItem}
-                eventDuration={eventDuration}
-                collapseItems={props.planningStage === 2}
                 {...props.relevantListCollection[DO_LATER_LIST_ID]}
             />
         </>
@@ -134,26 +106,13 @@ const PlannerMain = function(props: PlannerMainProps) {
         <></>
     );
 
+    // TODO: Final Stage should have the later list as well
     const FinalStage = (
         <>
             <DayCalendar
-                user={props.user}
-                editUser={props.editUser}
-                height="80vh"
-                width="310px"
                 date={props.date}
-                items={props.items}
-                events={props.events}
-                saveEvent={props.saveEvent}
-                deleteEvent={props.deleteEvent}
             />
             <List
-                items={props.items}
-                createItem={props.createItem}
-                mutateItem={props.mutateItem}
-                toggleItemComplete={props.toggleItemComplete}
-                deleteItem={props.deleteItem}
-                eventDuration={eventDuration}
                 {...props.relevantListCollection[dateToDayId(props.date)]}
             />
         </>

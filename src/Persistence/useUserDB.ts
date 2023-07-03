@@ -2,9 +2,9 @@ import { useState } from "react";
 // @ts-ignore
 import { Store } from "tauri-plugin-store-api";
 
-import { myStructuredClone } from "../globals";
+import { myStructuredClone, isDev } from "../globals";
 
-const USER_FNAME = "users.dat";
+const USER_FNAME = (isDev()) ? "dev-users.dat" : "users.dat";
 
 type AuthData = null | {
     accessToken: string,

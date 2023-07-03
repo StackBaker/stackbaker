@@ -3,9 +3,9 @@ import { useState } from "react";
 import { Store } from "tauri-plugin-store-api";
 
 import type { ItemRubric, ItemCollection } from "../Item";
-import { Id, myStructuredClone } from "../globals";
+import { Id, myStructuredClone, isDev } from "../globals";
 
-const ITEMS_FNAME = "items.dat";
+const ITEMS_FNAME = (isDev()) ? "dev-items.dat" : "items.dat";
 
 const useItemDB = function() {
     const store = new Store(ITEMS_FNAME);

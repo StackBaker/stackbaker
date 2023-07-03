@@ -10,24 +10,23 @@ import type { EventRubric, EventCollection } from "./Calendars/Event";
 import useDatabase from "./Persistence/useDatabase";
 import { dateToDayId, getToday } from "./dateutils";
 import type { UserRubric } from "./Persistence/useUserDB";
-import type { loadingStage } from "./globals";
-import { LOADING_STAGES } from "./globals";
+import { LoadingStage } from "./globals";
 
 interface coordinateBackendAndStateProps {
     date: dayjs.Dayjs,
     setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
-    loadStage: loadingStage,
-    setLoadStage: React.Dispatch<React.SetStateAction<loadingStage>>
+    loadStage: LoadingStage,
+    setLoadStage: React.Dispatch<React.SetStateAction<LoadingStage>>
 };
 
 // null so that I can easily create a React context
-type coordinateBackendAndStateOutput = null | {
+type coordinateBackendAndStateOutput = {
     // TODO: write some damn types for this
     _db: { user: any, items: any, lists: any, events: any },
     user: UserRubric,
     date: dayjs.Dayjs,
     setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
-    loadStage: loadingStage,
+    loadStage: LoadingStage,
     items: ItemCollection,
     lists: ListCollection,
     relevantListCollection: ListCollection,
@@ -64,72 +63,46 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         return newList;
     };
 
+    // TODO: clean up these functions AND TEST THEM
     useMemo(() => {
-        if (props.loadStage !== LOADING_STAGES.NOTHING_LOADED)
+        if (props.loadStage !== LoadingStage.NothingLoaded)
             return;
         db.user.load().then();
         db.items.loadAll().then();
+        // TODO: perhaps db.lists should take a date as argument to create if it doesn't exist
         db.lists.loadAll().then();
         db.events.loadAll().then();
 
-        props.setLoadStage(LOADING_STAGES.DB_LOADED);
+        props.setLoadStage(LoadingStage.DBLoaded);
     }, [props.loadStage]);
 
     useMemo(() => {
-        if (props.loadStage !== LOADING_STAGES.DB_LOADED)
+        if (props.loadStage !== LoadingStage.DBLoaded)
             return;
         
         db.lists.has(selectedDayId).then((res) => {
             if (!res) {
                 db.lists.create(props.date);
-                props.setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+                props.setLoadStage(LoadingStage.NothingLoaded);
                 return;
             }
             
-            props.setLoadStage(LOADING_STAGES.DB_UPDATED);
+            props.setLoadStage(LoadingStage.DBUpdated);
         });
     }, [props.loadStage, props.date]);
 
     useMemo(() => {
-        if (props.loadStage !== LOADING_STAGES.DB_UPDATED)
+        if (props.loadStage !== LoadingStage.DBUpdated)
             return;
         
         var selectedDayList = getListFromDB(selectedDayId);
         var laterList = getListFromDB(DO_LATER_LIST_ID);
         if (selectedDayList === null || laterList === null) {
-            props.setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+            props.setLoadStage(LoadingStage.NothingLoaded);
             return;
         }
 
-        var itemDeletedFlag = false;
-        for (var i = selectedDayList.itemIds.length - 1; i >= 0; i--) {
-            const itemId = selectedDayList.itemIds[i];
-            if (db.items.data!.hasOwnProperty(itemId))
-                continue;
-            
-            selectedDayList.itemIds.splice(i, 1);
-            db.items.del(itemId);
-            itemDeletedFlag = true;
-        }
-
-        for (var i = laterList.itemIds.length - 1; i >= 0; i--) {
-            const itemId = laterList.itemIds[i];
-            if (db.items.data!.hasOwnProperty(itemId))
-                continue;
-            
-            laterList.itemIds.splice(i, 1);
-            db.items.del(itemId);
-            itemDeletedFlag = true;
-        }
-
-        if (itemDeletedFlag) {
-            db.lists.set(selectedDayId, selectedDayList);
-            db.lists.set(DO_LATER_LIST_ID, laterList);
-            props.setLoadStage(LOADING_STAGES.NOTHING_LOADED);
-            return;
-        }
-
-        props.setLoadStage(LOADING_STAGES.READY);
+        props.setLoadStage(LoadingStage.Ready);
     }, [props.loadStage, props.date]);
 
     const editUser = (newUserConfig: Partial<UserRubric> | null): boolean => {
@@ -141,6 +114,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         return true;
     }
 
+    // TODO: fix the create item logic to actually properly deal with the index
     const createItem = (newItemConfig: ItemRubric, listId: Id): boolean => {
         let list = getListFromDB(listId);
         if (list === null) return false;
@@ -331,7 +305,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         
         const listIds = newLists.map(l => l.listId);
         db.lists.setMany(listIds, newLists);
-        props.setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+        props.setLoadStage(LoadingStage.NothingLoaded);
 
         return true;
     }
@@ -352,7 +326,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         db.items.clear();
         db.events.clear();
         props.setDate(getToday());
-        props.setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+        props.setLoadStage(LoadingStage.NothingLoaded);
     }
 
     const log = () => {
@@ -400,7 +374,8 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     };
 }
 
-export const CoordinationContext = React.createContext<coordinateBackendAndStateOutput>(null);
+// @ts-ignore
+export const CoordinationContext = React.createContext<coordinateBackendAndStateOutput>();
 
 interface CoordinationProviderProps {
     date: dayjs.Dayjs,
@@ -408,8 +383,8 @@ interface CoordinationProviderProps {
     children: React.ReactNode
 }
 
-const CoordinationProvider = function(props: CoordinationProviderProps): React.ReactNode {
-    const [loadStage, setLoadStage] = useState<loadingStage>(LOADING_STAGES.NOTHING_LOADED);
+const CoordinationProvider = function(props: CoordinationProviderProps) {
+    const [loadStage, setLoadStage] = useState<LoadingStage>(LoadingStage.NothingLoaded);
     const coordFunctions = _coordinateBackendAndState({
         date: props.date,
         setDate: props.setDate,

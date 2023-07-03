@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react"; 
+import { FormEvent, useContext, useEffect, useState } from "react"; 
 import type { Id } from "./globals"
 import { Droppable } from "@hello-pangea/dnd";
 import { Button, createStyles, Stack, TextInput, Title } from "@mantine/core";
@@ -7,7 +7,8 @@ import type { ItemRubric, ItemCollection } from "./Item";
 import { useDisclosure, useHotkeys, useClickOutside } from "@mantine/hooks";
 import { v4 as uuid } from "uuid";
 import { useForm } from "@mantine/form";
-import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, LIST_WIDTH } from "./globals";
+import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, LIST_WIDTH, PriorityLevel } from "./globals";
+import { CoordinationContext } from "./coordinateBackendAndState";
 
 const useStyles = createStyles((theme) => ({
     listWrapper: {
@@ -27,24 +28,6 @@ const useStyles = createStyles((theme) => ({
     }
 }));
 
-// export interface ListRubric {
-//     listId: Id,
-//     title: string,
-//     items: {
-//         itemId: Id,
-//         content: string,
-//         complete: boolean,
-//         index: number
-//     }
-//     planned: boolean
-// }
-
-export interface ListRubric {
-    listId: Id,
-    planned: boolean,
-    items: { [key: Id]: ItemRubric }
-}
-
 function getTitleFromId(listId: Id) {
     if (listId === DO_LATER_LIST_ID) {
         return DO_LATER_LIST_TITLE;
@@ -52,20 +35,21 @@ function getTitleFromId(listId: Id) {
         return DAY_LIST_TITLE;
     }
 }
+export interface ListRubric {
+    listId: Id,
+    planned: boolean,
+    items: { [key: Id]: ItemRubric }
+}
 
 export type ListCollection = { [key: Id]: ListRubric };
 
 interface ListProps extends ListRubric {
-    items: ItemCollection,
-    createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
-    mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
-    deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-    toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
-    eventDuration: number,
     collapseItems?: boolean
 };
 
 const List = function(props: ListProps) {
+    const coordination = useContext(CoordinationContext);
+
     const { classes } = useStyles();
     const [adding, handlers] = useDisclosure(false);
     const [newItemContent, changeNewItemContent] = useState("");
@@ -88,10 +72,13 @@ const List = function(props: ListProps) {
         if (newItemContent === "")
             return;
             
-        props.createItem({
+        coordination.createItem({
             itemId: uuid(),
             content: newItemContent,
-            complete: false
+            complete: false,
+            duration: coordination.user.defaultEventLength,
+            priority: PriorityLevel.Medium,
+            index: 0
         }, props.listId);
         changeNewItemContent("");
     }
@@ -118,7 +105,7 @@ const List = function(props: ListProps) {
             className={classes.listWrapper}
             p="sm"
         >
-            <Title order={2} pl="xs">{props.title}</Title>
+            <Title order={2} pl="xs">{getTitleFromId(props.listId)}</Title>
             {
                 (adding) ?
                 <form onSubmit={handleSubmitNewItem}>
@@ -133,7 +120,7 @@ const List = function(props: ListProps) {
                     />
                 </form>
                 : 
-                <Button className={classes.addButton} onClick={() => handlers.open()} mr="xs">
+                <Button onClick={() => handlers.open()} mr="xs">
                     Add Item
                 </Button>
             }
@@ -152,17 +139,12 @@ const List = function(props: ListProps) {
                             spacing={0}
                             pl={0}
                         >
-                            {props.itemIds.map((tid, idx) => (
+                            {props.itemIds.map((tid) => (
                                 <Item
                                     key={tid}
                                     listId={props.listId}
-                                    index={idx}
-                                    mutateItem={props.mutateItem}
-                                    toggleItemComplete={props.toggleItemComplete}
-                                    deleteItem={props.deleteItem}
-                                    eventDuration={props.eventDuration}
                                     collapseItem={props.collapseItems}
-                                    {...props.items[tid]}
+                                    {...coordination.items[tid] /* NOTE: this is currently coordination.items, should be props */} 
                                 />
                             ))}
                             {provided.placeholder}

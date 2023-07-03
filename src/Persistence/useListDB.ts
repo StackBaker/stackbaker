@@ -3,11 +3,11 @@ import { useState } from "react";
 import { Store } from "tauri-plugin-store-api";
 
 import type { ListRubric, ListCollection } from "../List";
-import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, Id, myStructuredClone } from "../globals";
+import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, Id, myStructuredClone, isDev } from "../globals";
 import dayjs from "dayjs";
 import { dateToDayId } from "../dateutils";
 
-const LISTS_FNAME = "lists.dat";
+const LISTS_FNAME = (isDev()) ? "dev-lists.dat" : "lists.dat";
 
 // TODO: properly test this
 const useListDB = function() {

@@ -404,18 +404,12 @@ const EditEventModal = function(props: EditEventModalProps) {
 }
 
 interface DayCalendarProps {
-	height: string | number,
-	width: string | number
-	date: dayjs.Dayjs,
-	readonly user: UserRubric,
-	readonly items: ItemCollection,
-	editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
-	events: EventCollection,
-	saveEvent: (newEventConfig: EventRubric) => boolean,
-	deleteEvent: (eventId: Id) => boolean,
+	date: dayjs.Dayjs
 };
 
 const DayCalendar = function(props: DayCalendarProps) {
+	const height = "80vh";
+	const width = "310px";
 	const navigate = useNavigate();
 	const { classes } = useStyles();
 	const location = useLocation();
@@ -643,7 +637,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	return ( (!props.user) ? <div></div> :
 		<Stack
 			className={classes.calendarWrapper}
-			sx={{ width: props.width }}
+			sx={{ width: width }}
 			p="sm"
 		>
 			<EditEventModal
@@ -681,8 +675,8 @@ const DayCalendar = function(props: DayCalendarProps) {
 						timeGridPlugin,
 						interactionPlugin
 					]}
-					viewHeight={props.height}
-					height={props.height}
+					viewHeight={height}
+					height={height}
 					allDaySlot={false}
 					nowIndicator={true}
 

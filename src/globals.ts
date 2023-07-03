@@ -27,15 +27,6 @@ export enum LoadingStage {
     Ready
 }
 
-// TODO: Get rid of this and use the enum
-export type loadingStage = -1 | 0 | 1 | 2;
-export const LOADING_STAGES: { [key: string]: loadingStage } = {
-    NOTHING_LOADED: -1,
-    DB_LOADED: 0,
-    DB_UPDATED: 1,
-    READY: 2
-}
-
 // TODO: comments
 export enum PlanningStage {
     Dump,
@@ -50,4 +41,9 @@ export enum DashboardViewOption {
     Day = "day",
     Month = "month",
     // TODO: week view
+}
+
+// TODO: change this on push
+export const isDev = function(): boolean {
+    return true;
 }

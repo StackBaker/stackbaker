@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@emotion/react':
     specifier: ^11.10.6
@@ -66,7 +70,7 @@ dependencies:
     version: 6.10.0(react-dom@18.2.0)(react@18.2.0)
   tauri-plugin-store-api:
     specifier: github:tauri-apps/tauri-plugin-store
-    version: github.com/tauri-apps/tauri-plugin-store/0558a1f6c869ae0afdb0181dfa1ea31be8cf4893
+    version: github.com/tauri-apps/tauri-plugin-store/1467ba770623ab1d41d825841c3d9435d9eaa0f1
   uuid:
     specifier: ^9.0.0
     version: 9.0.0
@@ -2350,8 +2354,8 @@ packages:
     engines: {node: '>= 6'}
     dev: false
 
-  github.com/tauri-apps/tauri-plugin-store/0558a1f6c869ae0afdb0181dfa1ea31be8cf4893:
-    resolution: {tarball: https://codeload.github.com/tauri-apps/tauri-plugin-store/tar.gz/0558a1f6c869ae0afdb0181dfa1ea31be8cf4893}
+  github.com/tauri-apps/tauri-plugin-store/1467ba770623ab1d41d825841c3d9435d9eaa0f1:
+    resolution: {tarball: https://codeload.github.com/tauri-apps/tauri-plugin-store/tar.gz/1467ba770623ab1d41d825841c3d9435d9eaa0f1}
     name: tauri-plugin-store-api
     version: 0.0.0
     dependencies:
