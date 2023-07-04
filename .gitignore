@@ -16,6 +16,7 @@ dist-ssr
 .apple_env_vars
 client_secret*.json
 tests.md
+.git_token
 
 # Editor directories and files
 .vscode/*
