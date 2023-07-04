@@ -113,6 +113,9 @@ devDependencies:
   selenium-webdriver:
     specifier: ^4.10.0
     version: 4.10.0
+  toml:
+    specifier: ^3.0.0
+    version: 3.0.0
   ts-node:
     specifier: ^10.9.1
     version: 10.9.1(@types/node@18.15.11)(typescript@4.9.5)
@@ -2819,6 +2822,10 @@ packages:
     engines: {node: '>=8.0'}
     dependencies:
       is-number: 7.0.0
+    dev: true
+
+  /toml@3.0.0:
+    resolution: {integrity: sha512-y/mWCZinnvxjTKYhJ+pYxwD0mRLVvOtdS2Awbgxln6iEnt4rk0yBxeSBHkGJcPucRiG0e55mwWp+g/05rsrd6w==}
     dev: true
 
   /ts-node@10.9.1(@types/node@18.15.11)(typescript@4.9.5):
