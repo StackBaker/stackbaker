@@ -45,7 +45,7 @@ const useUserDB = function() {
 
     const get = async (key: keyof UserRubric) => {
         const val = await store.get(key);
-        return new Promise((resolve) => resolve(val));
+        return val;
     }
 
     const set = (key: keyof UserRubric, val: ValidAttr) => {
@@ -64,16 +64,17 @@ const useUserDB = function() {
     }
 
     const replaceUser = (newUserConfig: UserRubric | null) => {
-        if (newUserConfig === null)
+        if (newUserConfig === null) {
             newUserConfig = {
                 ...defaultUser,
                 email: user.email,
                 authData: user.authData
             };
+        }
 
         setUser(newUserConfig);
         for (const key in newUserConfig) {
-            const k = key as keyof UserRubric
+            const k = key as keyof UserRubric;
             store.set(k, newUserConfig[k]);
         }
         store.save();

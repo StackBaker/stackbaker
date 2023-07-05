@@ -59,7 +59,7 @@ const useEventDB = function() {
         store.save();
     }
 
-    const loadAll = async () => {
+    const load = async () => {
         await store.load();
         const entries = await store.entries()
 
@@ -77,7 +77,7 @@ const useEventDB = function() {
         store.save();
     }
 
-    return { data: events, get, set, has, del, loadAll, clear };
+    return { data: events, get, set, has, del, load, clear };
 }
 
 export default useEventDB;

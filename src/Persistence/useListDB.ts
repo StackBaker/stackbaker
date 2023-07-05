@@ -81,6 +81,7 @@ const useListDB = function(fname: string = "") {
     }
 
     const createList = (date: dayjs.Dayjs | null): boolean => {
+        return false;
         // create a new empty list for a particular date or the do later list
         let listId;
         if (date === null) {

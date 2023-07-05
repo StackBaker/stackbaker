@@ -22,20 +22,19 @@ interface coordinateBackendAndStateProps {
 // null so that I can easily create a React context
 type coordinateBackendAndStateOutput = {
     // TODO: write some damn types for this
-    _db: { user: any, items: any, lists: any, events: any },
+    _db: { user: any, lists: any, events: any },
     user: UserRubric,
     loadStage: LoadingStage,
-    items: ItemCollection,
     lists: ListCollection,
     relevantListCollection: ListCollection,
     events: EventCollection,
     editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
     createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>, listId: Id) => boolean,
-    toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
+    toggleItemComplete: (itemId: Id, listId: Id) => boolean,
     deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
-    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
+    dragBetweenLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     addIncompleteAndLaterToToday: () => boolean,
     delManyItemsOrMutManyLists: (itemIds: Id[], newLists: ListRubric[]) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
@@ -45,8 +44,6 @@ type coordinateBackendAndStateOutput = {
 };
 
 // TODO: clean up each function here
-// TODO: wrap the output of this in a useState
-// TODO: db should be a static instantiation
 const _coordinateBackendAndState = function(props: coordinateBackendAndStateProps): coordinateBackendAndStateOutput {    
     const db = useDatabase();
     const selectedDayId = dateToDayId(props.date);
@@ -56,24 +53,21 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
             return null;
         }
         
-        var newList: ListRubric = myStructuredClone(db.lists.data![listId]);
-        if (!newList) {
-            return null;
-        }
-        
+        var newList: ListRubric | null = myStructuredClone(db.lists.data![listId]);
+
         return newList;
     };
 
     // TODO: clean up these functions AND TEST THEM
+    // TODO: redesign the logic and functionality here
     useMemo(() => {
         if (props.loadStage !== LoadingStage.NothingLoaded) {
             return;
         }
         db.user.load().then();
-        db.items.loadAll().then();
         // TODO: perhaps db.lists should take a date as argument to create if it doesn't exist
-        db.lists.loadAll().then();
-        db.events.loadAll().then();
+        db.lists.load().then();
+        db.events.load().then();
 
         props.setLoadStage(LoadingStage.DBLoaded);
     }, [props.loadStage]);
@@ -83,9 +77,9 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
             return;
         }
         
-        db.lists.has(selectedDayId).then((res) => {
+        db.lists.hasList(selectedDayId).then((res) => {
             if (!res) {
-                db.lists.create(props.date);
+                db.lists.createList(props.date);
                 props.setLoadStage(LoadingStage.NothingLoaded);
                 return;
             }
@@ -145,7 +139,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
 
         // add the new item to the list
         list!.items[newItemConfig.itemId] = newItemConfig;
-        db.lists.set(listId, list);
+        db.lists.setList(listId, list);
         return true;
     };
 
@@ -165,116 +159,180 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         list!.items[itemId] = editedItem;
         // TODO: create a db.lists.setItem function for editing an item in a list
         // TODO: avoiding having to rewrite the entire list every time
-        db.lists.set(listId, list);
+        db.lists.setList(listId, list);
 
         return true;
     };
 
-    const toggleItemComplete = (itemId: Id, idx: number, listId: Id): boolean => {
-        if (!db.items.data?.hasOwnProperty(itemId) || !db.lists.data?.hasOwnProperty(listId))
+    const toggleItemComplete = (itemId: Id, listId: Id): boolean => {
+        let list = getListFromDB(listId);
+        if (list === null || !list.items.hasOwnProperty(itemId)) {
             return false;
+        }
         
-        const prevComplete = db.items.data![itemId].complete;
+        const prevComplete = list.items[itemId].complete;
+        const numItems = Object.keys(list.items).length;
+
+        let newIndex: number;
+        if (!prevComplete) {
+            // it was previously incomplete, now it is complete, push to bottom
+            newIndex = numItems;
+        } else {
+            // it was previously complete, now it is incomplete, push to top
+            newIndex = 0;
+        }
+
+        Object.keys(list.items).forEach((itmId) => {
+            // for each item in the list
+            const itm = list!.items[itmId];
+            if (itm.index < newIndex) {
+                return;
+            }
+
+            // if the index of itm is >= newItemConfig.index
+            // increment the index of itm
+            list!.items[itmId].index += 1;
+        });
+
         const editedItem: ItemRubric = {
-            ...db.items.data![itemId],
+            ...list.items[itemId],
+            index: newIndex,
             complete: !prevComplete
         };
 
-        let newListIds = db.lists.data![listId].itemIds;
-        newListIds.splice(idx, 1);
-        if (!prevComplete) {
-            // it was previously incomplete, now it is complete, push to bottom
-            newListIds.push(itemId);
-        } else {
-            // it was previously complete, now it is incomplete, push to top
-            newListIds.unshift(itemId);
-        }
-        db.items.set(itemId, editedItem);
-        db.lists.set(listId, { ...db.lists.data![listId], itemIds: newListIds });
-
+        list.items[itemId] = editedItem;
+        db.lists.setList(listId, list);
         return true;
     }
 
-    const deleteItem = (itemId: Id, listId: Id, index: number): boolean => {
+    const deleteItem = (itemId: Id, listId: Id): boolean => {
         let list = getListFromDB(listId);
-        if (list === null) return false;
+        if (list === null || !list.items.hasOwnProperty(itemId)){
+            return false;
+        }
 
+        let index: number = list.items[itemId].index;
         // delete the item
-        list.itemIds.splice(index, 1);
-        db.items.del(itemId);
-        db.lists.set(listId, list);
+        delete list.items[itemId];
 
+        // update the indices of all the other items
+        Object.keys(list.items).forEach((itmId) => {
+            // for each item in the list
+            const itm = list!.items[itmId];
+            if (itm.index < index) {
+                return;
+            }
+
+            // if the index of itm is >= newItemConfig.index
+            // decrement the index of itm
+            list!.items[itmId].index -= 1;
+        });
+
+        db.lists.setList(listId, list);
         return true;
     };
 
     const mutateList = async (listId: Id, newConfig: Partial<ListRubric>): Promise<boolean> => {
-        const listThere = await db.lists.has(listId);
-        if (!listThere)
+        const listThere = await db.lists.hasList(listId);
+        if (!listThere) {
             return false;
+        }
 
         const editedList: ListRubric = {
             ...db.lists.data![listId],
             ...newConfig
         };
 
-        db.lists.set(listId, editedList);
-        // testing setting load stage because this function is used mainly to store that
-        // a particular day has been planned, which occurs just before a navigate
-
+        db.lists.setList(listId, editedList);
         return true;
     }
 
-    const mutateLists = (
+    const dragBetweenLists = (
         sourceOfDrag: DraggableLocation,
         destinationOfDrag: DraggableLocation,
         draggableId: Id,
         createNewLists: boolean = false,
     ): boolean => {
-        if (sourceOfDrag.droppableId === destinationOfDrag.droppableId) {
-            var list = getListFromDB(sourceOfDrag.droppableId);
-            if (list === null)
-                if (createNewLists)
+        const _getOrCreateList = (listId: Id, create: boolean): ListRubric | null => {
+            let list: ListRubric | null = getListFromDB(listId);
+            if (list === null) {
+                if (create) {
                     list = {
-                        listId: sourceOfDrag.droppableId,
-                        itemIds: [],
-                        planned: false
+                        listId: listId,
+                        planned: false,
+                        items: {}
                     };
-                else
-                    return false;
+                } else {
+                    return null;
+                }
+            }
 
-            var temp = list.itemIds[sourceOfDrag.index];
-            list.itemIds.splice(sourceOfDrag.index, 1);
-            list.itemIds.splice(destinationOfDrag.index, 0, temp);
-            db.lists.set(sourceOfDrag.droppableId, list);
-        } else {
-            var sourceList = getListFromDB(sourceOfDrag.droppableId);
-            var destList = getListFromDB(destinationOfDrag.droppableId);
+            return list;
+        }
 
-            // Assume that a list can only be null if it is a day list
-            if (sourceList === null)
-                if (createNewLists)
-                    sourceList = {
-                        listId: sourceOfDrag.droppableId,
-                        itemIds: [],
-                        planned: false
-                    };
-                else
-                    return false;
+        if (sourceOfDrag.droppableId === destinationOfDrag.droppableId) {
+            let list: ListRubric | null = _getOrCreateList(sourceOfDrag.droppableId, createNewLists);
+            if (list === null) {
+                return false;
+            }
+
+            // need to search for the item that has the index
+            let tempItem: ItemRubric | null = null;
+            for (const itemId in list.items) {
+                if (list.items[itemId].index === sourceOfDrag.index) {
+                    tempItem = list.items[itemId];
+                }
+            }
             
-            // TODO: duplicate code: I should write a function that creates the new lists
-            if (destList === null)
-                if (createNewLists)
-                    destList = {
-                        listId: destinationOfDrag.droppableId,
-                        itemIds: [],
-                        planned: false
-                    };
-                else
-                    return false;
-                
-            sourceList.itemIds.splice(sourceOfDrag.index, 1);
-            destList.itemIds.splice(destinationOfDrag.index, 0, draggableId);
-            db.lists.setMany(
+            if (tempItem === null) {
+                return false;
+            }
+            
+            // TODO: test this
+            Object.keys(list.items).forEach((itemId) => {
+                // move everything past the source one down
+                if (list!.items[itemId].index > sourceOfDrag.index) {
+                    list!.items[itemId].index -= 1;
+                }
+
+                // move everything past and including the destination one up
+                if (list!.items[itemId].index >= destinationOfDrag.index) {
+                    list!.items[itemId].index += 1;
+                }
+            });
+            // place the dragged item at the new index
+            list.items[draggableId].index = destinationOfDrag.index;
+            db.lists.setList(sourceOfDrag.droppableId, list);
+        } else {
+            var sourceList = _getOrCreateList(sourceOfDrag.droppableId, createNewLists);
+            var destList = _getOrCreateList(destinationOfDrag.droppableId, createNewLists);
+
+            if (sourceList === null || destList === null) {
+                return false;
+            }
+
+            // TODO: test
+            Object.keys(sourceList.items).forEach((itemId) => {
+                // move everything past the source one down
+                if (sourceList!.items[itemId].index > sourceOfDrag.index) {
+                    sourceList!.items[itemId].index -= 1;
+                }
+            });
+            // delete the item from the source list
+            let draggedItem = myStructuredClone(sourceList.items[draggableId]);
+            delete sourceList.items[draggableId];
+            draggedItem.index = destinationOfDrag.index;
+
+            Object.keys(destList.items).forEach((itemId) => {
+                // move everything past and including the destination up one
+                if (destList!.items[itemId].index >= destinationOfDrag.index) {
+                    destList!.items[itemId].index += 1;
+                }
+            });
+            // place the dragged item at the destination
+            destList.items[draggableId] = draggedItem;
+
+            db.lists.setManyLists(
                 [sourceOfDrag.droppableId, destinationOfDrag.droppableId],
                 [sourceList, destList]
             );
@@ -289,8 +347,9 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         const todayId = dateToDayId(today);
         var todayList = getListFromDB(todayId);
 
-        if (todayList === null || todayList.planned)
+        if (todayList === null || todayList.planned) {
             return false;
+        }
         
         // find all the IDs of previous days to check for incomplete tasks
         var prevDayIds = [];
@@ -299,42 +358,60 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         }
         // also check for tasks in the later list
         prevDayIds.push(DO_LATER_LIST_ID);
-
-        var incompleteTasks = [];
-        var newPrevDayIds = []
-        var newPrevDayLists = [];
+        
+        let numTodayItems = Object.keys(todayList.items).length;
+        let updatedLists: ListRubric[] = [];
+        let newPrevDayIds: Id[] = [];
         for (const prevDayId of prevDayIds) {
-            var prevDayList = getListFromDB(prevDayId);
-            if (!prevDayList)
+            let prevDayList = getListFromDB(prevDayId);
+            if (prevDayList === null) {
                 continue;
-            
-            for (var i = prevDayList.itemIds.length - 1; i >= 0; i--) {
-                const itemId = prevDayList.itemIds[i];
-                if (!db.items.data || db.items.data![itemId].complete)
-                    continue;
-                
-                // the task is incomplete, add it to the incomplete Tasks arr
-                incompleteTasks.push(itemId);
-                // remove it from this day's itemIds
-                prevDayList.itemIds.splice(i, 1);
             }
+            
+            let removedIndices: number[] = [];
+            let removedIds: Id[] = [];
+            Object.keys(prevDayList.items).forEach((itemId) => {
+                if (!prevDayList!.items[itemId].complete) {
+                    // add the item to today 
+                    const itemToAddToToday = {
+                        ...prevDayList!.items[itemId],
+                        index: numTodayItems
+                    }
+                    numTodayItems += 1;
+                    todayList!.items[itemId] = itemToAddToToday;
 
+                    // record that this Id should be removed from prevDayList
+                    removedIds.push(itemId);
+                    removedIndices.push(prevDayList!.items[itemId].index);
+                }
+            })
+
+            // remove the ids of items that were removed
+            for (const idToRemove of removedIds) {
+                delete prevDayList.items[idToRemove];
+            }
+            // update the indices of the other elements
+            Object.keys(prevDayList.items).forEach((itemId) => {
+                for (const idx of removedIndices) {
+                    if (prevDayList!.items[itemId].index > idx) {
+                        prevDayList!.items[itemId].index -= 1;
+                    }
+                }
+            });
+
+            updatedLists.push(prevDayList);
             newPrevDayIds.push(prevDayId);
-            newPrevDayLists.push(prevDayList);
         }
 
-        todayList.itemIds = incompleteTasks.concat(todayList.itemIds);
-        db.lists.setMany(newPrevDayIds.concat([todayId]), newPrevDayLists.concat([todayList]));
+        db.lists.setManyLists(newPrevDayIds.concat([todayId]), updatedLists.concat([todayList]));
         //props.setLoadStage(LOADING_STAGES.NOTHING_LOADED);
-
         return true;
     }
 
+    // TODO: this function might be unnecessary
     const delManyItemsOrMutManyLists = (itemIds: Id[], newLists: ListRubric[]): boolean => {
-        db.items.delMany(itemIds);
-        
         const listIds = newLists.map(l => l.listId);
-        db.lists.setMany(listIds, newLists);
+        db.lists.setManyLists(listIds, newLists);
         props.setLoadStage(LoadingStage.NothingLoaded);
 
         return true;
@@ -353,7 +430,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     const clearEverything = (): void => {
         db.user.clear();
         db.lists.clear();
-        db.items.clear();
         db.events.clear();
         props.setDate(getToday());
         props.setLoadStage(LoadingStage.NothingLoaded);
@@ -361,7 +437,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
 
     const log = () => {
         console.log("l", db.lists.data);
-        console.log("i", db.items.data);
         console.log("e", db.events.data);
         console.log("u", db.user.data);
         console.log("s", props.loadStage);
@@ -380,7 +455,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         _db: db,
         user: db.user.data!,
         loadStage: props.loadStage,
-        items: db.items.data!,
         lists: db.lists.data!,
         relevantListCollection: {
             [selectedDayId]: getListFromDB(selectedDayId)!,
@@ -392,7 +466,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         toggleItemComplete,
         deleteItem,
         mutateList,
-        mutateLists,
+        dragBetweenLists,
         addIncompleteAndLaterToToday,
         delManyItemsOrMutManyLists,
         events: db.events.data!,
@@ -402,6 +476,8 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     };
 }
 
+// ASSUMPTION: CoordinationContext will not be used anywhere except under
+// ASSUMPTION: the CoordinationProvider exported below
 // @ts-expect-error
 export const CoordinationContext = React.createContext<coordinateBackendAndStateOutput>();
 

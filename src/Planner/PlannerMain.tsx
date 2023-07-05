@@ -29,7 +29,7 @@ const PlannerMain = function(props: PlannerMainProps) {
 
     const onDragEnd = function(result: DropResult) {
         if (override !== null) {
-            coordination.mutateLists(override.sourceOfDrag, override.destinationOfDrag, override.draggableId, true);
+            coordination.dragBetweenLists(override.sourceOfDrag, override.destinationOfDrag, override.draggableId, true);
             setDragOverride(null);
             return;
         }
@@ -41,7 +41,7 @@ const PlannerMain = function(props: PlannerMainProps) {
             return;
         }
 
-        coordination.mutateLists(source, destination, draggableId);
+        coordination.dragBetweenLists(source, destination, draggableId);
     }
 
     const StageZero = (

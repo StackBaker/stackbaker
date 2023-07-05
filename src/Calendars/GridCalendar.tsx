@@ -214,7 +214,7 @@ const GridCalendar = function(props: GridCalendarProps) {
         const sourceIndex = coordination.lists[sourceListId].itemIds.indexOf(itemId);
         const destIndex = 0;
 
-        coordination.mutateLists(
+        coordination.dragBetweenLists(
             {
                 droppableId: sourceListId,
                 index: sourceIndex

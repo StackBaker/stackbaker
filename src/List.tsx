@@ -114,6 +114,8 @@ const List = function(props: ListProps) {
         ]);
     }
 
+    // TODO: add the keyboard shortcut hint to the list title with Kbd
+
     return (
         <Stack
             justify="flex-start"

@@ -66,7 +66,7 @@ const DashboardMain = function(props: DashboardMainProps) {
 
     const onDragEnd = function(result: DropResult) {
         if (override !== null) {
-            coordination.mutateLists(override.sourceOfDrag, override.destinationOfDrag, override.draggableId, true);
+            coordination.dragBetweenLists(override.sourceOfDrag, override.destinationOfDrag, override.draggableId, true);
             setDragOverride(null);
             return;
         }
@@ -78,7 +78,7 @@ const DashboardMain = function(props: DashboardMainProps) {
             return;
         }
 
-        coordination.mutateLists(source, destination, draggableId);
+        coordination.dragBetweenLists(source, destination, draggableId);
     }
 
     return ((coordination.loadStage !== LoadingStage.Ready) ? <div></div> :
