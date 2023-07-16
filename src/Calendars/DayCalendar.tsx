@@ -12,7 +12,7 @@ import { v4 as uuid } from "uuid";
 import { useNavigate, useLocation } from "react-router-dom"
 import { invoke } from "@tauri-apps/api";
 import { fetch as tauriFetch } from "@tauri-apps/api/http";
-import { getToday, offsetDay } from "../dateutils";
+import { dateToDayId, getToday, offsetDay } from "../dateutils";
 
 import type { EventRubric, GCalData, GCalItem } from "./Event";
 import { createEventReprId, createGCalEventReprId } from "./Event";
@@ -59,6 +59,8 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const { classes } = useStyles();
 	const location = useLocation();
 
+	const selectedDayId = dateToDayId(props.date);
+
 	const dummyEvent: EventRubric = {
 		id: createEventReprId("dummy" + uuid()),
 		title: "dummy",
@@ -73,15 +75,16 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
 	const [newEventId, setNewEventId] = useState<Id>("");
 
-	// TODO: are these useStates necessary?
-	const [dayDuration, setDayDuration] = useState<number>(coordination.user.hoursInDay);
-	const [eventDuration, setEventDuration] = useState<number>(coordination.user.defaultEventLength);
-	const [slotLabelInterval, setSlotLabelInterval] = useState<number>(coordination.user.dayCalLabelInterval);
-	const [snapDuration, setSnapDuration] = useState<number>(coordination.user.dayCalSnapDuration);
+	// // TODO: are these useStates necessary?
+	// const [dayDuration, setDayDuration] = useState<number>(coordination.user.hoursInDay);
+	// const [eventDuration, setEventDuration] = useState<number>(coordination.user.defaultEventLength);
+	// const [slotLabelInterval, setSlotLabelInterval] = useState<number>(coordination.user.dayCalLabelInterval);
+	// const [snapDuration, setSnapDuration] = useState<number>(coordination.user.dayCalSnapDuration);
 
 	useEffect(() => {
-		if (!coordination.user || !coordination.user.authData)
+		if (!coordination.user || !coordination.user.authData) {
 			return;
+		}
 
 		const accessTokenExpiryDate = coordination.user.authData?.expiryDate;
 		if (accessTokenExpiryDate === undefined) {
@@ -110,7 +113,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 			var searchParams = new URLSearchParams();
 			// parameters should be in UTC time
 			searchParams.append("timeMin", getToday().utc().format());
-			searchParams.append("timeMax", getToday().add(dayDuration, "hours").subtract(1, "minute").utc().format());
+			searchParams.append("timeMax", getToday().add(coordination.user.hoursInDay, "hours").subtract(1, "minute").utc().format());
 			const fetchURL = `${primaryCalURL}?${searchParams.toString()}`;
 
 			tauriFetch(fetchURL, {
@@ -151,21 +154,21 @@ const DayCalendar = function(props: DayCalendarProps) {
 		handlers.open();
 	}, [newEventId]);
 
-	useEffect(() => {
-		// this is to handle changes to the user in settings while the app is running
-		if (!coordination.user)
-			return;
+	// useEffect(() => {
+	// 	// this is to handle changes to the user in settings while the app is running
+	// 	if (!coordination.user)
+	// 		return;
 		
-		setDayDuration(coordination.user.hoursInDay);
-		setEventDuration(coordination.user.defaultEventLength);
-		setSlotLabelInterval(coordination.user.dayCalLabelInterval);
-		setSnapDuration(coordination.user.dayCalSnapDuration);
-	}, [coordination.user]);
+	// 	setDayDuration(coordination.user.hoursInDay);
+	// 	setEventDuration(coordination.user.defaultEventLength);
+	// 	setSlotLabelInterval(coordination.user.dayCalLabelInterval);
+	// 	setSnapDuration(coordination.user.dayCalSnapDuration);
+	// }, [coordination.user]);
 
 	useEffect(() => {
-		if (!editingEvent)
+		if (!editingEvent) {
 			changeEventBeingEdited(dummyEvent);
-
+		}
 	}, [editingEvent]);
 
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
@@ -200,8 +203,9 @@ const DayCalendar = function(props: DayCalendarProps) {
 			newStart = originalStartDay.add(sdiff);
 		}
 
-		if (newStart.isSame(newEnd) || newStart.isAfter(newEnd))
+		if (newStart.isSame(newEnd) || newStart.isAfter(newEnd)) {
 			return;
+		}
 
 		coordination.saveEvent({
 			...coordination.events[changeInfo.event.id],
@@ -267,15 +271,14 @@ const DayCalendar = function(props: DayCalendarProps) {
 		const [id, _] = el.id.split(ID_IDX_DELIM);
 
 		// NOTE: operating assumption: the div id of the item is exactly the itemId
-		const item = coordination.items[id];
-		if (!item)
-			return;
+		const item = coordination.lists[selectedDayId].items[id];
 
+		// TODO: update the Event model to store associated item
 		const draggedEvent: EventRubric = {
 			id: uuid(),
 			title: item.content,
 			start: dropInfo.date,
-			end: dayjs(dropInfo.date).add(eventDuration, "minutes").toDate()
+			end: dayjs(dropInfo.date).add(coordination.user.defaultEventLength, "minutes").toDate()
 		};
 
 		coordination.saveEvent(draggedEvent);
@@ -295,8 +298,8 @@ const DayCalendar = function(props: DayCalendarProps) {
 				changeEventBeingEdited={changeEventBeingEdited}
 				closeNoSave={closeNoSave}
 				deleteEditingEvent={deleteEditingEvent}
-				dayDuration={dayDuration}
-				snapDuration={snapDuration}
+				dayDuration={coordination.user.hoursInDay}
+				snapDuration={coordination.user.dayCalSnapDuration}
 			/>
 			<Group position="apart">
 				<Title order={2} pl="xs">
@@ -395,10 +398,10 @@ const DayCalendar = function(props: DayCalendarProps) {
 					initialView="timeGridDay"
 					initialDate={props.date.toDate()}
 
-					snapDuration={snapDuration * 60 * 1000}
-					slotDuration={Math.max(slotLabelInterval / 4, 15) * 60 * 1000}
-					slotLabelInterval={slotLabelInterval * 60 * 1000}
-					slotMaxTime={dayDuration * 60 * 60 * 1000}
+					snapDuration={coordination.user.dayCalSnapDuration * 60 * 1000}
+					slotDuration={Math.max(coordination.user.dayCalLabelInterval / 4, 15) * 60 * 1000}
+					slotLabelInterval={coordination.user.dayCalLabelInterval * 60 * 1000}
+					slotMaxTime={coordination.user.hoursInDay * 60 * 60 * 1000}
 				/>}
 			</Stack>
 		</Stack>

@@ -60,14 +60,14 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
 
     // TODO: clean up these functions AND TEST THEM
     // TODO: redesign the logic and functionality here
-    useMemo(() => {
+    useMemo(async () => {
         if (props.loadStage !== LoadingStage.NothingLoaded) {
             return;
         }
-        db.user.load().then();
+        await db.user.load();
         // TODO: perhaps db.lists should take a date as argument to create if it doesn't exist
-        db.lists.load().then();
-        db.events.load().then();
+        await db.lists.load();
+        await db.events.load();
 
         props.setLoadStage(LoadingStage.DBLoaded);
     }, [props.loadStage]);
@@ -77,7 +77,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
             return;
         }
         
-        db.lists.hasList(selectedDayId).then((res) => {
+        db.lists.hasList(selectedDayId).then(async (res) => {
             if (!res) {
                 db.lists.createList(props.date);
                 props.setLoadStage(LoadingStage.NothingLoaded);
@@ -333,7 +333,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
             destList.items[draggableId] = draggedItem;
 
             db.lists.setManyLists(
-                [sourceOfDrag.droppableId, destinationOfDrag.droppableId],
                 [sourceList, destList]
             );
         }
@@ -361,7 +360,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         
         let numTodayItems = Object.keys(todayList.items).length;
         let updatedLists: ListRubric[] = [];
-        let newPrevDayIds: Id[] = [];
         for (const prevDayId of prevDayIds) {
             let prevDayList = getListFromDB(prevDayId);
             if (prevDayList === null) {
@@ -400,20 +398,16 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
             });
 
             updatedLists.push(prevDayList);
-            newPrevDayIds.push(prevDayId);
         }
 
-        db.lists.setManyLists(newPrevDayIds.concat([todayId]), updatedLists.concat([todayList]));
-        //props.setLoadStage(LOADING_STAGES.NOTHING_LOADED);
+        db.lists.setManyLists(updatedLists.concat([todayList]));
         return true;
     }
 
     // TODO: this function might be unnecessary
     const delManyItemsOrMutManyLists = (itemIds: Id[], newLists: ListRubric[]): boolean => {
-        const listIds = newLists.map(l => l.listId);
-        db.lists.setManyLists(listIds, newLists);
+        db.lists.setManyLists(newLists);
         props.setLoadStage(LoadingStage.NothingLoaded);
-
         return true;
     }
 

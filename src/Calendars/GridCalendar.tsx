@@ -4,19 +4,18 @@ import React, { createRef, useEffect, useState, useRef, useContext } from "react
 import { createStyles, ActionIcon, TextInput, Text, Group, Modal, Stack } from "@mantine/core";
 import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
 import FullCalendar from "@fullcalendar/react";
-import interactionPlugin, { EventDragStartArg, EventDragStopArg } from "@fullcalendar/interaction";
+import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import type { EventAddArg, EventRemoveArg, EventClickArg, EventInput, EventDropArg } from "@fullcalendar/core";
+import type { EventClickArg, EventInput, EventDropArg } from "@fullcalendar/core";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import { createEventReprId, getIdFromEventRepr } from "./Event";
-import type { EventList } from "./Event";
+import type { EventList, EventRubric } from "./Event";
 import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM } from "../Item";
-import type { ItemCollection, ItemRubric } from "../Item";
-import type { ListCollection, ListRubric } from "../List";
+import type { ItemRubric } from "../Item";
 import { dateToDayId, dayIdToDay, getToday } from "../dateutils";
 import { DO_LATER_LIST_ID, Id, PriorityLevel } from "../globals";
 import { CoordinationContext } from "../coordinateBackendAndState";
@@ -118,46 +117,25 @@ const GridCalendar = function(props: GridCalendarProps) {
     useEffect(() => {
         // run once on render to initialize the events
         // QUESTION: what does this do?
-        var deletedItemIds: Id[] = [];
-        var mutatedLists: ListRubric[] = [];
-        for (const listId in coordination.lists) {
-            var list = coordination.lists[listId];
-            var deletedItem = false;
-            for (var i = list.itemIds.length - 1; i >= 0; i--) {
-                const itemId = list.itemIds[i];
-                if (coordination.items.hasOwnProperty(itemId))
-                    continue;
-                
-                list.itemIds.splice(i, 1);
-                deletedItemIds.push(itemId);
-                deletedItem = true;
-            }
-            if (deletedItem)
-                mutatedLists.push(list);
-        }
-
-        if (mutatedLists.length !== 0 || deletedItemIds.length !== 0) {
-            coordination.delManyItemsOrMutManyLists(deletedItemIds, mutatedLists);
-            return;
-        }
-
         setEvents(
             Object.keys(coordination.lists).reduce((prev, cur) => {
-                return prev.concat(coordination.lists[cur].itemIds.map((k) => ({
-                    id: createEventReprId(coordination.items[k].itemId),
-                    title: coordination.items[k].content,
-                    start: dayIdToDay(cur).toDate(),
-                    end: dayIdToDay(cur).add(1, "hour").toDate()
-                })));
+                return prev.concat(Object.values(coordination.lists[cur].items).map((item: ItemRubric) => {
+                    const out: EventRubric = {
+                        id: createEventReprId(item.itemId),
+                        title: item.content,
+                        start: dayIdToDay(cur).toDate(),
+                        end: dayIdToDay(cur).add(1, "hour").toDate()
+                    }
+                    return out;
+                }))
             }, [] as EventList)
         );
-    }, [coordination.lists, coordination.items]);
+    }, [coordination.lists]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const id = getIdFromEventRepr(clickInfo.event.id);
         const dayId = dateToDayId(clickInfo.event.start!);
-        const index = coordination.lists[dayId].itemIds.indexOf(id);
-        const item: ItemWithMutationInfo = { ...coordination.items[id], listId: dayId };
+        const item: ItemWithMutationInfo = { ...coordination.lists[dayId].items[id], listId: dayId };
         changeItemBeingEdited(item);
         handlers.open();
     }
@@ -169,7 +147,7 @@ const GridCalendar = function(props: GridCalendarProps) {
 
         handlers.close();
         const { listId, index, ...rest  } = itemBeingEdited;
-        coordination.mutateItem(rest.itemId, rest);
+        coordination.mutateItem(rest.itemId, rest, listId);
         changeItemBeingEdited(dummyItem);
     }
     
@@ -211,7 +189,7 @@ const GridCalendar = function(props: GridCalendarProps) {
         const sourceListId = dateToDayId(oldDate);
         const destListId = dateToDayId(newDate);
 
-        const sourceIndex = coordination.lists[sourceListId].itemIds.indexOf(itemId);
+        const sourceIndex = coordination.lists[sourceListId].items[itemId].index;
         const destIndex = 0;
 
         coordination.dragBetweenLists(

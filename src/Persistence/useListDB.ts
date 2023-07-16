@@ -30,8 +30,7 @@ const useListDB = function(fname: string = "") {
         return val;
     }
 
-    // NOTE: the calls to setList should be synchronous, but the calls to store.set perhaps should be async
-    const setList = (key: Id, val: ListRubric): boolean => {
+    const setList = async (key: Id, val: ListRubric): Promise<boolean> => {
         let newLists: ListCollection;
         if (lists) {
             setLists({ ...lists, [key]: val });
@@ -40,32 +39,27 @@ const useListDB = function(fname: string = "") {
             setLists(newLists);
         }
 
-        store.set(key, val);
-        store.save();
+        await store.set(key, val);
+        await store.save();
         console.log("lists saved");
         return true;
     }
 
-    const setManyLists = (keys: Id[], vals: ListRubric[]): boolean => {
-        if (keys.length !== vals.length) {
-            return false;
-        }
-
+    const setManyLists = async (vals: ListRubric[]): Promise<boolean> => {
         let newLists: ListCollection;
         if (lists) {
             newLists = myStructuredClone(lists);
         } else {
             newLists = {};
         }
-        
-        keys.map((k, i) => {
-            let v = vals[i];
-            newLists[k] = v;
-            store.set(k, v);
-        });
+
+        for (const v of vals) {
+            newLists[v.listId] = v;
+            await store.set(v.listId, v);
+        }
         setLists(newLists);
         
-        store.save();
+        await store.save();
         console.log("many lists saved");
 
         return true;
@@ -81,9 +75,8 @@ const useListDB = function(fname: string = "") {
     }
 
     const createList = (date: dayjs.Dayjs | null): boolean => {
-        return false;
         // create a new empty list for a particular date or the do later list
-        let listId;
+        let listId: Id;
         if (date === null) {
             listId = DO_LATER_LIST_ID
         } else {
