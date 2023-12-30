@@ -7,8 +7,6 @@ import { useNavigate } from "react-router-dom";
 
 import { DASHBOARD_PATH } from "../paths";
 import { PlanningStage, PlanningStageStrings } from "../globals";
-import type { ListRubric } from "../List";
-import type { Id } from "../globals";
 import { dateToDayId, getToday } from "../dateutils";
 import { CoordinationContext } from "../coordinateBackendAndState";
 

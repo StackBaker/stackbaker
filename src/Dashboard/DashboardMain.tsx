@@ -3,16 +3,11 @@ import { DragDropContext } from "@hello-pangea/dnd";
 import { Group } from "@mantine/core";
 import dayjs from "dayjs";
 import durationPlugin from "dayjs/plugin/duration";
-import type { DropResult, DraggableLocation } from "@hello-pangea/dnd";
+import type { DropResult } from "@hello-pangea/dnd";
 import { useNavigate } from "react-router-dom";
 
 import List from "../List";
 import DayCalendar from "../Calendars/DayCalendar";
-import type { ItemRubric, ItemCollection } from "../Item";
-import type { ListCollection, ListRubric } from "../List";
-import type { Id } from "../globals";
-import type { UserRubric } from "../Persistence/useUserDB";
-import { EventRubric, EventCollection } from "../Calendars/Event";
 import "../styles.css";
 import { DEFAULT_OFFSET, endOfOffsetDay, getToday } from "../dateutils";
 import { ROOT_PATH } from "../paths";

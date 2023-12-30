@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import useDatabase from "./Persistence/useDatabase";
-import { useNavigate, createMemoryRouter, RouterProvider, Link } from "react-router-dom";
-import { Button, MantineProvider } from "@mantine/core";
+import { useNavigate, createMemoryRouter, RouterProvider } from "react-router-dom";
+import { MantineProvider } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
 import { invoke } from "@tauri-apps/api";
 import { fetch as tauriFetch } from "@tauri-apps/api/http";
@@ -12,10 +12,8 @@ import "./styles.css";
 import * as paths from "./paths";
 import Dashboard from "./Dashboard/Dashboard";
 import Planner from "./Planner/Planner";
-import LoginSequence from "./Authentication/LoginSequence";
 import { dateToDayId, getToday } from "./dateutils";
 import { ListRubric } from "./List";
-import { UserRubric } from "./Persistence/useUserDB";
 import CoordinationProvider from "./coordinateBackendAndState";
 
 type baseEmailResType = { data: { email: string } };
@@ -142,10 +140,6 @@ const App = function() {
 			path: paths.PLANNER_PATH,
 			element: <Planner date={date} setDate={setDate} />
 		},
-		{
-			path: paths.LOGIN_PATH,
-			element: <LoginSequence />
-		}
 	]);
 
 	return (

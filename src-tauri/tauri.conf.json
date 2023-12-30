@@ -24,6 +24,9 @@
         "all": true,
         "request": true,
         "scope": ["https://www.googleapis.com/*"]
+      },
+      "app": {
+        "all": true
       }
     },
     "bundle": {

@@ -9,7 +9,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import type { EventRubric } from "./Event";
 import { myStructuredClone } from "../globals";
 import "./fullcalendar-vars.css";
-import { CoordinationContext } from "../coordinateBackendAndState";
 import { endOfOffsetDay, offsetDay } from "../dateutils";
 
 const useStyles = createStyles((theme) => ({

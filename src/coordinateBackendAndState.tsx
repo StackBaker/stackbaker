@@ -3,8 +3,8 @@ import { useHotkeys } from "@mantine/hooks";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import dayjs from "dayjs";
 
-import { Id, DO_LATER_LIST_ID, DAY_LIST_TITLE, myStructuredClone } from "./globals";
-import type { ItemRubric, ItemCollection } from "./Item";
+import { Id, DO_LATER_LIST_ID, myStructuredClone } from "./globals";
+import type { ItemRubric } from "./Item";
 import type { ListRubric, ListCollection } from "./List";
 import type { EventRubric, EventCollection } from "./Calendars/Event";
 import useDatabase from "./Persistence/useDatabase";
@@ -413,7 +413,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         return true;
     }
 
-    const clearEverything = (): void => {
+    const clearEverything = () => {
         db.user.clear();
         db.lists.clear();
         db.events.clear();

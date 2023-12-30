@@ -1,12 +1,11 @@
 import { useContext } from "react";
 import dayjs from "dayjs";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { AppShell } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { ResponseType, fetch as tauriFetch } from "@tauri-apps/api/http";
 
 import { CoordinationContext } from "../coordinateBackendAndState";
-import { LoadingStage, PlanningStage, isDev } from "../globals";
+import { LoadingStage, PlanningStage } from "../globals";
 import PlannerLeftPanel from "./PlannerLeftPanel";
 import PlannerMain from "./PlannerMain";
 import "../styles.css";

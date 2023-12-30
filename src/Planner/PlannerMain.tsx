@@ -1,19 +1,15 @@
-import { useEffect, useState, useContext } from "react";
+import { useState, useContext } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
-import type { DraggableLocation, DropResult } from "@hello-pangea/dnd";
+import type { DropResult } from "@hello-pangea/dnd";
 import { Group } from "@mantine/core";
 import dayjs from "dayjs";
 
 import { dateToDayId } from "../dateutils";
-import { ItemRubric, ItemCollection } from "../Item";
 import List from "../List";
-import type { ListCollection, ListRubric } from "../List";
-import type { EventRubric, EventCollection } from "../Calendars/Event";
-import { LoadingStage, PlanningStage, DO_LATER_LIST_ID, Id } from "../globals";
+import { PlanningStage, DO_LATER_LIST_ID } from "../globals";
 import DayCalendar from "../Calendars/DayCalendar";
 import GridCalendar from "../Calendars/GridCalendar";
 import type { overrideDragEndAttrs } from "../Calendars/GridCalendar";
-import { UserRubric } from "../Persistence/useUserDB";
 import { CoordinationContext } from "../coordinateBackendAndState";
 
 interface PlannerMainProps {

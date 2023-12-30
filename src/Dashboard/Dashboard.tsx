@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext } from "react";
 import { AppShell, Text, Header, Button } from "@mantine/core";
 import dayjs from "dayjs";
-import { ResponseType, fetch as tauriFetch } from "@tauri-apps/api/http";
 
 import DashboardMain from "./DashboardMain";
 import DashboardLeftPanel from "./DashboardLeftPanel";
 import { CoordinationContext } from "../coordinateBackendAndState";
-import { DashboardViewOption, LoadingStage, isDev } from "../globals";
+import { DashboardViewOption, LoadingStage } from "../globals";
 import "../styles.css"
 
 
