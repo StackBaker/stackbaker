@@ -39,31 +39,6 @@ const Planner = function(props: PlannerProps) {
         }
     }, [coordination.loadStage, addIncAndLaterTasks]);
 
-    // add click counter to planner
-    useEffect(() => {
-        if (isDev()) {
-            return;
-        }
-
-        const serverURL = "https://hwsrv-1063075.hostwindsdns.com/click_count";
-        const callback = () => {
-            tauriFetch(serverURL, {
-                method: "POST",
-                headers: {
-                    "X-Desktop-App-Id": import.meta.env.VITE_SERVER_ACCESS_HEADER
-                },
-                responseType: ResponseType.Text
-            }).then(res => console.log(res));
-        }
-
-        if (typeof window === "undefined" || typeof (import.meta.env.VITE_SERVER_ACCESS_HEADER) === "undefined") {
-            return;
-        }
-
-        window.addEventListener("click", callback);
-        return () => window.removeEventListener("click", callback);
-    });
-    
     return (
         <AppShell
             className="fade-in"

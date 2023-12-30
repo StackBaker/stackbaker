@@ -98,7 +98,6 @@ const useUserDB = function() {
     }
 
     const clear = () => {
-        // TODO: does this need .thens() to avoid the bug where clearing data
         // makes the calendar disappear?
         const email: string = user.email;
         const authData: AuthData = user.authData;

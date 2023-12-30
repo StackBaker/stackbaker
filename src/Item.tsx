@@ -64,7 +64,7 @@ const Item = function(props: ItemProps) {
 
     const handleToggleComplete = () => {
         handlers.close();
-        coordination.toggleItemComplete(props.itemId, props.index, props.listId);
+        coordination.toggleItemComplete(props.itemId, props.listId);
     }
 
     const handleSubmitContent = () => {
@@ -107,7 +107,6 @@ const Item = function(props: ItemProps) {
     }, [editing]);
 
     // TODO: tagging tasks
-    // TODO: duration input
     const collapseDefined = (props.collapseItem !== undefined) && (props.collapseItem);
 
     const getStyle = (style: DraggableStyle, snapshot: DraggableStateSnapshot) => {

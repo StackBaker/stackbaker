@@ -33,7 +33,6 @@ const EditEventModal = function(props: EditEventModalProps) {
 	const { classes } = useStyles();
 	const inputRef = useRef<HTMLInputElement>(null);
 	const timeDisplayFmt = "h:mm a";
-	// const dateDisplayFmt = "YYYYMMDDTHH:mmZ"
 	const dayBtnSize = 30;
 	const noRepeats = (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0);
 
@@ -49,7 +48,6 @@ const EditEventModal = function(props: EditEventModalProps) {
 			return;
 
 		let startDate = dayjs(newStart);
-		// TODO: bug: offsetDay should use dayDuration
 		const newStartDay = offsetDay(startDate);
 		const newStartDayEnd = endOfOffsetDay(newStartDay);
 		let endDate = dayjs(props.eventBeingEdited.end! as Date);
@@ -345,6 +343,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 						<Grid.Col span={12}>
 							<DatePickerInput
 								label="Until"
+								// @ts-ignore DatePickerInput is an Input so it has a placeholder prop
 								placeholder="By default, this event repeats indefinitely until deleted"
 								allowDeselect
 								firstDayOfWeek={0}

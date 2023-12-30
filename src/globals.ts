@@ -50,7 +50,7 @@ export enum DashboardViewOption {
     // TODO: week view
 }
 
-// TODO: change this on push
+// IMPORTANT: toggle this on push
 export const isDev = function(): boolean {
     return true;
 }

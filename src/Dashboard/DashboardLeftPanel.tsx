@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import dayjs from "dayjs";
-import { Modal, Group, Stack, Navbar, Button, Space, TextInput, Text, Title, Select } from "@mantine/core";
+import { Modal, Group, Stack, Navbar, Button, Space, TextInput, Text, Title, Select, Kbd } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import SettingsIcon from '@mui/icons-material/Settings';
 import DangerousIcon from '@mui/icons-material/Dangerous';
@@ -71,7 +71,6 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
             }
         }, {} as { [k in keyof UserRubric]: string });
 
-        // TODO: test this
         setAccountBeingEdited(stringifiedAcc);
     }, [coordination.user]);
 
@@ -267,10 +266,27 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                         />
                         <Space h="lg"></Space>
                         <Button fullWidth onClick={() => props.setDate(getToday())}>Today</Button>
+                        <Space h="sm"></Space>
+                        <Text
+                            size="sm"
+                            px="lg"
+                            weight={700}
+                            align="center"
+                            sx={{
+                                opacity: 0,
+                                transition: "0.1s",
+                                "&:hover": {
+                                    opacity: 1,
+                                    transition: "all 0.5s"
+                                }
+                            }}
+                        >
+                            Pro Tip: Create new items using <Kbd>N</Kbd> and <Kbd>L</Kbd>
+                        </Text>
                     </>
                 }
             </Navbar.Section>
-            <Navbar.Section grow>{}</Navbar.Section>
+            <Navbar.Section grow><></></Navbar.Section>
             <Navbar.Section>
                 {
                     (settingsOpen) ?

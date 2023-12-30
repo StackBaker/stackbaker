@@ -9,7 +9,6 @@ import dayjs from "dayjs";
 import { dateToDayId } from "../dateutils";
 import type { ItemRubric } from "../Item";
 
-// TODO: write unit tests
 const useListDB = function(fname: string = "") {
     if (!fname) {
         fname = (isDev()) ? "dev-lists.dat" : "lists.dat";
@@ -145,8 +144,6 @@ const useListDB = function(fname: string = "") {
 
         return true;
     }
-
-    // TODO: del many items?
 
     const load = async (): Promise<boolean> => {
         await store.load();

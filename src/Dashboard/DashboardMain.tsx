@@ -47,7 +47,7 @@ const DashboardMain = function(props: DashboardMainProps) {
             const _curDiff = dayjs();
             const curDiff = _curDiff.diff(_curDiff.startOf("day"));
             
-            // TODO: test this
+
             if ((Math.abs(curDiff - todayDiff) <= resolution && !props.date.startOf("day").isSame(today)) ||
                 (dayjs().isAfter(endOfOffsetDay(today)) && props.date.startOf("day").isSame(today))) {
                 props.setDate(today);

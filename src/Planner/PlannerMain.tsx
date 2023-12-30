@@ -50,7 +50,6 @@ const PlannerMain = function(props: PlannerMainProps) {
         />
     );
 
-    // TODO: StageOne should be about reordering things, not putting things in the daycalendar
     const StageOne = (
         <>
             <DayCalendar
@@ -77,7 +76,6 @@ const PlannerMain = function(props: PlannerMainProps) {
         </>
     );
 
-    // TODO: Final Stage should have the later list as well
     const FinalStage = (
         <>
             <DayCalendar
@@ -85,6 +83,9 @@ const PlannerMain = function(props: PlannerMainProps) {
             />
             <List
                 {...coordination.relevantListCollection[dateToDayId(props.date)]}
+            />
+            <List
+                {...coordination.relevantListCollection[DO_LATER_LIST_ID]}
             />
         </>
     );

@@ -19,9 +19,7 @@ interface coordinateBackendAndStateProps {
     setLoadStage: React.Dispatch<React.SetStateAction<LoadingStage>>
 };
 
-// null so that I can easily create a React context
 type coordinateBackendAndStateOutput = {
-    // TODO: write some damn types for this
     _db: { user: any, lists: any, events: any },
     user: UserRubric,
     loadStage: LoadingStage,
@@ -36,7 +34,6 @@ type coordinateBackendAndStateOutput = {
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
     dragBetweenLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     addIncompleteAndLaterToToday: () => boolean,
-    delManyItemsOrMutManyLists: (itemIds: Id[], newLists: ListRubric[]) => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
     deleteEvent: (eventId: Id) => boolean,
 
@@ -161,10 +158,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
             index: list!.items[itemId].index
         }
 
-        list!.items[itemId] = editedItem;
-        // TODO: create a db.lists.setItem function for editing an item in a list
-        // TODO: avoiding having to rewrite the entire list every time
-        db.lists.setList(listId, list);
+        db.lists.setItem(itemId, editedItem, listId);
 
         return true;
     };
@@ -207,6 +201,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
 
         list.items[itemId] = editedItem;
         db.lists.setList(listId, list);
+    
         return true;
     }
 
@@ -293,7 +288,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
                 return false;
             }
             
-            // TODO: test this
             Object.keys(list.items).forEach((itemId) => {
                 // move everything past the source one down
                 if (list!.items[itemId].index > sourceOfDrag.index) {
@@ -305,6 +299,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
                     list!.items[itemId].index += 1;
                 }
             });
+
             // place the dragged item at the new index
             list.items[draggableId].index = destinationOfDrag.index;
             db.lists.setList(sourceOfDrag.droppableId, list);
@@ -316,7 +311,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
                 return false;
             }
 
-            // TODO: test
             Object.keys(sourceList.items).forEach((itemId) => {
                 // move everything past the source one down
                 if (sourceList!.items[itemId].index > sourceOfDrag.index) {
@@ -409,13 +403,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         return true;
     }
 
-    // TODO: this function might be unnecessary
-    const delManyItemsOrMutManyLists = (itemIds: Id[], newLists: ListRubric[]): boolean => {
-        db.lists.setManyLists(newLists);
-        props.setLoadStage(LoadingStage.NothingLoaded);
-        return true;
-    }
-
     const saveEvent = (newEventConfig: EventRubric): boolean => {
         db.events.set(newEventConfig.id, newEventConfig);
         return true;
@@ -467,7 +454,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         mutateList,
         dragBetweenLists,
         addIncompleteAndLaterToToday,
-        delManyItemsOrMutManyLists,
         events: db.events.data!,
         saveEvent,
         deleteEvent,

@@ -38,7 +38,6 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
         [PlanningStage.Timebox]: "Review your plan, and get ready for the day."
     };
 
-    // TODO: retest if this works
     return (
         <Navbar
             p="md"
@@ -53,7 +52,7 @@ const PlannerLeftPanel = function(props: PlannerLeftPanelProps) {
                     <Text>{tidbits[props.planningStage]}</Text>
                 </Stack>
             </Navbar.Section>
-            <Navbar.Section grow>{}</Navbar.Section>
+            <Navbar.Section grow><></></Navbar.Section>
             <Navbar.Section>
                 <Group position="apart" p={35}>
                     {
