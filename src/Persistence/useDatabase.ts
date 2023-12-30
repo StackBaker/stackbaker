@@ -27,11 +27,10 @@ const useDatabase = function() {
             // if the current version of the app is past that version
             // make sure the DB has been cleared to accomodate the breaking change
             if (semver.gte(appVersion, version)) {
-                console.log("Current version", appVersion, "exceeds breaking version", version);
                 const alreadyClearedDBForThisVersion = await store.get(version);
 
                 if (!alreadyClearedDBForThisVersion) {
-                    console.log("Clearing DB to accomodate breaking change in version", version);
+                    console.log("Current version", appVersion, "exceeds breaking version", version + ".",  "Clearing DB to commodate change");
                     await store.set(version, true);
                     userDB.clear();
                     listDB.clear();

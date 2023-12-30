@@ -52,11 +52,16 @@ const useListDB = function(fname: string = "") {
             newLists = {};
         }
 
+        // quickly update the view for smoother UX
         for (const v of vals) {
             newLists[v.listId] = v;
-            await store.set(v.listId, v);
         }
         setLists(newLists);
+
+        // only then update the store
+        for (const v of vals) {
+            await store.set(v.listId, v);
+        }
         
         await store.save();
         console.log("many lists saved");
