@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useContext } from "react";
-import { AppShell, Text, Header, Group, Button } from "@mantine/core";
+import { AppShell, Text, Header, Button } from "@mantine/core";
 import dayjs from "dayjs";
-import { open } from "@tauri-apps/api/shell";
 import { ResponseType, fetch as tauriFetch } from "@tauri-apps/api/http";
 
 import DashboardMain from "./DashboardMain";
 import DashboardLeftPanel from "./DashboardLeftPanel";
-import CoordinationProvider, { CoordinationContext } from "../coordinateBackendAndState";
+import { CoordinationContext } from "../coordinateBackendAndState";
 import { DashboardViewOption, LoadingStage, isDev } from "../globals";
 import "../styles.css"
 
@@ -18,7 +17,6 @@ interface DashboardHeaderProps {
 
 const DashboardHeader = function(props: DashboardHeaderProps) {
     const coordination = useContext(CoordinationContext);
-    const feedbackLink = "https://airtable.com/shr2PFR5Urx9E1w8A"; // TODO: update this
 
     return (
         <Header height={{ base: props.headerHeight /* , md: 70 */ }} p="md">
@@ -27,16 +25,6 @@ const DashboardHeader = function(props: DashboardHeaderProps) {
                     {(coordination.loadStage === LoadingStage.Ready) ? "StackBaker" : "Loading..."}
                 </Text>
                 <div style={{ display: "flex", flexDirection: "row", height: "100%", justifyContent: "flex-end", alignItems: "center" }}>
-                    <Text
-                        onClick={() => open(feedbackLink).then() }
-                        className="dash-header"
-                        size={10}
-                        underline
-                        c="#2008f4"
-                        sx={{ cursor: "pointer" }}
-                    >
-                        Find any bugs or have any feedback?
-                    </Text>
                     <Button
                         variant="subtle"
                         ml="lg"
@@ -88,43 +76,40 @@ const Dashboard = function(props: DashboardProps) {
             return;
         }
 
-        // TODO: put this back
         window.addEventListener("click", callback);
         return () => window.removeEventListener("click", callback);
     });
 
     // have to do this sx thing because AppShell automatically renders too large
     return (
-        <CoordinationProvider date={props.date} setDate={props.setDate}>
-            <AppShell
-                sx={{
-                    main: {
-                        minHeight: actionAreaHeight,
-                        maxHeight: actionAreaHeight,
-                        paddingTop: headerHeight
-                    }
-                }}
-                navbarOffsetBreakpoint="sm"
-                navbar={
-                    <DashboardLeftPanel
-                        date={props.date}
-                        setDate={props.setDate}
-                    />
+        <AppShell
+            sx={{
+                main: {
+                    minHeight: actionAreaHeight,
+                    maxHeight: actionAreaHeight,
+                    paddingTop: headerHeight
                 }
-                header={
-                    <DashboardHeader
-                        headerHeight={headerHeight}
-                        setCurrentView={setCurrentView}
-                    />
-                }
-            >
-                <DashboardMain
-                    currentView={currentView}
+            }}
+            navbarOffsetBreakpoint="sm"
+            navbar={
+                <DashboardLeftPanel
                     date={props.date}
                     setDate={props.setDate}
                 />
-            </AppShell>
-        </CoordinationProvider>
+            }
+            header={
+                <DashboardHeader
+                    headerHeight={headerHeight}
+                    setCurrentView={setCurrentView}
+                />
+            }
+        >
+            <DashboardMain
+                currentView={currentView}
+                date={props.date}
+                setDate={props.setDate}
+            />
+        </AppShell>
     );
 }
 

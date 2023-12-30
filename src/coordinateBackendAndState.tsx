@@ -43,13 +43,12 @@ type coordinateBackendAndStateOutput = {
     clearEverything: () => void,
 };
 
-// TODO: clean up each function here
 const _coordinateBackendAndState = function(props: coordinateBackendAndStateProps): coordinateBackendAndStateOutput {    
     const db = useDatabase();
     const selectedDayId = dateToDayId(props.date);
 
     const getListFromDB = (listId: Id): ListRubric | null => {
-        if (!db.lists.data) {
+        if (!db.lists.data || !db.lists.data.hasOwnProperty(listId)) {
             return null;
         }
         
@@ -58,20 +57,18 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         return newList;
     };
 
-    // TODO: clean up these functions AND TEST THEM
-    // TODO: redesign the logic and functionality here
     useMemo(async () => {
         if (props.loadStage !== LoadingStage.NothingLoaded) {
             return;
         }
         await db.user.load();
-        // TODO: perhaps db.lists should take a date as argument to create if it doesn't exist
         await db.lists.load();
         await db.events.load();
 
         props.setLoadStage(LoadingStage.DBLoaded);
     }, [props.loadStage]);
 
+    // try to create the list for the selected day
     useMemo(() => {
         if (props.loadStage !== LoadingStage.DBLoaded) {
             return;
@@ -89,7 +86,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     }, [props.loadStage, props.date]);
 
     useMemo(() => {
-        // TODO: test removing the dependence of this on loadStage
         if (props.loadStage !== LoadingStage.DBUpdated) {
             return;
         }
@@ -103,6 +99,15 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
 
         props.setLoadStage(LoadingStage.Ready);
     }, [props.loadStage, props.date]);
+
+    // reset the coordinator upon date change
+    useMemo(() => {
+        if (props.loadStage !== LoadingStage.Ready) {
+            return;
+        }
+
+        props.setLoadStage(LoadingStage.NothingLoaded);
+    }, [props.date]);
 
     const editUser = (newUserConfig: Partial<UserRubric> | null): boolean => {
         let newUserData: UserRubric = { ...db.user.data!, ...newUserConfig };
@@ -497,7 +502,6 @@ const CoordinationProvider = function(props: CoordinationProviderProps) {
     );
 }
 
-// TODO: test the coordination provider
 export default CoordinationProvider;
 
 

@@ -48,8 +48,6 @@ interface DayCalendarProps {
 	date: dayjs.Dayjs
 };
 
-// TODO: refactor the logic of this entire file
-
 const DayCalendar = function(props: DayCalendarProps) {
 	const coordination = useContext(CoordinationContext);
 
@@ -74,12 +72,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [editingEvent, handlers] = useDisclosure(false);
 	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
 	const [newEventId, setNewEventId] = useState<Id>("");
-
-	// // TODO: are these useStates necessary?
-	// const [dayDuration, setDayDuration] = useState<number>(coordination.user.hoursInDay);
-	// const [eventDuration, setEventDuration] = useState<number>(coordination.user.defaultEventLength);
-	// const [slotLabelInterval, setSlotLabelInterval] = useState<number>(coordination.user.dayCalLabelInterval);
-	// const [snapDuration, setSnapDuration] = useState<number>(coordination.user.dayCalSnapDuration);
 
 	useEffect(() => {
 		if (!coordination.user || !coordination.user.authData) {
@@ -153,17 +145,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 		setNewEventId("");
 		handlers.open();
 	}, [newEventId]);
-
-	// useEffect(() => {
-	// 	// this is to handle changes to the user in settings while the app is running
-	// 	if (!coordination.user)
-	// 		return;
-		
-	// 	setDayDuration(coordination.user.hoursInDay);
-	// 	setEventDuration(coordination.user.defaultEventLength);
-	// 	setSlotLabelInterval(coordination.user.dayCalLabelInterval);
-	// 	setSnapDuration(coordination.user.dayCalSnapDuration);
-	// }, [coordination.user]);
 
 	useEffect(() => {
 		if (!editingEvent) {
@@ -273,7 +254,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 		// NOTE: operating assumption: the div id of the item is exactly the itemId
 		const item = coordination.lists[selectedDayId].items[id];
 
-		// TODO: update the Event model to store associated item
 		const draggedEvent: EventRubric = {
 			id: uuid(),
 			title: item.content,
@@ -284,7 +264,6 @@ const DayCalendar = function(props: DayCalendarProps) {
 		coordination.saveEvent(draggedEvent);
 	};
 
-	// TODO: bug: can't have recurring events that end at 6am???
 	return ( (!coordination.user) ? <div></div> :
 		<Stack
 			className={classes.calendarWrapper}
@@ -303,7 +282,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 			/>
 			<Group position="apart">
 				<Title order={2} pl="xs">
-					{props.date.format("MMMM D, YYYY")}
+					{props.date.format("MMM D, YYYY")}
 				</Title>
 				{
 					(location.pathname === PLANNER_PATH) ? <></> :

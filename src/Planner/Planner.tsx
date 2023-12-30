@@ -25,8 +25,6 @@ const Planner = function(props: PlannerProps) {
 
     // add unfinished tasks from next day to today's items
     useMemo(() => {
-        // TODO: fix the bugs in the logic for this
-
         if (!addIncAndLaterTasks) {
             return;
         }
