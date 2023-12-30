@@ -27,6 +27,7 @@ export type GCalItem = {
     id: Id
 };
 
+// TODO: make EventRubric more like GCalData
 export type GCalData = {
     data: {
         items: GCalItem[]

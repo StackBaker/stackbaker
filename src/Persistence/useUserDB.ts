@@ -2,9 +2,9 @@ import { useState } from "react";
 // @ts-ignore
 import { Store } from "tauri-plugin-store-api";
 
-import { myStructuredClone } from "../globals";
+import { myStructuredClone, isDev } from "../globals";
 
-const USER_FNAME = "users.dat";
+const USER_FNAME = (isDev()) ? "dev-users.dat" : "users.dat";
 
 type AuthData = null | {
     accessToken: string,
@@ -45,7 +45,7 @@ const useUserDB = function() {
 
     const get = async (key: keyof UserRubric) => {
         const val = await store.get(key);
-        return new Promise((resolve) => resolve(val));
+        return val;
     }
 
     const set = (key: keyof UserRubric, val: ValidAttr) => {
@@ -64,16 +64,17 @@ const useUserDB = function() {
     }
 
     const replaceUser = (newUserConfig: UserRubric | null) => {
-        if (newUserConfig === null)
+        if (newUserConfig === null) {
             newUserConfig = {
                 ...defaultUser,
                 email: user.email,
                 authData: user.authData
             };
+        }
 
         setUser(newUserConfig);
         for (const key in newUserConfig) {
-            const k = key as keyof UserRubric
+            const k = key as keyof UserRubric;
             store.set(k, newUserConfig[k]);
         }
         store.save();
@@ -97,7 +98,6 @@ const useUserDB = function() {
     }
 
     const clear = () => {
-        // TODO: does this need .thens() to avoid the bug where clearing data
         // makes the calendar disappear?
         const email: string = user.email;
         const authData: AuthData = user.authData;

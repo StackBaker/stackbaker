@@ -1,27 +1,26 @@
 import dayjs from "dayjs";
 import { v4 as uuid } from "uuid";
-import { createRef, useEffect, useState, useRef } from "react";
+import React, { createRef, useEffect, useState, useRef, useContext } from "react";
 import { createStyles, ActionIcon, TextInput, Text, Group, Modal, Stack } from "@mantine/core";
 import { getHotkeyHandler, useDisclosure } from "@mantine/hooks";
 import FullCalendar from "@fullcalendar/react";
-import interactionPlugin, { EventDragStartArg, EventDragStopArg } from "@fullcalendar/interaction";
+import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import type { EventAddArg, EventRemoveArg, EventClickArg, EventInput, EventDropArg } from "@fullcalendar/core";
+import type { EventClickArg, EventInput, EventDropArg } from "@fullcalendar/core";
 import type { DraggableLocation } from "@hello-pangea/dnd";
 import DeleteIcon from "@mui/icons-material/Delete";
 
 import { createEventReprId, getIdFromEventRepr } from "./Event";
-import type { EventList } from "./Event";
+import type { EventList, EventRubric } from "./Event";
 import "./fullcalendar-vars.css";
 import { ID_IDX_DELIM } from "../Item";
-import type { ItemCollection, ItemRubric } from "../Item";
-import type { ListCollection, ListRubric } from "../List";
-import type { loadingStage } from "../globals";
+import type { ItemRubric } from "../Item";
 import { dateToDayId, dayIdToDay, getToday } from "../dateutils";
-import { DO_LATER_LIST_ID, Id } from "../globals";
+import { DO_LATER_LIST_ID, Id, PriorityLevel } from "../globals";
+import { CoordinationContext } from "../coordinateBackendAndState";
 
-type ItemWithMutationInfo = ItemRubric & { listId: Id, index: number };
+type ItemWithMutationInfo = ItemRubric & { listId: Id };
 
 const useStyles = createStyles((theme) => ({
     del: {
@@ -90,19 +89,13 @@ export interface overrideDragEndAttrs {
 };
 
 interface GridCalendarProps {
-    setDragOverride: React.Dispatch<React.SetStateAction<overrideDragEndAttrs | null>>,
-    loadStage: loadingStage,
-    readonly items: ItemCollection,
-    readonly lists: ListCollection,
-    createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
-    mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
-    deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-    mutateLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
-    delManyItemsOrMutManyLists: (itemIds: Id[], newLists: ListRubric[]) => boolean,
+    setDragOverride: React.Dispatch<React.SetStateAction<overrideDragEndAttrs | null>>
 };
 
 const GridCalendar = function(props: GridCalendarProps) {
     // TODO: use the Mantine datepicker?
+    const coordination = useContext(CoordinationContext);
+
     const wrapperHeight = "85vh";
     const wrapperWidth = "45vw";
     const actualHeight = "150vh";
@@ -110,6 +103,8 @@ const GridCalendar = function(props: GridCalendarProps) {
         itemId: uuid(),
         content: "",
         complete: false,
+        duration: coordination.user.defaultEventLength,
+        priority: PriorityLevel.VeryLow,
         listId: "",
         index: -1
     }
@@ -121,52 +116,26 @@ const GridCalendar = function(props: GridCalendarProps) {
 
     useEffect(() => {
         // run once on render to initialize the events
-        var deletedItemIds: Id[] = [];
-        var mutatedLists: ListRubric[] = [];
-        for (const listId in props.lists) {
-            var list = props.lists[listId];
-            var deletedItem = false;
-            for (var i = list.itemIds.length - 1; i >= 0; i--) {
-                const itemId = list.itemIds[i];
-                if (props.items.hasOwnProperty(itemId))
-                    continue;
-                
-                list.itemIds.splice(i, 1);
-                deletedItemIds.push(itemId);
-                deletedItem = true;
-            }
-            if (deletedItem)
-                mutatedLists.push(list);
-        }
-
-        if (mutatedLists.length !== 0 || deletedItemIds.length !== 0) {
-            props.delManyItemsOrMutManyLists(deletedItemIds, mutatedLists);
-            return;
-        }
-
+        // QUESTION: what does this do?
         setEvents(
-            Object.keys(props.lists).reduce((prev, cur) => {
-                return prev.concat(props.lists[cur].itemIds.map((k) => ({
-                    id: createEventReprId(props.items[k].itemId),
-                    title: props.items[k].content,
-                    start: dayIdToDay(cur).toDate(),
-                    end: dayIdToDay(cur).add(1, "hour").toDate()
-                })));
+            Object.keys(coordination.lists).reduce((prev, cur) => {
+                return prev.concat(Object.values(coordination.lists[cur].items).map((item: ItemRubric) => {
+                    const out: EventRubric = {
+                        id: createEventReprId(item.itemId),
+                        title: item.content,
+                        start: dayIdToDay(cur).toDate(),
+                        end: dayIdToDay(cur).add(1, "hour").toDate()
+                    }
+                    return out;
+                }))
             }, [] as EventList)
         );
-    }, [props.lists, props.items]);
-
-    useEffect(() => {
-        // TODO: scroll to current day
-        let calendarApi = calendarRef.current!.getApi();
-        calendarApi.gotoDate(dayjs().toDate());
-    }, [])
+    }, [coordination.lists]);
 
     const handleEventClick = (clickInfo: EventClickArg) => {
         const id = getIdFromEventRepr(clickInfo.event.id);
         const dayId = dateToDayId(clickInfo.event.start!);
-        const index = props.lists[dayId].itemIds.indexOf(id);
-        const item: ItemWithMutationInfo = { ...props.items[id], listId: dayId, index: index };
+        const item: ItemWithMutationInfo = { ...coordination.lists[dayId].items[id], listId: dayId };
         changeItemBeingEdited(item);
         handlers.open();
     }
@@ -178,14 +147,14 @@ const GridCalendar = function(props: GridCalendarProps) {
 
         handlers.close();
         const { listId, index, ...rest  } = itemBeingEdited;
-        props.mutateItem(rest.itemId, rest);
+        coordination.mutateItem(rest.itemId, rest, listId);
         changeItemBeingEdited(dummyItem);
     }
     
     const deleteEditingItem = () => {
         handlers.close();
         const { listId, index, ...rest } = itemBeingEdited;
-        props.deleteItem(rest.itemId, listId, index);
+        coordination.deleteItem(rest.itemId, listId, index);
         changeItemBeingEdited(dummyItem);
     };
 
@@ -220,10 +189,10 @@ const GridCalendar = function(props: GridCalendarProps) {
         const sourceListId = dateToDayId(oldDate);
         const destListId = dateToDayId(newDate);
 
-        const sourceIndex = props.lists[sourceListId].itemIds.indexOf(itemId);
+        const sourceIndex = coordination.lists[sourceListId].items[itemId].index;
         const destIndex = 0;
 
-        props.mutateLists(
+        coordination.dragBetweenLists(
             {
                 droppableId: sourceListId,
                 index: sourceIndex

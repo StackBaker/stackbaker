@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import dayjs from "dayjs";
-import { Modal, Group, Stack, Navbar, Button, Space, TextInput, Text, Title, Select } from "@mantine/core";
+import { Modal, Group, Stack, Navbar, Button, Space, TextInput, Text, Title, Select, Kbd } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import SettingsIcon from '@mui/icons-material/Settings';
 import DangerousIcon from '@mui/icons-material/Dangerous';
@@ -15,7 +15,8 @@ import { getToday } from "../dateutils";
 import "../styles.css";
 import type { UserRubric } from "../Persistence/useUserDB";
 import { LOGIN_PATH, ROOT_PATH } from "../paths";
-import type { dashboardViewOption } from "../globals";
+import { LoadingStage } from "../globals";
+import { CoordinationContext } from "../coordinateBackendAndState";
 
 interface ConfirmModalProps {
     opened: boolean,
@@ -44,12 +45,8 @@ const ConfirmModal = (props: ConfirmModalProps) => {
 }
 
 export interface DashLeftPanelProps {
-    currentView: dashboardViewOption,
-    user: UserRubric,
     date: dayjs.Dayjs,
-    editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
-    setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>,
-    clearEverything: () => void,
+    setDate: React.Dispatch<React.SetStateAction<dayjs.Dayjs>>
 };
 
 const DashboardLeftPanel = function(props: DashLeftPanelProps) {
@@ -59,20 +56,23 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
     const [confirmOpen, confirmHandlers] = useDisclosure(false);
     const [accountBeingEdited, setAccountBeingEdited] = useState<{ [k in keyof UserRubric]: string }>();
 
+    const coordination = useContext(CoordinationContext);
+
     useEffect(() => {
-        if (!props.user)
+        if (!coordination.user)
             return;
         
-        setAccountBeingEdited({
-            email: props.user.email,
-            authData: JSON.stringify(props.user.authData),
-            hoursInDay: JSON.stringify(props.user.hoursInDay),
-            defaultEventLength: JSON.stringify(props.user.defaultEventLength),
-            dayCalLabelInterval: JSON.stringify(props.user.dayCalLabelInterval),
-            dayCalSnapDuration: JSON.stringify(props.user.dayCalSnapDuration),
-            autoLoadPlanner: JSON.stringify(props.user.autoLoadPlanner)
-        });
-    }, [props.user]);
+        // is there a more programmatic way of doing this?
+        const stringifiedAcc = Object.keys(coordination.user).reduce((prev, _cur) => {
+            let cur = _cur as (keyof UserRubric);
+            return {
+                ...prev,
+                [cur]: JSON.stringify(coordination.user[cur])
+            }
+        }, {} as { [k in keyof UserRubric]: string });
+
+        setAccountBeingEdited(stringifiedAcc);
+    }, [coordination.user]);
 
 	useEffect(() => {
 		invoke("create_oauth_request_url").then((r) => {
@@ -85,27 +85,31 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
     const handleSubmitSettings = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         e.preventDefault();
         let newHours: number = parseInt(accountBeingEdited!.hoursInDay);
-        if (isNaN(newHours))
-            newHours = props.user.hoursInDay;
+        if (isNaN(newHours)) {
+            newHours = coordination.user.hoursInDay;
+        }
         
         let newEvtLen: number = parseInt(accountBeingEdited!.defaultEventLength);
-        if (isNaN(newEvtLen))
-            newEvtLen = props.user.defaultEventLength;
+        if (isNaN(newEvtLen)) {
+            newEvtLen = coordination.user.defaultEventLength;
+        }
         
         newHours = Math.max(24, Math.min(newHours, 120));
         newEvtLen = Math.ceil(Math.max(1, Math.min(newEvtLen, 300)) / 5) * 5;
 
         let newDayCalInterval: number = parseInt(accountBeingEdited!.dayCalLabelInterval);
-        if (isNaN(newDayCalInterval))
-            newDayCalInterval = props.user.dayCalLabelInterval;
+        if (isNaN(newDayCalInterval)) {
+            newDayCalInterval = coordination.user.dayCalLabelInterval;
+        }
         
         let newDayCalSnapDuration: number = parseInt(accountBeingEdited!.dayCalSnapDuration);
-        if (isNaN(newDayCalInterval))
-            newDayCalSnapDuration = props.user.dayCalSnapDuration;
+        if (isNaN(newDayCalInterval)) {
+            newDayCalSnapDuration = coordination.user.dayCalSnapDuration;
+        }
 
         let newautoLoadPlanner: boolean = (accountBeingEdited!.autoLoadPlanner === "false") ? false : true;
 
-        props.editUser({
+        coordination.editUser({
             defaultEventLength: newEvtLen,
             hoursInDay: newHours,
             dayCalLabelInterval: newDayCalInterval,
@@ -116,7 +120,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
 
     const confirmDeleteEverything = () => {
         confirmHandlers.close();
-        props.clearEverything();
+        coordination.clearEverything();
         navigate(ROOT_PATH);
     }
 
@@ -125,6 +129,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
     }
 
     return (
+        (coordination.loadStage !== LoadingStage.Ready) ? <div></div> :
         <Navbar
             p="md"
             className="fade-in"
@@ -261,17 +266,34 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                         />
                         <Space h="lg"></Space>
                         <Button fullWidth onClick={() => props.setDate(getToday())}>Today</Button>
+                        <Space h="sm"></Space>
+                        <Text
+                            size="sm"
+                            px="lg"
+                            weight={700}
+                            align="center"
+                            sx={{
+                                opacity: 0,
+                                transition: "0.1s",
+                                "&:hover": {
+                                    opacity: 1,
+                                    transition: "all 0.5s"
+                                }
+                            }}
+                        >
+                            Pro Tip: Create new items using <Kbd>N</Kbd> and <Kbd>L</Kbd>
+                        </Text>
                     </>
                 }
             </Navbar.Section>
-            <Navbar.Section grow>{}</Navbar.Section>
+            <Navbar.Section grow><></></Navbar.Section>
             <Navbar.Section>
                 {
                     (settingsOpen) ?
                     <Button
                         fullWidth
                         variant="outline"
-                        onClick={() => props.editUser(null)}
+                        onClick={() => coordination.editUser(null)}
                     >
                         Reset to defaults
                     </Button>

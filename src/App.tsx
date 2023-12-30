@@ -16,6 +16,7 @@ import LoginSequence from "./Authentication/LoginSequence";
 import { dateToDayId, getToday } from "./dateutils";
 import { ListRubric } from "./List";
 import { UserRubric } from "./Persistence/useUserDB";
+import CoordinationProvider from "./coordinateBackendAndState";
 
 type baseEmailResType = { data: { email: string } };
 interface emailResType extends baseEmailResType {};
@@ -30,9 +31,8 @@ const Root = function(props: RootProps) {
 
 	useEffect(() => {
 		db.user.load().then();
-		db.items.loadAll().then();
-		db.lists.loadAll().then();
-		db.events.loadAll().then();
+		db.lists.load().then();
+		db.events.load().then();
 	}, []);
 
 	// TODO: if can't find the user
@@ -89,16 +89,16 @@ const Root = function(props: RootProps) {
 			db.user.get("autoLoadPlanner").then((alp) => {
 				let autoLoadPlanner = alp as boolean;
 				const todayId = dateToDayId(props.date);
-				db.lists.has(todayId).then((res: boolean) => {
+				db.lists.hasList(todayId).then((res: boolean) => {
 					if (res) {
-						db.lists.get(todayId).then((val) => {
+						db.lists.getList(todayId).then((val) => {
 							if (getToday().isSame(props.date, "day") && autoLoadPlanner && !(val as ListRubric).planned)
 								navigate(paths.PLANNER_PATH);
 							else
 								navigate(paths.DASHBOARD_PATH);
 						});
 					} else {
-						db.lists.create(props.date);
+						db.lists.createList(props.date);
 						if (getToday().isSame(props.date, "day"))
 							navigate(paths.PLANNER_PATH);
 						else
@@ -111,7 +111,6 @@ const Root = function(props: RootProps) {
 
 	const log = () => {
         console.log("l", db.lists.data);
-        console.log("i", db.items.data);
         console.log("e", db.events.data);
         console.log("u", db.user.data);
     }
@@ -158,7 +157,9 @@ const App = function() {
 				}
 			}}
 		>
-			<RouterProvider router={router} />
+			<CoordinationProvider date={date} setDate={setDate}>
+				<RouterProvider router={router} />
+			</CoordinationProvider>
 		</MantineProvider>
 	);
 }

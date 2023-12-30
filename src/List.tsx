@@ -1,16 +1,14 @@
-import { FormEvent, useEffect, useState } from "react"; 
+import { FormEvent, useContext, useEffect, useState } from "react"; 
 import type { Id } from "./globals"
-import { Droppable, DragDropContext } from "@hello-pangea/dnd";
-import type { DraggableLocation } from "@hello-pangea/dnd"
+import { Droppable } from "@hello-pangea/dnd";
 import { Button, createStyles, Stack, TextInput, Title } from "@mantine/core";
 import Item from "./Item";
 import type { ItemRubric, ItemCollection } from "./Item";
 import { useDisclosure, useHotkeys, useClickOutside } from "@mantine/hooks";
 import { v4 as uuid } from "uuid";
 import { useForm } from "@mantine/form";
-
-import { DAY_LIST_ID, DO_LATER_LIST_ID } from "./globals";
-import { UserRubric } from "./Persistence/useUserDB";
+import { DO_LATER_LIST_ID, LIST_WIDTH, PriorityLevel, getTitleFromId } from "./globals";
+import { CoordinationContext } from "./coordinateBackendAndState";
 
 const useStyles = createStyles((theme) => ({
     listWrapper: {
@@ -19,7 +17,7 @@ const useStyles = createStyles((theme) => ({
         overflow: "hidden!important"
     },
     list: {
-        width: "250px", // TODO: make this some constant somewhere, perhaps in globals along with height
+        width: LIST_WIDTH,
         padding: theme.spacing.xs,
         overflow: "scroll!important",
         msOverflowStyle: "none",
@@ -27,46 +25,42 @@ const useStyles = createStyles((theme) => ({
         "&::-webkit-scrollbar": {
             display: "none"
         }
-    },
-    addButton: {
-        // backgroundColor: theme.colors.stackblue[3]
     }
 }));
 
-// export interface ListRubric {
-//     listId: Id,
-//     title: string,
-//     items: {
-//         itemId: Id,
-//         content: string,
-//         complete: boolean,
-//         index: number
-//     }
-//     planned: boolean
-// }
+const _itemOrder = function(a: ItemRubric, b: ItemRubric): number {
+    if (a.index < b.index) {
+        return -1;
+    } else if (a.index > b.index) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
 
 export interface ListRubric {
+    // unique ID for this list: usually a formatted datestring
     listId: Id,
-    title: string,
-    itemIds: Id[],
-    planned: boolean
+    // whether or not the user used the Planner for this day
+    planned: boolean,
+    // all the items for this list
+    items: ItemCollection
 }
 
 export type ListCollection = { [key: Id]: ListRubric };
 
 interface ListProps extends ListRubric {
-    items: ItemCollection,
-    createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
-    mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
-    deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-    toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
-    eventDuration: number,
+    // whether to show items in collapsed view by default
     collapseItems?: boolean
 };
 
 const List = function(props: ListProps) {
+    const coordination = useContext(CoordinationContext);
+
     const { classes } = useStyles();
+    // adding a new item
     const [adding, handlers] = useDisclosure(false);
+    // state variable to allow changing of new item content during addition
     const [newItemContent, changeNewItemContent] = useState("");
     const newItemContentInputId = `${props.listId}-new-item-context-text-input`;
     const newItemContentInputRef = useClickOutside(handlers.close);
@@ -75,7 +69,6 @@ const List = function(props: ListProps) {
         initialValues: {
             content: newItemContent
         },
-        
         validate: {
             content: (val: string) => (val.length !== 0)
         }
@@ -85,23 +78,32 @@ const List = function(props: ListProps) {
         e.preventDefault();
         handlers.close();
 
-        if (newItemContent === "")
+        if (newItemContent === "") {
             return;
-            
-        props.createItem({
+        }
+        
+        // create the item
+        coordination.createItem({
             itemId: uuid(),
             content: newItemContent,
-            complete: false
+            complete: false,
+            duration: coordination.user.defaultEventLength,
+            priority: PriorityLevel.Medium,
+            index: 0
         }, props.listId);
+
+        // reset the item addition state variable
         changeNewItemContent("");
     }
     
+    // auto-focus on the Input element when adding new item
     useEffect(() => {
         if (adding) {
             document.getElementById(newItemContentInputId)?.focus();
         }
     }, [adding]);
 
+    // keyboard shortcuts for adding a new item
     if (props.listId === DO_LATER_LIST_ID) {
         useHotkeys([
             ["L", handlers.toggle]
@@ -118,7 +120,7 @@ const List = function(props: ListProps) {
             className={classes.listWrapper}
             p="sm"
         >
-            <Title order={2} pl="xs">{props.title}</Title>
+            <Title order={2} pl="xs">{getTitleFromId(props.listId)}</Title>
             {
                 (adding) ?
                 <form onSubmit={handleSubmitNewItem}>
@@ -133,7 +135,7 @@ const List = function(props: ListProps) {
                     />
                 </form>
                 : 
-                <Button className={classes.addButton} onClick={() => handlers.open()} mr="xs">
+                <Button onClick={() => handlers.open()} mr="xs">
                     Add Item
                 </Button>
             }
@@ -152,19 +154,17 @@ const List = function(props: ListProps) {
                             spacing={0}
                             pl={0}
                         >
-                            {props.itemIds.map((tid, idx) => (
-                                <Item
-                                    key={tid}
-                                    listId={props.listId}
-                                    index={idx}
-                                    mutateItem={props.mutateItem}
-                                    toggleItemComplete={props.toggleItemComplete}
-                                    deleteItem={props.deleteItem}
-                                    eventDuration={props.eventDuration}
-                                    collapseItem={props.collapseItems}
-                                    {...props.items[tid]}
-                                />
-                            ))}
+                            {
+                                // sort the output in order
+                                Object.values(props.items).sort(_itemOrder).map((itm: ItemRubric) => (
+                                    <Item
+                                        key={itm.itemId}
+                                        listId={props.listId}
+                                        collapseItem={props.collapseItems}
+                                        {...itm}
+                                    />
+                                ))
+                            }
                             {provided.placeholder}
                         </Stack>
                     )

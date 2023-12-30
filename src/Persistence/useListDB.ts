@@ -3,18 +3,21 @@ import { useState } from "react";
 import { Store } from "tauri-plugin-store-api";
 
 import type { ListRubric, ListCollection } from "../List";
-import { DAY_LIST_TITLE, DO_LATER_LIST_ID, DO_LATER_LIST_TITLE, Id, myStructuredClone } from "../globals";
+import { DO_LATER_LIST_ID, myStructuredClone, isDev } from "../globals";
+import type { Id } from "../globals";
 import dayjs from "dayjs";
 import { dateToDayId } from "../dateutils";
+import type { ItemRubric } from "../Item";
 
-const LISTS_FNAME = "lists.dat";
-
-// TODO: properly test this
-const useListDB = function() {
-    const store = new Store(LISTS_FNAME);
+const useListDB = function(fname: string = "") {
+    if (!fname) {
+        fname = (isDev()) ? "dev-lists.dat" : "lists.dat";
+    }
+    
+    const store = new Store(fname);
     const [lists, setLists] = useState<ListCollection>({});
 
-    const get = async (key: Id) => {
+    const getList = async (key: Id): Promise<ListRubric | null> => {
         // the use of setState is not as a cache: it's an efficient duplicate
         // image of the store well suited to the frontend
         if (lists?.hasOwnProperty(key)) {
@@ -22,12 +25,11 @@ const useListDB = function() {
         }
 
         // otherwise miss to disk
-        const val = await store.get(key);
+        const val: ListRubric | null = await store.get(key);
         return val;
     }
 
-    // NOTE: the calls to setList should be synchronous, but the calls to store.set perhaps should be async
-    const set = (key: Id, val: ListRubric) => {
+    const setList = async (key: Id, val: ListRubric): Promise<boolean> => {
         let newLists: ListCollection;
         if (lists) {
             setLists({ ...lists, [key]: val });
@@ -36,36 +38,33 @@ const useListDB = function() {
             setLists(newLists);
         }
 
-        store.set(key, val);
-        // suspicion: loads can be run before saves complete
-        store.save();
+        await store.set(key, val);
+        await store.save();
         console.log("lists saved");
+        return true;
     }
 
-    const setMany = (keys: Id[], vals: ListRubric[]): boolean => {
-        if (keys.length !== vals.length)
-            return false;
-
+    const setManyLists = async (vals: ListRubric[]): Promise<boolean> => {
         let newLists: ListCollection;
-        if (lists)
+        if (lists) {
             newLists = myStructuredClone(lists);
-        else
+        } else {
             newLists = {};
-        
-        keys.map((k, i) => {
-            let v = vals[i];
-            newLists[k] = v;
-            store.set(k, v);
-        });
+        }
+
+        for (const v of vals) {
+            newLists[v.listId] = v;
+            await store.set(v.listId, v);
+        }
         setLists(newLists);
         
-        store.save();
+        await store.save();
         console.log("many lists saved");
 
         return true;
     }
 
-    const has = async (listId: Id): Promise<boolean> => {
+    const hasList = async (listId: Id): Promise<boolean> => {
         const listInStore = await store.has(listId);
         if (listInStore) {
             return true;
@@ -74,40 +73,79 @@ const useListDB = function() {
         return false;
     }
 
-    const create = (date: dayjs.Dayjs | null): boolean => {
+    const createList = (date: dayjs.Dayjs | null): boolean => {
         // create a new empty list for a particular date or the do later list
-        let listId;
-        if (date === null)
+        let listId: Id;
+        if (date === null) {
             listId = DO_LATER_LIST_ID
-        else
+        } else {
             listId = dateToDayId(date!);
+        }
 
-        const newList = {
+        const newList: ListRubric = {
             listId: listId,
-            title: (!date) ? DO_LATER_LIST_TITLE: DAY_LIST_TITLE,
-            itemIds: [],
-            planned: false
+            planned: false,
+            items: {}
         };
-        set(listId, newList);
+        setList(listId, newList);
         
         return true;
     }
 
-    const del = (key: Id) => {
+    const delList = (key: Id): boolean => {
         let newLists: ListCollection;
-        if (lists)
+        if (lists) {
             newLists = myStructuredClone(lists);
-        else
+        } else {
             newLists = {};
+        }
         delete newLists[key];
         setLists(newLists);
         
-        // then write through to disk
         store.delete(key);
         store.save();
+
+        return true;
     }
 
-    const loadAll = async () => {
+    const getItem = async (itemId: Id, listId: Id): Promise<ItemRubric | null> => {
+        const lst = await getList(listId);
+        if (lst === null) {
+            return null;
+        }
+
+        if (lst!.items.hasOwnProperty(itemId)) {
+            return lst!.items[itemId];
+        }
+        return null;
+    }
+
+    const setItem = async (itemId: Id, newVal: ItemRubric, listId: Id): Promise<boolean> => {
+        // do not allow this function to create lists
+        const lst = await getList(listId);
+        if (lst === null) {
+            return false;
+        }
+
+        lst!.items[itemId] = newVal;
+        setList(listId, lst);
+
+        return true;
+    }
+
+    const delItem = async (itemId: Id, listId: Id) => {
+        const lst = await getList(listId);
+        if (lst === null) {
+            return false;
+        }
+
+        delete lst!.items[itemId];
+        setList(listId, lst);
+
+        return true;
+    }
+
+    const load = async (): Promise<boolean> => {
         await store.load();
         const entries = await store.entries()
 
@@ -117,9 +155,10 @@ const useListDB = function() {
             newLists[key] = val as ListRubric;
         }
         setLists(newLists);
+
+        return true;
     }
 
-    // TODO: should these functions be async?
     const clear = () => {
         setLists({});
         store.clear();
@@ -127,13 +166,26 @@ const useListDB = function() {
     }
 
     // make sure the do later list is there
-    has(DO_LATER_LIST_ID).then(x => {
+    hasList(DO_LATER_LIST_ID).then(x => {
         if (!x) {
-            create(null);
+            createList(null);
         }
     });
 
-    return { data: lists, get, set, setMany, has, create, del, loadAll, clear };
+    return {
+        data: lists,
+        getList,
+        setList,
+        setManyLists,
+        hasList,
+        createList,
+        delList,
+        getItem,
+        setItem,
+        delItem,
+        load,
+        clear
+    }
 }
 
 export default useListDB;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import type { DraggableStateSnapshot, DraggableStyle } from "@hello-pangea/dnd";
 import { createStyles, Card, Text, ActionIcon, Textarea, Group } from "@mantine/core";
@@ -11,13 +11,15 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { ThirdPartyDraggable } from "@fullcalendar/interaction";
 
-import type { Id } from "./globals";
+import { LIST_WIDTH } from "./globals";
+import type { Id, PriorityLevel } from "./globals";
+import { CoordinationContext } from "./coordinateBackendAndState";
 
 export const ID_IDX_DELIM = "~";
 
 const useStyles = createStyles((theme) => ({
     item: {
-        maxWidth: "250px",
+        maxWidth: LIST_WIDTH,
         alignItems: "center",
         marginBottom: theme.spacing.sm,
     },
@@ -38,23 +40,22 @@ const useStyles = createStyles((theme) => ({
 export interface ItemRubric {
     itemId: Id,
     content: string,
-    complete: boolean
+    complete: boolean,
+    duration: number,
+    priority: PriorityLevel,
+    index: number
 };
 
 export type ItemCollection = { [key: Id]: ItemRubric };
 
 interface ItemProps extends ItemRubric {
     listId: Id,
-    index: number,
-    mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>) => boolean,
-    toggleItemComplete: (itemId: Id, idx: number, listId: Id) => boolean,
-    deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
-
-    eventDuration: number,
     collapseItem?: boolean
 };
 
 const Item = function(props: ItemProps) {
+    const coordination = useContext(CoordinationContext);
+
     const { classes } = useStyles();
     const [editing, handlers] = useDisclosure(false);
     const [editableContent, changeEditableContent] = useState<string>(props.content);
@@ -63,15 +64,16 @@ const Item = function(props: ItemProps) {
 
     const handleToggleComplete = () => {
         handlers.close();
-        props.toggleItemComplete(props.itemId, props.index, props.listId);
+        coordination.toggleItemComplete(props.itemId, props.listId);
     }
 
     const handleSubmitContent = () => {
-        if (editableContent.length === 0)
+        if (editableContent.length === 0) {
             return;
+        }
 
         handlers.close();
-        props.mutateItem(props.itemId, { content: editableContent });
+        coordination.mutateItem(props.itemId, { content: editableContent }, props.listId);
     }
 
     const editRef = useClickOutside(handleSubmitContent);
@@ -81,16 +83,15 @@ const Item = function(props: ItemProps) {
         // reference: https://github.com/fullcalendar/fullcalendar-react/issues/118#issuecomment-761278598
         let draggable = new ThirdPartyDraggable(document.getElementById(itemEltId)!, {
             eventData: {
-                title: props.content!,
-                duration: props.eventDuration * 60 * 1000,
+                title: props.content,
+                duration: props.duration * 60 * 1000,
                 create: false
             }
         });
 
         // a cleanup function
         return () => draggable.destroy();
-    }, [props.content, props.eventDuration]);
-
+    }, [props.content, props.duration]);
 
     useEffect(() => {
         if (editing) {
@@ -192,7 +193,7 @@ const Item = function(props: ItemProps) {
                                         </ActionIcon>
                                         <ActionIcon
                                             className={classes.del}
-                                            onClick={() => props.deleteItem(props.itemId, props.listId, props.index)}
+                                            onClick={() => coordination.deleteItem(props.itemId, props.listId, props.index)}
                                         >
                                             <DeleteIcon />
                                         </ActionIcon>

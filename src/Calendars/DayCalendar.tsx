@@ -1,29 +1,27 @@
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import dayjs from "dayjs";
 import dayjsUTCPlugin from "dayjs/plugin/utc"
 import FullCalendar from "@fullcalendar/react";
-import type { DateSelectArg, EventAddArg, EventRemoveArg, EventChangeArg, EventClickArg, EventInput } from "@fullcalendar/core";
+import type { DateSelectArg, EventChangeArg, EventClickArg, EventInput } from "@fullcalendar/core";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { DropArg } from "@fullcalendar/interaction";
-import { createStyles, Stack, Button, Title, Text, Modal, TextInput, Group, ActionIcon, Select, Grid, SelectItem, Avatar, Space } from "@mantine/core";
-import { getHotkeyHandler, useDisclosure, useHotkeys } from "@mantine/hooks";
-import { DatePickerInput } from "@mantine/dates";
-import type { DateValue } from "@mantine/dates";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { createStyles, Stack, Button, Title, Group } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { v4 as uuid } from "uuid";
 import { useNavigate, useLocation } from "react-router-dom"
 import { invoke } from "@tauri-apps/api";
 import { fetch as tauriFetch } from "@tauri-apps/api/http";
-import { getToday, offsetDay, endOfOffsetDay } from "../dateutils";
+import { dateToDayId, getToday, offsetDay } from "../dateutils";
 
-import type { EventCollection, EventRubric, GCalData, GCalItem } from "./Event";
+import type { EventRubric, GCalData, GCalItem } from "./Event";
 import { createEventReprId, createGCalEventReprId } from "./Event";
 import { Id, myStructuredClone } from "../globals";
 import "./fullcalendar-vars.css";
-import { ID_IDX_DELIM, ItemCollection } from "../Item";;
+import { ID_IDX_DELIM } from "../Item";;
 import { PLANNER_PATH } from "../paths";
-import type { UserRubric } from "../Persistence/useUserDB";
+import { CoordinationContext } from "../coordinateBackendAndState";
+import EditEventModal from "./DayCalEditEventModal";
 
 dayjs.extend(dayjsUTCPlugin);
 
@@ -46,379 +44,20 @@ const useStyles = createStyles((theme) => ({
     }
 }));
 
-// TODO: make this a separate file, please, at some point
-interface EditEventModalProps {
-	editingEvent: boolean,
-	saveEditingEvent: () => void,
-	deleteEditingEvent: () => void,
-	closeNoSave: () => void,
-	eventBeingEdited: EventRubric,
-	changeEventBeingEdited: React.Dispatch<React.SetStateAction<EventRubric>>,
-	dayDuration: number,
-	snapDuration: number,
-};
-
-const EditEventModal = function(props: EditEventModalProps) {
-	const { classes } = useStyles();
-	const inputRef = useRef<HTMLInputElement>(null);
-	const timeDisplayFmt = "h:mm a";
-	// const dateDisplayFmt = "YYYYMMDDTHH:mmZ"
-	const dayBtnSize = 30;
-	const noRepeats = (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0);
-
-	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
-		props.changeEventBeingEdited({
-			...props.eventBeingEdited,
-			title: e.currentTarget.value
-		});
-	}
-
-	const handleChangeStartTime = (newStart: string | null) => {
-		if (!newStart)
-			return;
-
-		let startDate = dayjs(newStart);
-		// TODO: bug: offsetDay should use dayDuration
-		const newStartDay = offsetDay(startDate);
-		const newStartDayEnd = endOfOffsetDay(newStartDay);
-		let endDate = dayjs(props.eventBeingEdited.end! as Date);
-
-		if (!noRepeats) {
-			// don't change the day of the start
-			const originalStart = dayjs(props.eventBeingEdited.start! as Date);
-			const originalStartDay = offsetDay(originalStart);
-			// get the difference between the newStart and the beginning of its day
-			const diff = startDate.diff(newStartDay);
-			// then the new date is actually the original start + the new diff
-			startDate = originalStartDay.add(diff);
-		}
-
-		if (endDate.isSame(startDate) || endDate.isBefore(startDate)) {
-			endDate = startDate.add(endDate.diff(dayjs(props.eventBeingEdited.start! as Date)));
-			if (endDate.isAfter(newStartDayEnd) || startDate.isSame(newStartDayEnd)) {
-				startDate = newStartDayEnd;
-			}
-		}
-
-		props.changeEventBeingEdited({
-			...props.eventBeingEdited,
-			start: startDate.toDate(),
-			end: endDate.toDate()
-		});
-	}
-
-	const handleChangeEndTime = (newEnd: string | null) => {
-		if (!newEnd)
-			return;
-		
-		let endDate = dayjs(newEnd);
-		const newEndDay = offsetDay(endDate);
-		let startDate = dayjs(props.eventBeingEdited.start! as Date);
-
-		if (!noRepeats) {
-			// don't change the day of the end
-			const originalEnd = dayjs(props.eventBeingEdited.end! as Date);
-			const originalEndDay = offsetDay(originalEnd);
-			// get the difference between the newEnd and the beginning of its day
-			const diff = endDate.diff(newEndDay);
-			// then the new end date is actually the original end's day + the new diff
-			endDate = originalEndDay.add(diff);
-		}
-
-		if (endDate.isSame(startDate) || endDate.isBefore(startDate)) {
-			startDate = endDate.add(startDate.diff(dayjs(props.eventBeingEdited.end! as Date)));
-			if (startDate.isBefore(newEndDay) || startDate.isSame(newEndDay)) {
-				startDate = newEndDay;
-			}
-		}
-		
-		props.changeEventBeingEdited({
-			...props.eventBeingEdited,
-			start: startDate.toDate(),
-			end: endDate.toDate()
-		});
-	}
-
-	const toggleIncludeDayOfWeek = (num: 0 | 1 | 2 | 3 | 4 | 5 | 6) => {
-		// 0: Sun, 1: Mon, ..., 6: Sat - FC convention
-		if (noRepeats) {
-			props.changeEventBeingEdited({
-				...props.eventBeingEdited,
-				daysOfWeek: [num]
-			});
-			return;
-		}
-
-		let newDaysOfWeek = myStructuredClone(props.eventBeingEdited.daysOfWeek!);
-		const idx = newDaysOfWeek.indexOf(num);
-		if (idx === -1) {
-			newDaysOfWeek.push(num);
-		} else {
-			newDaysOfWeek.splice(idx, 1);
-		}
-		
-		props.changeEventBeingEdited({
-			...props.eventBeingEdited,
-			daysOfWeek: newDaysOfWeek
-		})
-	}
-
-	const toggleDailyRepeat = () => {
-		if (noRepeats) {
-			props.changeEventBeingEdited({
-				...props.eventBeingEdited,
-				daysOfWeek: [0, 1, 2, 3, 4, 5, 6]
-			});
-			return;
-		}
-
-		let newDaysOfWeek = myStructuredClone(props.eventBeingEdited.daysOfWeek!);
-		if (newDaysOfWeek.sort().every((val, idx) => val === [0, 1, 2, 3, 4, 5, 6][idx])) {
-			props.changeEventBeingEdited({
-				...props.eventBeingEdited,
-				daysOfWeek: []
-			});
-		} else  {
-			props.changeEventBeingEdited({
-				...props.eventBeingEdited,
-				daysOfWeek: [0, 1, 2, 3, 4, 5, 6]
-			});
-		}
-	}
-
-	const handlePickEndDate = (value: DateValue) => {
-		// DateValue is Date | null
-		if (value !== null) {
-			const valAsDayjs: dayjs.Dayjs = dayjs(value).add(1, "day").startOf("day");
-			const startDayjs = dayjs(props.eventBeingEdited.start! as Date);
-			// don't end before you start
-			if (valAsDayjs.isBefore(startDayjs) || valAsDayjs.isSame(startDayjs))
-				return;
-		}
-
-		props.changeEventBeingEdited({
-			...props.eventBeingEdited,
-			endRecur: value
-		})
-	}
-
-	// add 1 for padding
-	const possibleTimes = Array(props.dayDuration * 12 + 1).fill(0).map((_, idx) => {
-		const curTimeInMins = 5 * idx;
-		const startDate = dayjs(props.eventBeingEdited.start! as Date);
-		const startDay = offsetDay(startDate);
-		const date = startDay.startOf("day").add(curTimeInMins, "minutes");
-		const dayDiff = curTimeInMins / (24 * 60);
-		let labelPrefix;
-		if (noRepeats) {
-			labelPrefix = date.format("ddd ");
-		} else {
-			labelPrefix = ((dayDiff >= 1) ? "Tomorrow " : "Today ");
-		}
-
-		return { value: date.format(), label: labelPrefix + date.format(timeDisplayFmt) } as SelectItem;
-	});
-
-	return (
-		<Modal
-			opened={props.editingEvent}
-			onClose={props.closeNoSave}
-			title={<Text>Edit Event{ (!noRepeats) ? ", starts from " + offsetDay(dayjs(props.eventBeingEdited.start! as Date)).format("MMM D YYYY") : ""}</Text>}
-			centered
-			onKeyDown={getHotkeyHandler([
-				["Enter", () => {
-					if (props.eventBeingEdited?.title.length === 0)
-						inputRef.current?.focus();
-					else
-						props.saveEditingEvent();
-				}]])}
-		>
-			<Grid grow mb="xs">
-				<Grid.Col span={12}>
-					<TextInput
-						ref={inputRef}
-						label="Title"
-						value={props.eventBeingEdited?.title}
-						onChange={handleChangeTitle}
-					/>
-				</Grid.Col>
-				<Grid.Col span={12}>
-					<Select
-						label="Start time"
-						placeholder="Pick a start time"
-						value={dayjs(props.eventBeingEdited.start! as Date).format()}
-						onChange={handleChangeStartTime}
-						data={possibleTimes}
-						dropdownPosition="bottom"
-						maxDropdownHeight={150}
-					/>
-				</Grid.Col>
-				<Grid.Col span={12}>
-					<Select
-						label="End time"
-						placeholder="Pick an end time"
-						value={dayjs(props.eventBeingEdited.end! as Date).format()}
-						onChange={handleChangeEndTime}
-						data={possibleTimes}
-						dropdownPosition="bottom"
-						maxDropdownHeight={150}
-					/>
-				</Grid.Col>
-				<Grid.Col span={2}>
-					<Stack spacing={0}>
-						<Text fz="sm" fw={450}>Repeats</Text>
-						<Text
-							c={
-								(noRepeats) ?
-								"dimmed" : "white"
-							}
-							fz="xs"
-						>
-							Never
-						</Text>
-					</Stack>
-				</Grid.Col>
-				<Grid.Col span={10}>
-					<Group position="apart" align="center" spacing={2}>
-						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(0)}>
-							<Avatar
-								size={dayBtnSize}
-								color="blue"
-								variant={
-									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(0)) ?
-									"light" : "filled"
-								}
-							>
-								S
-							</Avatar>
-						</Button>
-						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(1)}>
-							<Avatar
-								size={dayBtnSize}
-								color="blue"
-								variant={
-									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(1)) ?
-									"light" : "filled"
-								}
-							>
-								M
-							</Avatar>
-						</Button>
-						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(2)}>
-							<Avatar
-								size={dayBtnSize}
-								color="blue"
-								variant={
-									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(2)) ?
-									"light" : "filled"
-								}
-							>
-								T
-							</Avatar>
-						</Button>
-						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(3)}>
-							<Avatar
-								size={dayBtnSize}
-								color="blue"
-								variant={
-									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(3)) ?
-									"light" : "filled"
-								}
-							>
-								W
-							</Avatar>
-						</Button>
-						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(4)}>
-							<Avatar
-								size={dayBtnSize}
-								color="blue"
-								variant={
-									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(4)) ?
-									"light" : "filled"
-								}
-							>
-								T
-							</Avatar>
-						</Button>
-						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(5)}>
-							<Avatar
-								size={dayBtnSize}
-								color="blue"
-								variant={
-									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(5)) ?
-									"light" : "filled"
-								}
-							>
-								F
-							</Avatar>
-						</Button>
-						<Button variant="unstyled" p={0} m={0} onClick={() => toggleIncludeDayOfWeek(6)}>
-							<Avatar
-								size={dayBtnSize}
-								color="blue"
-								variant={
-									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(6)) ?
-									"light" : "filled"
-								}
-							>
-								S
-							</Avatar>
-						</Button>
-						<Button variant="subtle" m={0} px="xs" size="xs" onClick={toggleDailyRepeat}>
-							Daily
-						</Button>
-					</Group>
-				</Grid.Col>
-				{
-					(!noRepeats) ? 
-						<Grid.Col span={12}>
-							<DatePickerInput
-								label="Until"
-								placeholder="By default, this event repeats indefinitely until deleted"
-								allowDeselect
-								firstDayOfWeek={0}
-								popoverProps={{ zIndex: 201 }}
-								defaultValue={
-									(!props.eventBeingEdited.endRecur) ? undefined
-									: dayjs(props.eventBeingEdited.endRecur! as Date).subtract(1, "day").toDate()
-								}
-								onChange={handlePickEndDate}
-							/>
-						</Grid.Col>
-					: <></>
-				}
-			</Grid>
-			<Group position="apart">
-				<ActionIcon
-					className={classes.del}
-					onClick={props.deleteEditingEvent}
-				>
-					<DeleteIcon />
-				</ActionIcon>
-				<Button onClick={props.saveEditingEvent}>
-					Save
-				</Button>
-			</Group>
-		</Modal>
-	);
-}
-
 interface DayCalendarProps {
-	height: string | number,
-	width: string | number
-	date: dayjs.Dayjs,
-	readonly user: UserRubric,
-	readonly items: ItemCollection,
-	editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
-	events: EventCollection,
-	saveEvent: (newEventConfig: EventRubric) => boolean,
-	deleteEvent: (eventId: Id) => boolean,
+	date: dayjs.Dayjs
 };
 
 const DayCalendar = function(props: DayCalendarProps) {
+	const coordination = useContext(CoordinationContext);
+
+	const height = "80vh";
+	const width = "310px";
 	const navigate = useNavigate();
 	const { classes } = useStyles();
 	const location = useLocation();
+
+	const selectedDayId = dateToDayId(props.date);
 
 	const dummyEvent: EventRubric = {
 		id: createEventReprId("dummy" + uuid()),
@@ -433,16 +72,13 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const [editingEvent, handlers] = useDisclosure(false);
 	const [eventBeingEdited, changeEventBeingEdited] = useState<EventRubric>(dummyEvent);
 	const [newEventId, setNewEventId] = useState<Id>("");
-	const [dayDuration, setDayDuration] = useState<number>(props.user.hoursInDay);
-	const [eventDuration, setEventDuration] = useState<number>(props.user.defaultEventLength);
-	const [slotLabelInterval, setSlotLabelInterval] = useState<number>(props.user.dayCalLabelInterval);
-	const [snapDuration, setSnapDuration] = useState<number>(props.user.dayCalSnapDuration);
 
 	useEffect(() => {
-		if (!props.user || !props.user.authData)
+		if (!coordination.user || !coordination.user.authData) {
 			return;
+		}
 
-		const accessTokenExpiryDate = props.user.authData?.expiryDate;
+		const accessTokenExpiryDate = coordination.user.authData?.expiryDate;
 		if (accessTokenExpiryDate === undefined) {
 			console.log("undefined expiry");
 			return;
@@ -451,13 +87,13 @@ const DayCalendar = function(props: DayCalendarProps) {
 		const expiryDate = dayjs(accessTokenExpiryDate!);
 		// using the refresh token, refresh the access token
 		if (dayjs().isAfter(expiryDate)) {
-			invoke("exchange_refresh_for_access_token", { refreshToken: props.user.authData!.refreshToken }).then(r => {
+			invoke("exchange_refresh_for_access_token", { refreshToken: coordination.user.authData!.refreshToken }).then(r => {
 				let res = r as { expires_in: number, access_token: string };
                 const accessToken = res.access_token;
                 const expiryDate = dayjs().add(Math.max(res.expires_in - 10, 0), "seconds").format();
 
-                props.editUser({ authData: {
-					refreshToken: props.user.authData!.refreshToken,
+                coordination.editUser({ authData: {
+					refreshToken: coordination.user.authData!.refreshToken,
 					accessToken,
 					expiryDate
 				}});
@@ -469,13 +105,13 @@ const DayCalendar = function(props: DayCalendarProps) {
 			var searchParams = new URLSearchParams();
 			// parameters should be in UTC time
 			searchParams.append("timeMin", getToday().utc().format());
-			searchParams.append("timeMax", getToday().add(dayDuration, "hours").subtract(1, "minute").utc().format());
+			searchParams.append("timeMax", getToday().add(coordination.user.hoursInDay, "hours").subtract(1, "minute").utc().format());
 			const fetchURL = `${primaryCalURL}?${searchParams.toString()}`;
 
 			tauriFetch(fetchURL, {
 				method: "GET",
 				headers: {
-					"Authorization": `Bearer ${props.user.authData?.accessToken}`
+					"Authorization": `Bearer ${coordination.user.authData?.accessToken}`
 				}
 			}).then(r => {
 				let res = r as GCalData;
@@ -492,11 +128,12 @@ const DayCalendar = function(props: DayCalendarProps) {
 				console.log("here", gcalOut);
 			});
 		}
-	}, [props.user]);
+	}, [coordination.user]);
 
 	// TODO: be able to edit events locally and have that sync to GCal
 	// TODO: google calendar logo should be at the top right of the Day Calendar
 	// TODO: and that should be the button to enable or disable it
+	// TODO: maybe a dropdown with the logo (GCal / Outlook / None) as the items
 
 	useEffect(() => {
 		// hack for preventing that one long error when adding changing events
@@ -504,38 +141,27 @@ const DayCalendar = function(props: DayCalendarProps) {
 		if (!newEventId) {
 			return;
 		}
-		changeEventBeingEdited(props.events[newEventId]);
+		changeEventBeingEdited(coordination.events[newEventId]);
 		setNewEventId("");
 		handlers.open();
 	}, [newEventId]);
 
 	useEffect(() => {
-		// this is to handle changes to the user in settings while the app is running
-		if (!props.user)
-			return;
-		
-		setDayDuration(props.user.hoursInDay);
-		setEventDuration(props.user.defaultEventLength);
-		setSlotLabelInterval(props.user.dayCalLabelInterval);
-		setSnapDuration(props.user.dayCalSnapDuration);
-	}, [props.user]);
-
-	useEffect(() => {
-		if (!editingEvent)
+		if (!editingEvent) {
 			changeEventBeingEdited(dummyEvent);
-
+		}
 	}, [editingEvent]);
 
 	const handleEventDrag = (changeInfo: EventChangeArg) => {
 		const id = changeInfo.event.id;
-		const evt = props.events[id];
-		// TODO: evt may be in gcalEvents now, not in props.events!!!
+		const evt = coordination.events[id];
+		// TODO: evt may be in gcalEvents now, not in coordination.events!!!
 		const noRepeats = (!evt.daysOfWeek || evt.daysOfWeek?.length === 0);
-		let oldStart = dayjs(props.events[id].start! as Date);
-		let _newStart = (changeInfo.event.start) ? changeInfo.event.start : props.events[id].start!;
+		let oldStart = dayjs(coordination.events[id].start! as Date);
+		let _newStart = (changeInfo.event.start) ? changeInfo.event.start : coordination.events[id].start!;
 		let newStart = dayjs(_newStart as Date);
-		let oldEnd = dayjs(props.events[id].end! as Date);
-		let _newEnd = (changeInfo.event.start) ? changeInfo.event.end : props.events[id].end!;
+		let oldEnd = dayjs(coordination.events[id].end! as Date);
+		let _newEnd = (changeInfo.event.end) ? changeInfo.event.end : coordination.events[id].end!;
 		let newEnd = dayjs(_newEnd as Date);
 		
 		// if the event is repeating, then we need different logic
@@ -558,11 +184,12 @@ const DayCalendar = function(props: DayCalendarProps) {
 			newStart = originalStartDay.add(sdiff);
 		}
 
-		if (newStart.isSame(newEnd) || newStart.isAfter(newEnd))
+		if (newStart.isSame(newEnd) || newStart.isAfter(newEnd)) {
 			return;
+		}
 
-		props.saveEvent({
-			...props.events[changeInfo.event.id],
+		coordination.saveEvent({
+			...coordination.events[changeInfo.event.id],
 			start: newStart.toDate(),
 			end: newEnd.toDate()
 		});
@@ -571,7 +198,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 	const handleEventClick = (clickInfo: EventClickArg) => {
 		// open the edit modal
 		const id = clickInfo.event.id;
-		changeEventBeingEdited(props.events[id]);
+		changeEventBeingEdited(coordination.events[id]);
 		handlers.open();
 	}
 
@@ -582,7 +209,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 			return;
 		}
 
-		props.saveEvent(myStructuredClone(eventBeingEdited));
+		coordination.saveEvent(myStructuredClone(eventBeingEdited));
 		handlers.close();
 	}
 
@@ -597,7 +224,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 
 	const deleteEditingEvent = () => {
 		handlers.close();
-		props.deleteEvent(eventBeingEdited.id);
+		coordination.deleteEvent(eventBeingEdited.id);
 	}
 
 	const handleAddEventThroughSelection = (info: DateSelectArg) => {
@@ -616,7 +243,7 @@ const DayCalendar = function(props: DayCalendarProps) {
 			start: start.toDate(),
 			end: end.toDate()
 		};
-		props.saveEvent(newEvent);
+		coordination.saveEvent(newEvent);
 		setNewEventId(newEventId);
 	}
 
@@ -625,25 +252,22 @@ const DayCalendar = function(props: DayCalendarProps) {
 		const [id, _] = el.id.split(ID_IDX_DELIM);
 
 		// NOTE: operating assumption: the div id of the item is exactly the itemId
-		const item = props.items[id];
-		if (!item)
-			return;
+		const item = coordination.lists[selectedDayId].items[id];
 
 		const draggedEvent: EventRubric = {
 			id: uuid(),
 			title: item.content,
 			start: dropInfo.date,
-			end: dayjs(dropInfo.date).add(eventDuration, "minutes").toDate()
+			end: dayjs(dropInfo.date).add(coordination.user.defaultEventLength, "minutes").toDate()
 		};
 
-		props.saveEvent(draggedEvent);
+		coordination.saveEvent(draggedEvent);
 	};
 
-	// TODO: bug: can't have recurring events that end at 6am???
-	return ( (!props.user) ? <div></div> :
+	return ( (!coordination.user) ? <div></div> :
 		<Stack
 			className={classes.calendarWrapper}
-			sx={{ width: props.width }}
+			sx={{ width: width }}
 			p="sm"
 		>
 			<EditEventModal
@@ -653,12 +277,12 @@ const DayCalendar = function(props: DayCalendarProps) {
 				changeEventBeingEdited={changeEventBeingEdited}
 				closeNoSave={closeNoSave}
 				deleteEditingEvent={deleteEditingEvent}
-				dayDuration={dayDuration}
-				snapDuration={snapDuration}
+				dayDuration={coordination.user.hoursInDay}
+				snapDuration={coordination.user.dayCalSnapDuration}
 			/>
 			<Group position="apart">
 				<Title order={2} pl="xs">
-					{props.date.format("MMMM D, YYYY")}
+					{props.date.format("MMM D, YYYY")}
 				</Title>
 				{
 					(location.pathname === PLANNER_PATH) ? <></> :
@@ -681,15 +305,15 @@ const DayCalendar = function(props: DayCalendarProps) {
 						timeGridPlugin,
 						interactionPlugin
 					]}
-					viewHeight={props.height}
-					height={props.height}
+					viewHeight={height}
+					height={height}
 					allDaySlot={false}
 					nowIndicator={true}
 
 					editable={true}
 					events={
-						Object.keys(props.events).map(eid => {
-							const evt = props.events[eid];
+						Object.keys(coordination.events).map(eid => {
+							const evt = coordination.events[eid];
 							let output: EventInput
 							if (evt.daysOfWeek === undefined || evt.daysOfWeek === null || evt.daysOfWeek.length === 0) {
 								output = {
@@ -753,10 +377,10 @@ const DayCalendar = function(props: DayCalendarProps) {
 					initialView="timeGridDay"
 					initialDate={props.date.toDate()}
 
-					snapDuration={snapDuration * 60 * 1000}
-					slotDuration={Math.max(slotLabelInterval / 4, 15) * 60 * 1000}
-					slotLabelInterval={slotLabelInterval * 60 * 1000}
-					slotMaxTime={dayDuration * 60 * 60 * 1000}
+					snapDuration={coordination.user.dayCalSnapDuration * 60 * 1000}
+					slotDuration={Math.max(coordination.user.dayCalLabelInterval / 4, 15) * 60 * 1000}
+					slotLabelInterval={coordination.user.dayCalLabelInterval * 60 * 1000}
+					slotMaxTime={coordination.user.hoursInDay * 60 * 60 * 1000}
 				/>}
 			</Stack>
 		</Stack>

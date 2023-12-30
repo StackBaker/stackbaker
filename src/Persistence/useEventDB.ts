@@ -3,9 +3,9 @@ import { useState } from "react";
 import { Store } from "tauri-plugin-store-api";
 
 import type { EventRubric, EventCollection } from "../Calendars/Event";
-import { Id, myStructuredClone } from "../globals";
+import { Id, myStructuredClone, isDev } from "../globals";
 
-const EVENTS_FNAME = "events.dat";
+const EVENTS_FNAME = (isDev()) ? "dev-events.dat" : "events.dat";
 
 const useEventDB = function() {
     const store = new Store(EVENTS_FNAME);
@@ -59,7 +59,7 @@ const useEventDB = function() {
         store.save();
     }
 
-    const loadAll = async () => {
+    const load = async () => {
         await store.load();
         const entries = await store.entries()
 
@@ -77,7 +77,7 @@ const useEventDB = function() {
         store.save();
     }
 
-    return { data: events, get, set, has, del, loadAll, clear };
+    return { data: events, get, set, has, del, load, clear };
 }
 
 export default useEventDB;
