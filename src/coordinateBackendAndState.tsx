@@ -340,7 +340,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     };
 
     const addIncompleteAndLaterToToday = (): boolean => {
-        const numPrevDaysToSearch = 3;
+        const numPrevDaysToSearch = 7;
         const today = getToday();
         const todayId = dateToDayId(today);
         var todayList = getListFromDB(todayId);
@@ -373,7 +373,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
                     const itemToAddToToday = {
                         ...prevDayList!.items[itemId],
                         index: numTodayItems
-                    }
+                    };
                     numTodayItems += 1;
                     todayList!.items[itemId] = itemToAddToToday;
 

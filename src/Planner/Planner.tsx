@@ -28,7 +28,7 @@ const Planner = function(props: PlannerProps) {
             return;
         }
 
-        if (coordination.loadStage !== LoadingStage.DBUpdated) {
+        if (coordination.loadStage !== LoadingStage.Ready) {
             return;
         }
         
