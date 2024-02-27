@@ -52,5 +52,5 @@ export enum DashboardViewOption {
 
 // IMPORTANT: toggle this on push
 export const isDev = function(): boolean {
-    return false;
+    return true;
 }

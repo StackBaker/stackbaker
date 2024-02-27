@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import type { DraggableStateSnapshot, DraggableStyle } from "@hello-pangea/dnd";
-import { createStyles, Card, Text, ActionIcon, Textarea, Group } from "@mantine/core";
+import { createStyles, Card, Text, ActionIcon, Textarea, Group, Button } from "@mantine/core";
 import { useDisclosure, useClickOutside, getHotkeyHandler } from "@mantine/hooks";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -11,9 +11,10 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { ThirdPartyDraggable } from "@fullcalendar/interaction";
 
-import { LIST_WIDTH } from "./globals";
+import { DO_LATER_LIST_ID, LIST_WIDTH } from "./globals";
 import type { Id, PriorityLevel } from "./globals";
 import { CoordinationContext } from "./coordinateBackendAndState";
+import { dateToDayId } from "./dateutils";
 
 export const ID_IDX_DELIM = "~";
 
@@ -193,7 +194,7 @@ const Item = function(props: ItemProps) {
                                         </ActionIcon>
                                         <ActionIcon
                                             className={classes.del}
-                                            onClick={() => coordination.deleteItem(props.itemId, props.listId, props.index)}
+                                            onClick={() => coordination.deleteItem(props.itemId, props.listId)}
                                         >
                                             <DeleteIcon />
                                         </ActionIcon>
@@ -204,6 +205,29 @@ const Item = function(props: ItemProps) {
                                             <EditIcon className={classes.editSignal}/>
                                             : null
                                         }
+                                        <Button
+                                            size="10px" 
+                                            px="xs"
+                                            py="7px"
+                                            variant="light"
+                                            onClick={
+                                                () => {
+                                                    let { listId, collapseItem, ...itemConfig } = props;
+                                                    let otherListId;
+                                                    if (props.listId === DO_LATER_LIST_ID) {
+                                                        // Add to Items
+                                                        otherListId = dateToDayId(coordination.date);
+                                                    } else {
+                                                        otherListId = DO_LATER_LIST_ID;
+                                                    }
+                                                    coordination.shiftItemBetweenLists(itemConfig.itemId, props.listId, otherListId);
+                                                }
+                                            }
+                                        >
+                                            {
+                                                (props.listId === DO_LATER_LIST_ID) ? "To Items" : "Push Later"
+                                            }
+                                        </Button>
                                         {
                                             (collapseDefined) ? 
                                             <ActionIcon onClick={collapseHandlers.open}>
@@ -212,7 +236,6 @@ const Item = function(props: ItemProps) {
                                             : null
                                         }
                                     </Group>
-                                    
                                 </Group>
                             }
                         </Card.Section>

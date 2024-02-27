@@ -154,7 +154,7 @@ const GridCalendar = function(props: GridCalendarProps) {
     const deleteEditingItem = () => {
         handlers.close();
         const { listId, index, ...rest } = itemBeingEdited;
-        coordination.deleteItem(rest.itemId, listId, index);
+        coordination.deleteItem(rest.itemId, listId);
         changeItemBeingEdited(dummyItem);
     };
 

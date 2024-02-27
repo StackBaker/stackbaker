@@ -135,7 +135,7 @@ const List = function(props: ListProps) {
                     />
                 </form>
                 : 
-                <Button onClick={() => handlers.open()} mr="xs">
+                <Button onClick={() => handlers.open()}>
                     Add Item
                 </Button>
             }

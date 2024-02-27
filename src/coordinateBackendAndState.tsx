@@ -21,17 +21,19 @@ interface coordinateBackendAndStateProps {
 
 type coordinateBackendAndStateOutput = {
     _db: { user: any, lists: any, events: any },
+    date: dayjs.Dayjs,
     user: UserRubric,
     loadStage: LoadingStage,
     lists: ListCollection,
     relevantListCollection: ListCollection,
     events: EventCollection,
     editUser: (newUserConfig: Partial<UserRubric> | null) => boolean,
-    createItem: (newItemConfig: ItemRubric, listId: Id) => boolean,
+    createItem: (newItemConfig: ItemRubric, listId: Id) => ListRubric | null,
     mutateItem: (itemId: Id, newConfig: Partial<ItemRubric>, listId: Id) => boolean,
     toggleItemComplete: (itemId: Id, listId: Id) => boolean,
-    deleteItem: (itemId: Id, listId: Id, index: number) => boolean,
+    deleteItem: (itemId: Id, listId: Id) => ListRubric | null,
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
+    shiftItemBetweenLists: (itemId: Id,sourceListId: Id, destListId: Id) => boolean,
     dragBetweenLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     addIncompleteAndLaterToToday: () => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
@@ -116,10 +118,10 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         return true;
     }
 
-    const createItem = (newItemConfig: ItemRubric, listId: Id): boolean => {
+    const createItem = (newItemConfig: ItemRubric, listId: Id, updateDB: boolean = true): ListRubric | null => {
         let list = getListFromDB(listId);
         if (list === null) {
-            return false;
+            return null;
         }
 
         const numItems = Object.keys(list.items).length;
@@ -141,8 +143,10 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
 
         // add the new item to the list
         list!.items[newItemConfig.itemId] = newItemConfig;
-        db.lists.setList(listId, list);
-        return true;
+        if (updateDB) {
+            db.lists.setList(listId, list);
+        }
+        return list;
     };
 
     const mutateItem = (itemId: Id, newConfig: Partial<ItemRubric>, listId: Id): boolean => {
@@ -205,10 +209,10 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         return true;
     }
 
-    const deleteItem = (itemId: Id, listId: Id): boolean => {
+    const deleteItem = (itemId: Id, listId: Id, updateDB: boolean = true): ListRubric | null => {
         let list = getListFromDB(listId);
         if (list === null || !list.items.hasOwnProperty(itemId)){
-            return false;
+            return null;
         }
 
         let index: number = list.items[itemId].index;
@@ -228,10 +232,13 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
             list!.items[itmId].index -= 1;
         });
 
-        db.lists.setList(listId, list);
-        return true;
+        if (updateDB) {
+            db.lists.setList(listId, list);
+        }
+        return list;
     };
 
+    // TODO: does this need to be async? Why isn't it using getListFromDB?
     const mutateList = async (listId: Id, newConfig: Partial<ListRubric>): Promise<boolean> => {
         const listThere = await db.lists.hasList(listId);
         if (!listThere) {
@@ -244,6 +251,29 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         };
 
         db.lists.setList(listId, editedList);
+        return true;
+    }
+
+    const shiftItemBetweenLists = (itemId: Id,sourceListId: Id, destListId: Id): boolean => {
+        let srcList = getListFromDB(sourceListId);
+        if (srcList === null) {
+            return false;
+        }
+        let itemConfig = srcList.items[itemId];
+        // delete the item from the source list
+        let srcListAfterDelete = deleteItem(itemId, sourceListId, false);
+        // create the item in the dest list, at the first position
+        itemConfig.index = 0;
+        let destListAfterCreate = createItem(itemConfig, destListId, false);
+
+        if (srcListAfterDelete === null || destListAfterCreate === null) {
+            return false;
+        }
+
+        // update the DB
+        db.lists.setManyLists(
+            [srcListAfterDelete, destListAfterCreate]
+        );
         return true;
     }
 
@@ -439,6 +469,7 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
     // because the first render should load everything from the DB synchronously.
     return {
         _db: db,
+        date: props.date,
         user: db.user.data!,
         loadStage: props.loadStage,
         lists: db.lists.data!,
@@ -452,12 +483,13 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         toggleItemComplete,
         deleteItem,
         mutateList,
+        shiftItemBetweenLists,
         dragBetweenLists,
         addIncompleteAndLaterToToday,
         events: db.events.data!,
         saveEvent,
         deleteEvent,
-        clearEverything
+        clearEverything,
     };
 }
 
