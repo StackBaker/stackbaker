@@ -8,7 +8,7 @@ import type { ItemRubric } from "./Item";
 import type { ListRubric, ListCollection } from "./List";
 import type { EventRubric, EventCollection } from "./Calendars/Event";
 import useDatabase from "./Persistence/useDatabase";
-import { dateToDayId, getToday } from "./dateutils";
+import { dateToDayId, dayIdToDay, getToday } from "./dateutils";
 import type { UserRubric } from "./Persistence/useUserDB";
 import { LoadingStage } from "./globals";
 
@@ -33,7 +33,7 @@ type coordinateBackendAndStateOutput = {
     toggleItemComplete: (itemId: Id, listId: Id) => boolean,
     deleteItem: (itemId: Id, listId: Id) => ListRubric | null,
     mutateList: (listId: Id, newConfig: Partial<ListRubric>) => Promise<boolean>,
-    shiftItemBetweenLists: (itemId: Id,sourceListId: Id, destListId: Id) => boolean,
+    shiftItemBetweenLists: (itemId: Id,sourceListId: Id, destListId: Id) => Promise<boolean>,
     dragBetweenLists: (sourceOfDrag: DraggableLocation, destinationOfDrag: DraggableLocation, draggableId: Id, createNewLists?: boolean) => boolean,
     addIncompleteAndLaterToToday: () => boolean,
     saveEvent: (newEventConfig: EventRubric) => boolean,
@@ -254,25 +254,66 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         return true;
     }
 
-    const shiftItemBetweenLists = (itemId: Id,sourceListId: Id, destListId: Id): boolean => {
+    const _getOrCreateList = (listId: Id, create: boolean): ListRubric | null => {
+        let list: ListRubric | null = getListFromDB(listId);
+        if (list === null) {
+            if (create) {
+                list = {
+                    listId,
+                    planned: false,
+                    items: {}
+                };
+            } else {
+                return null;
+            }
+        }
+
+        return list;
+    }
+
+    const shiftItemBetweenLists = async (itemId: Id,sourceListId: Id, destListId: Id, createNewLists: boolean = true): Promise<boolean> => {
         let srcList = getListFromDB(sourceListId);
         if (srcList === null) {
             return false;
         }
+
         let itemConfig = srcList.items[itemId];
         // delete the item from the source list
-        let srcListAfterDelete = deleteItem(itemId, sourceListId, false);
-        // create the item in the dest list, at the first position
-        itemConfig.index = 0;
-        let destListAfterCreate = createItem(itemConfig, destListId, false);
+        let srcListAfterDeleteItem = deleteItem(itemId, sourceListId, false);
+        // create the item in the dest list
+        // at the first position if incomplete
+        // else last if complete
+        const numItems = Object.keys(itemConfig).length;
+        if (!itemConfig.complete) {
+            itemConfig.index = 0;
+        } else {
+            itemConfig.index = numItems;
+        }
+        let destListAfterCreateItem = createItem(itemConfig, destListId, false);
 
-        if (srcListAfterDelete === null || destListAfterCreate === null) {
+        if (srcListAfterDeleteItem === null) {
             return false;
+        }
+
+        // may need to create the dest list
+        if (destListAfterCreateItem === null) {
+            if (!createNewLists) {
+                return false;
+            } else {
+                // create the dest list at this point
+                destListAfterCreateItem = {
+                    listId: destListId,
+                    planned: false,
+                    items: {
+                        [itemConfig.itemId]: itemConfig
+                    }
+                }
+            }
         }
 
         // update the DB
         db.lists.setManyLists(
-            [srcListAfterDelete, destListAfterCreate]
+            [srcListAfterDeleteItem, destListAfterCreateItem]
         );
         return true;
     }
@@ -283,22 +324,6 @@ const _coordinateBackendAndState = function(props: coordinateBackendAndStateProp
         draggableId: Id,
         createNewLists: boolean = false,
     ): boolean => {
-        const _getOrCreateList = (listId: Id, create: boolean): ListRubric | null => {
-            let list: ListRubric | null = getListFromDB(listId);
-            if (list === null) {
-                if (create) {
-                    list = {
-                        listId: listId,
-                        planned: false,
-                        items: {}
-                    };
-                } else {
-                    return null;
-                }
-            }
-
-            return list;
-        }
 
         if (sourceOfDrag.droppableId === destinationOfDrag.droppableId) {
             let list: ListRubric | null = _getOrCreateList(sourceOfDrag.droppableId, createNewLists);

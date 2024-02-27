@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import type { DraggableStateSnapshot, DraggableStyle } from "@hello-pangea/dnd";
-import { createStyles, Card, Text, ActionIcon, Textarea, Group, Button } from "@mantine/core";
+import { createStyles, Card, Text, ActionIcon, Textarea, Group, Button, Select } from "@mantine/core";
 import { useDisclosure, useClickOutside, getHotkeyHandler } from "@mantine/hooks";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -58,13 +58,14 @@ const Item = function(props: ItemProps) {
     const coordination = useContext(CoordinationContext);
 
     const { classes } = useStyles();
-    const [editing, handlers] = useDisclosure(false);
+    const [editing, editingHandlers] = useDisclosure(false);
     const [editableContent, changeEditableContent] = useState<string>(props.content);
     const [collapse, collapseHandlers] = useDisclosure(true);
+    const [pushing, pushingHandlers] = useDisclosure(false);
     const itemEltId = `${props.itemId}${ID_IDX_DELIM}${props.index}`;
 
     const handleToggleComplete = () => {
-        handlers.close();
+        editingHandlers.close();
         coordination.toggleItemComplete(props.itemId, props.listId);
     }
 
@@ -73,12 +74,13 @@ const Item = function(props: ItemProps) {
             return;
         }
 
-        handlers.close();
+        editingHandlers.close();
         coordination.mutateItem(props.itemId, { content: editableContent }, props.listId);
     }
 
     const editRef = useClickOutside(handleSubmitContent);
     const itemTextAreaId = `${props.itemId}-textarea-for-editing`;
+    const pushingSelectRef = useClickOutside(pushingHandlers.close);
 
     useEffect(() => {
         // reference: https://github.com/fullcalendar/fullcalendar-react/issues/118#issuecomment-761278598
@@ -134,7 +136,7 @@ const Item = function(props: ItemProps) {
                         {...provided.dragHandleProps}
                         {...provided.draggableProps}
                         style={getStyle(provided.draggableProps.style!, snapshot)}
-                        sx={{ flexShrink: 0 }}
+                        sx={{ flexShrink: 0, flexGrow: 1 }}
                     >
                         <Card.Section
                             p={(collapseDefined && collapse) ? 0 : "xs"}
@@ -144,7 +146,7 @@ const Item = function(props: ItemProps) {
                                 (collapseDefined && collapse) ? 
                                 <Group position="apart" p="xs" pl="md">
                                     <Text size="sm" maw="75%" truncate>{editableContent}</Text>
-                                    <ActionIcon onClick={() => {collapseHandlers.close(); handlers.close()}}>
+                                    <ActionIcon onClick={() => {collapseHandlers.close(); editingHandlers.close()}}>
                                         <KeyboardArrowDownIcon />
                                     </ActionIcon>
                                 </Group> :
@@ -170,7 +172,7 @@ const Item = function(props: ItemProps) {
                                     className={(props.complete) ? classes.disabledInput : undefined}
                                     size="sm"
                                     onClick={() => {
-                                        if (!props.complete) handlers.open()
+                                        if (!props.complete) editingHandlers.open()
                                     }}
                                     py="xs"
                                     pl={2}
@@ -205,29 +207,51 @@ const Item = function(props: ItemProps) {
                                             <EditIcon className={classes.editSignal}/>
                                             : null
                                         }
-                                        <Button
-                                            size="10px" 
-                                            px="xs"
-                                            py="7px"
-                                            variant="light"
-                                            onClick={
-                                                () => {
-                                                    let { listId, collapseItem, ...itemConfig } = props;
+                                        {
+                                            (pushing) ?
+                                            <Select
+                                                // ref={pushingSelectRef}
+                                                size="xs"
+                                                initiallyOpened
+                                                selectOnBlur
+                                                withinPortal
+                                                placeholder="Pick a list"
+                                                data={[
+                                                    { value: "Tomorrow", label: "Tomorrow"},
+                                                    {
+                                                        value: "OtherList",
+                                                        label: (props.listId === DO_LATER_LIST_ID) ? "Items" : "Later", 
+                                                    },
+                                                    { value: "Yesterday", label: "Yesterday"},
+                                                ]}
+                                                maw="10ch"
+                                                onChange={(value: string) => {
                                                     let otherListId;
-                                                    if (props.listId === DO_LATER_LIST_ID) {
-                                                        // Add to Items
-                                                        otherListId = dateToDayId(coordination.date);
+                                                    if (value === "Yesterday") {
+                                                        otherListId = dateToDayId(coordination.date.add(-1, "day"));
+                                                    } else if (value === "Tomorrow") {
+                                                        otherListId = dateToDayId(coordination.date.add(1, "day"));
+                                                    } else if (value === "OtherList") {
+                                                        otherListId = (props.listId === DO_LATER_LIST_ID) ? dateToDayId(coordination.date) : DO_LATER_LIST_ID;
                                                     } else {
-                                                        otherListId = DO_LATER_LIST_ID;
+                                                        // don't want to trigger anything
+                                                        return;
                                                     }
-                                                    coordination.shiftItemBetweenLists(itemConfig.itemId, props.listId, otherListId);
-                                                }
-                                            }
-                                        >
-                                            {
-                                                (props.listId === DO_LATER_LIST_ID) ? "To Items" : "Push Later"
-                                            }
-                                        </Button>
+                                                    pushingHandlers.close();
+                                                    coordination.shiftItemBetweenLists(props.itemId, props.listId, otherListId).then();
+                                                }}
+                                            />
+                                             : 
+                                            <Button
+                                                size="10px" 
+                                                px="xs"
+                                                py="7px"
+                                                variant="light"
+                                                onClick={() => pushingHandlers.open()}
+                                            >
+                                                Push
+                                            </Button>
+                                        }
                                         {
                                             (collapseDefined) ? 
                                             <ActionIcon onClick={collapseHandlers.open}>

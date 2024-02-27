@@ -218,6 +218,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 						onChange={handleChangeStartTime}
 						data={possibleTimes}
 						dropdownPosition="bottom"
+						withinPortal
 						maxDropdownHeight={150}
 					/>
 				</Grid.Col>
@@ -229,6 +230,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 						onChange={handleChangeEndTime}
 						data={possibleTimes}
 						dropdownPosition="bottom"
+						withinPortal
 						maxDropdownHeight={150}
 					/>
 				</Grid.Col>
