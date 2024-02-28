@@ -10,6 +10,10 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { ThirdPartyDraggable } from "@fullcalendar/interaction";
+// TODO: vet these dependencies
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 import { DO_LATER_LIST_ID, LIST_WIDTH } from "./globals";
 import type { Id, PriorityLevel } from "./globals";
@@ -176,7 +180,9 @@ const Item = function(props: ItemProps) {
                                     }}
                                     py="xs"
                                     pl={2}
-                                >{editableContent}</Text>
+                                >
+                                    <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{editableContent}</Markdown>
+                                </Text>
                             }
                         </Card.Section>
                         <Card.Section>
