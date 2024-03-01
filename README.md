@@ -2,6 +2,20 @@
 
 StackBaker is the time management tool for college students. Stay on top of your work while making time for the things you care about.
 
+# Editing StackBaker
+
+StackBaker is managed using [`pnpm`](https://pnpm.io) and built with [Tauri](https://tauri.app). As Tauri is written in Rust, you may need to install Rust and such to use it. Follow the instructions on their webpage to properly run Tauri.
+
+Once that is done, clone the repo, `cd` into it, then install libraries with
+```sh
+pnpm install
+```
+This may take a while. To test your changes on the fly, use:
+```sh
+pnpm tauri dev
+```
+Publishing the app is a little more complicated, and since it has to be installable on MacOS, needs licenses and certificates and other nonsense. Repo authors recommend making a pull request, and we can subsequently handle proper publishing. But, if you want to know more, details are in the following section:
+
 # Publishing StackBaker
 
 Releases of StackBaker are hosted on our [app-releases repo](https://github.com/StackBaker/app-releases). That repo was created so we could publicly publish the app while keeping the code private. However, now that StackBaker is open source, it exists for continuity and ease of finding the app releases. This may change in the future.

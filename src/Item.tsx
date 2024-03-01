@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import type { DraggableStateSnapshot, DraggableStyle } from "@hello-pangea/dnd";
-import { createStyles, Card, Text, ActionIcon, Textarea, Group } from "@mantine/core";
+import { createStyles, Card, Text, ActionIcon, Textarea, Group, Button } from "@mantine/core";
 import { useDisclosure, useClickOutside, getHotkeyHandler } from "@mantine/hooks";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -11,9 +11,14 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { ThirdPartyDraggable } from "@fullcalendar/interaction";
 
-import { LIST_WIDTH } from "./globals";
+/**
+ * TOOD: markdown support
+ */
+
+import { DO_LATER_LIST_ID, LIST_WIDTH } from "./globals";
 import type { Id, PriorityLevel } from "./globals";
 import { CoordinationContext } from "./coordinateBackendAndState";
+import { dateToDayId } from "./dateutils";
 
 export const ID_IDX_DELIM = "~";
 
@@ -57,13 +62,13 @@ const Item = function(props: ItemProps) {
     const coordination = useContext(CoordinationContext);
 
     const { classes } = useStyles();
-    const [editing, handlers] = useDisclosure(false);
+    const [editing, editingHandlers] = useDisclosure(false);
     const [editableContent, changeEditableContent] = useState<string>(props.content);
     const [collapse, collapseHandlers] = useDisclosure(true);
     const itemEltId = `${props.itemId}${ID_IDX_DELIM}${props.index}`;
 
     const handleToggleComplete = () => {
-        handlers.close();
+        editingHandlers.close();
         coordination.toggleItemComplete(props.itemId, props.listId);
     }
 
@@ -72,7 +77,7 @@ const Item = function(props: ItemProps) {
             return;
         }
 
-        handlers.close();
+        editingHandlers.close();
         coordination.mutateItem(props.itemId, { content: editableContent }, props.listId);
     }
 
@@ -132,6 +137,7 @@ const Item = function(props: ItemProps) {
                         withBorder
                         {...provided.dragHandleProps}
                         {...provided.draggableProps}
+                        
                         style={getStyle(provided.draggableProps.style!, snapshot)}
                         sx={{ flexShrink: 0 }}
                     >
@@ -143,7 +149,7 @@ const Item = function(props: ItemProps) {
                                 (collapseDefined && collapse) ? 
                                 <Group position="apart" p="xs" pl="md">
                                     <Text size="sm" maw="75%" truncate>{editableContent}</Text>
-                                    <ActionIcon onClick={() => {collapseHandlers.close(); handlers.close()}}>
+                                    <ActionIcon onClick={() => {collapseHandlers.close(); editingHandlers.close()}}>
                                         <KeyboardArrowDownIcon />
                                     </ActionIcon>
                                 </Group> :
@@ -154,7 +160,6 @@ const Item = function(props: ItemProps) {
                                     placeholder="Item content..."
                                     aria-label={`item-${props.itemId}-input`}
                                     readOnly={!editing}
-                                    disabled={props.complete}
                                     variant="unstyled"
                                     value={editableContent}
                                     onChange={(e) => changeEditableContent(e.currentTarget.value)}
@@ -167,13 +172,15 @@ const Item = function(props: ItemProps) {
                                 :
                                 <Text
                                     className={(props.complete) ? classes.disabledInput : undefined}
+                                    variant="unstyled"
                                     size="sm"
-                                    onClick={() => {
-                                        if (!props.complete) handlers.open()
-                                    }}
+                                    sx={{ whiteSpace: "pre-wrap" }}
+                                    onClick={() => { if (!props.complete) editingHandlers.open(); }}
                                     py="xs"
                                     pl={2}
-                                >{editableContent}</Text>
+                                >
+                                    {editableContent}
+                                </Text>
                             }
                         </Card.Section>
                         <Card.Section>
@@ -193,7 +200,7 @@ const Item = function(props: ItemProps) {
                                         </ActionIcon>
                                         <ActionIcon
                                             className={classes.del}
-                                            onClick={() => coordination.deleteItem(props.itemId, props.listId, props.index)}
+                                            onClick={() => coordination.deleteItem(props.itemId, props.listId)}
                                         >
                                             <DeleteIcon />
                                         </ActionIcon>
@@ -204,6 +211,18 @@ const Item = function(props: ItemProps) {
                                             <EditIcon className={classes.editSignal}/>
                                             : null
                                         }
+                                        <Button
+                                            size="10px" 
+                                            px="xs"
+                                            py="7px"
+                                            variant="light"
+                                            onClick={() => {
+                                                let otherListId = dateToDayId(coordination.date.add(1, "day"));
+                                                coordination.shiftItemBetweenLists(props.itemId, props.listId, otherListId).then();
+                                            }}
+                                        >
+                                            Tmrw
+                                        </Button>
                                         {
                                             (collapseDefined) ? 
                                             <ActionIcon onClick={collapseHandlers.open}>
@@ -212,7 +231,6 @@ const Item = function(props: ItemProps) {
                                             : null
                                         }
                                     </Group>
-                                    
                                 </Group>
                             }
                         </Card.Section>

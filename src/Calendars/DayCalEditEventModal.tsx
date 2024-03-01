@@ -33,6 +33,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const timeDisplayFmt = "h:mm a";
 	const dayBtnSize = 30;
+	const quickDurationBtnSize = 75;
 	const noRepeats = (!props.eventBeingEdited.daysOfWeek || props.eventBeingEdited.daysOfWeek?.length === 0);
 
 	const handleChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -170,6 +171,12 @@ const EditEventModal = function(props: EditEventModalProps) {
 		})
 	}
 
+	const handleUseQuickButton = (durationMinutes: number) => {
+		let startTime = dayjs(props.eventBeingEdited.start! as Date);
+		let endTime = startTime.add(durationMinutes, "minutes");
+		handleChangeEndTime(endTime.format());
+	}
+
 	// add 1 for padding
 	const possibleTimes = Array(props.dayDuration * 12 + 1).fill(0).map((_, idx) => {
 		const curTimeInMins = 5 * idx;
@@ -218,6 +225,7 @@ const EditEventModal = function(props: EditEventModalProps) {
 						onChange={handleChangeStartTime}
 						data={possibleTimes}
 						dropdownPosition="bottom"
+						withinPortal
 						maxDropdownHeight={150}
 					/>
 				</Grid.Col>
@@ -229,8 +237,65 @@ const EditEventModal = function(props: EditEventModalProps) {
 						onChange={handleChangeEndTime}
 						data={possibleTimes}
 						dropdownPosition="bottom"
+						withinPortal
 						maxDropdownHeight={150}
 					/>
+				</Grid.Col>
+				<Grid.Col span={12}>
+					<Group position="apart" px="md">
+						<Button variant="unstyled" p={0} m={0} onClick={() => { handleUseQuickButton(15); }}>
+							<Avatar
+								size={dayBtnSize}
+								color="violet"
+								w={quickDurationBtnSize}
+								variant={
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(0)) ?
+									"light" : "filled"
+								}
+							>
+								15 min
+							</Avatar>
+						</Button>
+						<Button variant="unstyled" p={0} m={0} onClick={() => { handleUseQuickButton(30); }}>
+							<Avatar
+								size={dayBtnSize}
+								color="violet"
+								w={quickDurationBtnSize}
+								variant={
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(0)) ?
+									"light" : "filled"
+								}
+							>
+								30 min
+							</Avatar>
+						</Button>
+						<Button variant="unstyled" p={0} m={0} onClick={() => { handleUseQuickButton(45); }}>
+							<Avatar
+								size={dayBtnSize}
+								color="violet"
+								w={quickDurationBtnSize}
+								variant={
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(0)) ?
+									"light" : "filled"
+								}
+							>
+								45 min
+							</Avatar>
+						</Button>
+						<Button variant="unstyled" p={0} m={0} onClick={() => { handleUseQuickButton(60); }}>
+							<Avatar
+								size={dayBtnSize}
+								color="violet"
+								w={quickDurationBtnSize}
+								variant={
+									(!props.eventBeingEdited.daysOfWeek || !props.eventBeingEdited.daysOfWeek?.includes(0)) ?
+									"light" : "filled"
+								}
+							>
+								1 hour
+							</Avatar>
+						</Button>
+					</Group>
 				</Grid.Col>
 				<Grid.Col span={2}>
 					<Stack spacing={0}>

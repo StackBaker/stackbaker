@@ -49,10 +49,18 @@ export interface DashLeftPanelProps {
 
 const DashboardLeftPanel = function(props: DashLeftPanelProps) {
     const navigate = useNavigate();
-	const [oauthURL, setOAuthUrl] = useState("");
-    const [settingsOpen, handlers] = useDisclosure(false);
+    const [settingsOpen, settingsOpenHandlers] = useDisclosure(false);
+    const [settingsEdited, settingsEditedHandlers] = useDisclosure(false);
     const [confirmOpen, confirmHandlers] = useDisclosure(false);
-    const [accountBeingEdited, setAccountBeingEdited] = useState<{ [k in keyof UserRubric]: string }>();
+    const [accountBeingEdited, _setAccountBeingEdited] = useState<{ [k in keyof UserRubric]: string }>();
+
+    // In order to detect edits, wrap  both settingsEditedHandlers.open
+    // and _setAccountBeingEdited as follows
+    const setAccountBeingEdited = (args: { [k in keyof UserRubric]: string }) => {
+        if (settingsOpen)
+            settingsEditedHandlers.open();
+        _setAccountBeingEdited(args);
+    }
 
     const coordination = useContext(CoordinationContext);
 
@@ -71,14 +79,6 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
 
         setAccountBeingEdited(stringifiedAcc);
     }, [coordination.user]);
-
-	useEffect(() => {
-		invoke("create_oauth_request_url").then((r) => {
-			let res = r as string;
-			setOAuthUrl(res);
-			console.log("Auth URL:", res);
-		});
-	}, []);
 
     const handleSubmitSettings = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         e.preventDefault();
@@ -220,7 +220,20 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                                 { value: "false", label: "No" }
                             ]}
                         />
-                        <Button onClick={handleSubmitSettings} fullWidth>Save</Button>
+                        <Button
+                            onClick={(e) => {
+                                let prevSettingsEdited = settingsEdited;
+                                settingsOpenHandlers.close();
+                                settingsEditedHandlers.close();
+                                if (prevSettingsEdited)
+                                    handleSubmitSettings(e);
+                            }}
+                            fullWidth
+                            leftIcon={(!settingsEdited) ? <CloseIcon/> : null}
+                            variant={(settingsEdited) ? "filled" : "default"}
+                        >
+                            {(settingsEdited) ? "Save and Close" : "Close Settings"}
+                        </Button>
                     </Stack>
                     :
                     <>
@@ -286,14 +299,19 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                     : null
                 }
                 <Space h="lg"></Space>
-                <Button
-                    fullWidth
-                    variant="default"
-                    leftIcon={(settingsOpen) ? <CloseIcon/> : <SettingsIcon />}
-                    onClick={handlers.toggle}
-                >
-                    {(settingsOpen) ? "Close Settings" : "Settings"}
-                </Button>
+                {
+                    (!settingsOpen) ?
+                    <Button
+                        fullWidth
+                        variant="default"
+                        leftIcon={<SettingsIcon />}
+                        onClick={settingsOpenHandlers.toggle}
+                    >
+                        Settings
+                    </Button>
+                    :
+                    null
+                }
                 <Space h="lg"></Space>
                 {
                     (settingsOpen) ?

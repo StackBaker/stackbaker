@@ -1,7 +1,8 @@
-import { FormEvent, useContext, useEffect, useState } from "react"; 
+import { useContext, useEffect, useState } from "react"; 
 import type { Id } from "./globals"
 import { Droppable } from "@hello-pangea/dnd";
-import { Button, createStyles, Stack, TextInput, Title } from "@mantine/core";
+import { Button, createStyles, Stack, Textarea, Title } from "@mantine/core";
+import { getHotkeyHandler } from "@mantine/hooks";
 import Item from "./Item";
 import type { ItemRubric, ItemCollection } from "./Item";
 import { useDisclosure, useHotkeys, useClickOutside } from "@mantine/hooks";
@@ -74,7 +75,11 @@ const List = function(props: ListProps) {
         }
     });
 
-    const handleSubmitNewItem = (e: FormEvent<HTMLFormElement>) => {
+    const handleSubmitNewItem = (e: React.KeyboardEvent<HTMLElement> | KeyboardEvent) => {
+        // Only submit on hitting Enter; ignore combinations with enter
+        if (e.key !== "Enter" || e.shiftKey || e.altKey || e.metaKey || e.ctrlKey) {
+            return;
+        }
         e.preventDefault();
         handlers.close();
 
@@ -104,15 +109,9 @@ const List = function(props: ListProps) {
     }, [adding]);
 
     // keyboard shortcuts for adding a new item
-    if (props.listId === DO_LATER_LIST_ID) {
-        useHotkeys([
-            ["L", handlers.toggle]
-        ]);
-    } else {
-        useHotkeys([
-            ["N", handlers.toggle],
-        ]);
-    }
+    useHotkeys([
+        [(props.listId === DO_LATER_LIST_ID) ? "L" : "N", handlers.toggle],
+    ]);
 
     return (
         <Stack
@@ -123,19 +122,22 @@ const List = function(props: ListProps) {
             <Title order={2} pl="xs">{getTitleFromId(props.listId)}</Title>
             {
                 (adding) ?
-                <form onSubmit={handleSubmitNewItem}>
-                    <TextInput
-                        id={newItemContentInputId}
-                        ref={newItemContentInputRef}
-                        aria-label={`${props.listId}-new-item-content-label`}
-                        placeholder="New item..."
-                        value={newItemContent}
-                        onChange={(e) => {changeNewItemContent(e.currentTarget.value)}}
-                        {...newItemForm.getInputProps}
-                    />
-                </form>
+                <Textarea
+                    id={newItemContentInputId}
+                    ref={newItemContentInputRef}
+                    autosize
+                    minRows={1}
+                    aria-label={`${props.listId}-new-item-content-label`}
+                    placeholder="New item..."
+                    value={newItemContent}
+                    onChange={(e) => {changeNewItemContent(e.currentTarget.value)}}
+                    onKeyDown={getHotkeyHandler([
+                        ["Enter", handleSubmitNewItem]
+                    ])}
+                    {...newItemForm.getInputProps}
+                />
                 : 
-                <Button onClick={() => handlers.open()} mr="xs">
+                <Button onClick={() => handlers.open()} mih={43}>
                     Add Item
                 </Button>
             }
