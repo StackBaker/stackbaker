@@ -136,10 +136,11 @@ const Item = function(props: ItemProps) {
                         mih={(collapseDefined && collapse) ? "54px" : "100px"}
                         ref={provided.innerRef}
                         withBorder
+                        onClick={(e => { if (!editing) e.stopPropagation(); e.preventDefault(); })}
                         {...provided.dragHandleProps}
                         {...provided.draggableProps}
                         style={getStyle(provided.draggableProps.style!, snapshot)}
-                        sx={{ flexShrink: 0, flexGrow: 1 }}
+                        sx={{ flexShrink: 0 }}
                     >
                         <Card.Section
                             p={(collapseDefined && collapse) ? 0 : "xs"}
@@ -153,13 +154,13 @@ const Item = function(props: ItemProps) {
                                         <KeyboardArrowDownIcon />
                                     </ActionIcon>
                                 </Group> :
-                                (editing) ?
                                 <Textarea
                                     id={itemTextAreaId}
                                     ref={editRef}
                                     placeholder="Item content..."
                                     aria-label={`item-${props.itemId}-input`}
                                     readOnly={!editing}
+                                    className={(props.complete) ? classes.disabledInput : undefined}
                                     disabled={props.complete}
                                     variant="unstyled"
                                     value={editableContent}
@@ -169,20 +170,8 @@ const Item = function(props: ItemProps) {
                                         ["Enter", () => { if (editing) handleSubmitContent() }]
                                     ])}
                                     size="sm"
+                                    onClick={editingHandlers.open}
                                 />
-                                :
-                                <Text
-                                    className={(props.complete) ? classes.disabledInput : undefined}
-                                    size="sm"
-                                    onClick={() => {
-                                        if (!props.complete) editingHandlers.open()
-                                    }}
-                                    py="xs"
-                                    pl={2}
-                                >
-                                    {/* <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{editableContent}</Markdown> */}
-                                    {editableContent}
-                                </Text>
                             }
                         </Card.Section>
                         <Card.Section>
