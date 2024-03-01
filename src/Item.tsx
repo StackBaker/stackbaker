@@ -136,9 +136,9 @@ const Item = function(props: ItemProps) {
                         mih={(collapseDefined && collapse) ? "54px" : "100px"}
                         ref={provided.innerRef}
                         withBorder
-                        onClick={(e => { if (!editing) e.stopPropagation(); e.preventDefault(); })}
                         {...provided.dragHandleProps}
                         {...provided.draggableProps}
+                        
                         style={getStyle(provided.draggableProps.style!, snapshot)}
                         sx={{ flexShrink: 0 }}
                     >
@@ -154,14 +154,13 @@ const Item = function(props: ItemProps) {
                                         <KeyboardArrowDownIcon />
                                     </ActionIcon>
                                 </Group> :
+                                (editing) ?
                                 <Textarea
                                     id={itemTextAreaId}
                                     ref={editRef}
                                     placeholder="Item content..."
                                     aria-label={`item-${props.itemId}-input`}
                                     readOnly={!editing}
-                                    className={(props.complete) ? classes.disabledInput : undefined}
-                                    disabled={props.complete}
                                     variant="unstyled"
                                     value={editableContent}
                                     onChange={(e) => changeEditableContent(e.currentTarget.value)}
@@ -170,8 +169,19 @@ const Item = function(props: ItemProps) {
                                         ["Enter", () => { if (editing) handleSubmitContent() }]
                                     ])}
                                     size="sm"
-                                    onClick={editingHandlers.open}
                                 />
+                                :
+                                <Text
+                                    className={(props.complete) ? classes.disabledInput : undefined}
+                                    variant="unstyled"
+                                    size="sm"
+                                    sx={{ whiteSpace: "pre-wrap" }}
+                                    onClick={() => { if (!props.complete) editingHandlers.open(); }}
+                                    py="xs"
+                                    pl={2}
+                                >
+                                    {editableContent}
+                                </Text>
                             }
                         </Card.Section>
                         <Card.Section>
