@@ -14,8 +14,6 @@ import { ThirdPartyDraggable } from "@fullcalendar/interaction";
 /**
  * TOOD: markdown support
  * TODO: item box increases in height rather than scrolls
- * TODO: 15 min 30 min 1 hr buttons in the EditEventModal
- * TODO: Settings save should be close settings -> Save on change, don't have 2 buttons
  */
 
 import { DO_LATER_LIST_ID, LIST_WIDTH } from "./globals";
