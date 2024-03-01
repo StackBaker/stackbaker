@@ -13,7 +13,6 @@ import { ThirdPartyDraggable } from "@fullcalendar/interaction";
 
 /**
  * TOOD: markdown support
- * TODO: item box increases in height rather than scrolls
  */
 
 import { DO_LATER_LIST_ID, LIST_WIDTH } from "./globals";

@@ -4,7 +4,9 @@ StackBaker is the time management tool for college students. Stay on top of your
 
 # Editing StackBaker
 
-StackBaker is managed using [`pnpm`](https://pnpm.io) and built with [Tauri](https://tauri.app). Clone the repo, `cd` into it, then install libraries with
+StackBaker is managed using [`pnpm`](https://pnpm.io) and built with [Tauri](https://tauri.app). As Tauri is written in Rust, you may need to install Rust and such to use it. Follow the instructions on their webpage to properly run Tauri.
+
+Once that is done, clone the repo, `cd` into it, then install libraries with
 ```sh
 pnpm install
 ```

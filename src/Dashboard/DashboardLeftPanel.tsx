@@ -49,21 +49,20 @@ export interface DashLeftPanelProps {
 
 const DashboardLeftPanel = function(props: DashLeftPanelProps) {
     const navigate = useNavigate();
-    const [settingsOpen, handlers] = useDisclosure(false);
+    const [settingsOpen, settingsOpenHandlers] = useDisclosure(false);
     const [settingsEdited, settingsEditedHandlers] = useDisclosure(false);
     const [confirmOpen, confirmHandlers] = useDisclosure(false);
     const [accountBeingEdited, _setAccountBeingEdited] = useState<{ [k in keyof UserRubric]: string }>();
 
     // In order to detect edits, wrap  both settingsEditedHandlers.open
     // and _setAccountBeingEdited as follows
-    const setAccountBeingEdited = (args: any) => {
+    const setAccountBeingEdited = (args: { [k in keyof UserRubric]: string }) => {
         if (settingsOpen)
             settingsEditedHandlers.open();
         _setAccountBeingEdited(args);
     }
 
     const coordination = useContext(CoordinationContext);
-    console.log(settingsEdited);
 
     useEffect(() => {
         if (!coordination.user)
@@ -224,7 +223,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                         <Button
                             onClick={(e) => {
                                 let prevSettingsEdited = settingsEdited;
-                                handlers.close();
+                                settingsOpenHandlers.close();
                                 settingsEditedHandlers.close();
                                 if (prevSettingsEdited)
                                     handleSubmitSettings(e);
@@ -306,7 +305,7 @@ const DashboardLeftPanel = function(props: DashLeftPanelProps) {
                         fullWidth
                         variant="default"
                         leftIcon={<SettingsIcon />}
-                        onClick={handlers.toggle}
+                        onClick={settingsOpenHandlers.toggle}
                     >
                         Settings
                     </Button>
