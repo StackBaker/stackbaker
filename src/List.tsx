@@ -1,7 +1,7 @@
 import { FormEvent, useContext, useEffect, useState } from "react"; 
 import type { Id } from "./globals"
 import { Droppable } from "@hello-pangea/dnd";
-import { Button, createStyles, Stack, TextInput, Title } from "@mantine/core";
+import { Button, createStyles, Stack, Textarea, Title, TextInput } from "@mantine/core";
 import Item from "./Item";
 import type { ItemRubric, ItemCollection } from "./Item";
 import { useDisclosure, useHotkeys, useClickOutside } from "@mantine/hooks";
@@ -124,9 +124,11 @@ const List = function(props: ListProps) {
             {
                 (adding) ?
                 <form onSubmit={handleSubmitNewItem}>
-                    <TextInput
+                    <Textarea
                         id={newItemContentInputId}
                         ref={newItemContentInputRef}
+                        autosize
+                        minRows={1}
                         aria-label={`${props.listId}-new-item-content-label`}
                         placeholder="New item..."
                         value={newItemContent}
@@ -135,7 +137,7 @@ const List = function(props: ListProps) {
                     />
                 </form>
                 : 
-                <Button onClick={() => handlers.open()}>
+                <Button onClick={() => handlers.open()} mih="md">
                     Add Item
                 </Button>
             }

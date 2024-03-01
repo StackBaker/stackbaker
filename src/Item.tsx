@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import type { DraggableStateSnapshot, DraggableStyle } from "@hello-pangea/dnd";
-import { createStyles, Card, Text, ActionIcon, Textarea, Group, Button, Select } from "@mantine/core";
+import { createStyles, Card, Text, ActionIcon, Textarea, Group, Button } from "@mantine/core";
 import { useDisclosure, useClickOutside, getHotkeyHandler } from "@mantine/hooks";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -10,10 +10,13 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { ThirdPartyDraggable } from "@fullcalendar/interaction";
-// TODO: vet these dependencies
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
+
+/**
+ * TOOD: markdown support
+ * TODO: item box increases in height rather than scrolls
+ * TODO: 15 min 30 min 1 hr buttons in the EditEventModal
+ * TODO: Settings save should be close settings -> Save on change, don't have 2 buttons
+ */
 
 import { DO_LATER_LIST_ID, LIST_WIDTH } from "./globals";
 import type { Id, PriorityLevel } from "./globals";
@@ -65,7 +68,6 @@ const Item = function(props: ItemProps) {
     const [editing, editingHandlers] = useDisclosure(false);
     const [editableContent, changeEditableContent] = useState<string>(props.content);
     const [collapse, collapseHandlers] = useDisclosure(true);
-    const [pushing, pushingHandlers] = useDisclosure(false);
     const itemEltId = `${props.itemId}${ID_IDX_DELIM}${props.index}`;
 
     const handleToggleComplete = () => {
@@ -84,7 +86,6 @@ const Item = function(props: ItemProps) {
 
     const editRef = useClickOutside(handleSubmitContent);
     const itemTextAreaId = `${props.itemId}-textarea-for-editing`;
-    const pushingSelectRef = useClickOutside(pushingHandlers.close);
 
     useEffect(() => {
         // reference: https://github.com/fullcalendar/fullcalendar-react/issues/118#issuecomment-761278598
@@ -181,7 +182,8 @@ const Item = function(props: ItemProps) {
                                     py="xs"
                                     pl={2}
                                 >
-                                    <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{editableContent}</Markdown>
+                                    {/* <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>{editableContent}</Markdown> */}
+                                    {editableContent}
                                 </Text>
                             }
                         </Card.Section>
@@ -213,51 +215,18 @@ const Item = function(props: ItemProps) {
                                             <EditIcon className={classes.editSignal}/>
                                             : null
                                         }
-                                        {
-                                            (pushing) ?
-                                            <Select
-                                                // ref={pushingSelectRef}
-                                                size="xs"
-                                                initiallyOpened
-                                                selectOnBlur
-                                                withinPortal
-                                                placeholder="Pick a list"
-                                                data={[
-                                                    { value: "Tomorrow", label: "Tomorrow"},
-                                                    {
-                                                        value: "OtherList",
-                                                        label: (props.listId === DO_LATER_LIST_ID) ? "Items" : "Later", 
-                                                    },
-                                                    { value: "Yesterday", label: "Yesterday"},
-                                                ]}
-                                                maw="10ch"
-                                                onChange={(value: string) => {
-                                                    let otherListId;
-                                                    if (value === "Yesterday") {
-                                                        otherListId = dateToDayId(coordination.date.add(-1, "day"));
-                                                    } else if (value === "Tomorrow") {
-                                                        otherListId = dateToDayId(coordination.date.add(1, "day"));
-                                                    } else if (value === "OtherList") {
-                                                        otherListId = (props.listId === DO_LATER_LIST_ID) ? dateToDayId(coordination.date) : DO_LATER_LIST_ID;
-                                                    } else {
-                                                        // don't want to trigger anything
-                                                        return;
-                                                    }
-                                                    pushingHandlers.close();
-                                                    coordination.shiftItemBetweenLists(props.itemId, props.listId, otherListId).then();
-                                                }}
-                                            />
-                                             : 
-                                            <Button
-                                                size="10px" 
-                                                px="xs"
-                                                py="7px"
-                                                variant="light"
-                                                onClick={() => pushingHandlers.open()}
-                                            >
-                                                Push
-                                            </Button>
-                                        }
+                                        <Button
+                                            size="10px" 
+                                            px="xs"
+                                            py="7px"
+                                            variant="light"
+                                            onClick={() => {
+                                                let otherListId = dateToDayId(coordination.date.add(1, "day"));
+                                                coordination.shiftItemBetweenLists(props.itemId, props.listId, otherListId).then();
+                                            }}
+                                        >
+                                            Tmrw
+                                        </Button>
                                         {
                                             (collapseDefined) ? 
                                             <ActionIcon onClick={collapseHandlers.open}>
